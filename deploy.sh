@@ -34,6 +34,13 @@ API_URL="https://api.topagon.uz"
 APP_DIR="/var/www/topagon"          # `split` dan keyin: /var/www/topagon-app
 LANDING_DIR="/var/www/topagon-landing"
 
+# VPS'dagi HAQIQIY sayt nomi. Boshqa nom bilan yozib bo'lmaydi: `nginx.conf`
+# da `limit_req_zone` e'lonlari bor, ular http{} kontekstiga tushadi va IKKI
+# marta e'lon qilinsa nginx butunlay ko'tarilmaydi:
+#     limit_req_zone "bilim_otp" is already bound to key "$binary_remote_addr"
+# Ya'ni yangi nom = ikkita faol sayt = butun nginx yiqiladi, faqat API emas.
+NGINX_API_SITE="topagon-api"
+
 # Yangi build ekanini tasdiqlaydigan satr — eng OXIRGI sessiyada qo'shilgan
 # tarjimadan olinadi, shunda eski build'da uchramasligi kafolatlanadi.
 # Har sessiyada yangilang, aks holda tekshiruv eski build'ni ham "yangi"
@@ -255,20 +262,38 @@ deploy_nginx() {
   fi
 
   step "2/3  Konfiguratsiyani o'rnatish"
-  # Eski konfiguratsiya saqlanadi: `nginx -t` yiqilsa qaytarish uchun.
-  ssh "$VPS" "cd $REMOTE_BACKEND && \
-    cp -f /etc/nginx/sites-available/bilim /etc/nginx/sites-available/bilim.bak 2>/dev/null || true; \
+  local site="/etc/nginx/sites-available/$NGINX_API_SITE"
+  # MAVJUD faylning ustiga yoziladi — yangi nom bilan yozish ikkinchi faol
+  # sayt yaratadi va `limit_req_zone` takrorlanib nginx umuman ko'tarilmaydi.
+  ssh "$VPS" "test -f $site" \
+    || die "$site VPS'da topilmadi — sayt nomi o'zgarganmi? NGINX_API_SITE ni tekshiring"
+
+  # Manba — LOKAL fayl, VPS'dagi nusxa emas.
+  #
+  # NEGA (2026-08-09 da boshdan kechirilgan). Ilgari bu yerda VPS'dagi
+  # `deploy/nginx.conf` o'qilardi. Lekin u faqat `deploy.sh backend`
+  # muvaffaqiyatli tugagandagina yangilanadi — backend deployi yiqilgan
+  # bo'lsa, bu qadam ESKI faylni o'qib, hech narsa o'zgarmagan holda
+  # "muvaffaqiyatli" tugaydi. Sabab esa hech qayerda ko'rinmaydi.
+  scp -q backend/deploy/nginx.conf "$VPS:/tmp/nginx-api.src"
+  ssh "$VPS" "grep -q '__ADMIN_IP__' /tmp/nginx-api.src" \
+    || die "nginx.conf da __ADMIN_IP__ yo'q — noto'g'ri yoki eski fayl yuborildi"
+
+  ssh "$VPS" "cp -f $site $site.bak && \
     sed -e 's/__DOMAIN__/api.topagon.uz/g' \
         -e 's/allow __ADMIN_IP__;/allow $admin_ip;/' \
-        deploy/nginx.conf > /etc/nginx/sites-available/bilim && \
-    ln -sf /etc/nginx/sites-available/bilim /etc/nginx/sites-enabled/bilim"
+        /tmp/nginx-api.src > $site && rm -f /tmp/nginx-api.src"
 
   step "3/3  Sintaksis va qayta yuklash"
-  # `nginx -t` yiqilsa eski konfiguratsiya qaytariladi — sayt o'chib qolmasin.
-  ssh "$VPS" "nginx -t || { \
-      echo 'nginx -t YIQILDI — eski konfiguratsiya qaytarilmoqda'; \
-      cp -f /etc/nginx/sites-available/bilim.bak /etc/nginx/sites-available/bilim 2>/dev/null; \
-      exit 1; }" || die "nginx konfiguratsiyasi yaroqsiz — hech narsa o'zgarmadi"
+  # `nginx -t` yiqilsa eski konfiguratsiya QAYTARILADI va yana tekshiriladi:
+  # bu qadamdan keyin nginx har doim yaroqli holatda qolishi kerak, aks holda
+  # keyingi reload (masalan certbot yangilanishi) butun saytni o'chiradi.
+  if ! ssh "$VPS" "nginx -t"; then
+    ssh "$VPS" "cp -f $site.bak $site && nginx -t" \
+      && warn "eski konfiguratsiya qaytarildi — nginx yaroqli holatda" \
+      || die "QAYTARISH HAM YIQILDI. VPS'da qo'lda tekshiring: nginx -t"
+    die "nginx konfiguratsiyasi yaroqsiz — hech narsa o'zgarmadi"
+  fi
   ssh "$VPS" "systemctl reload nginx"
 
   curl -fsS "$API_URL/health" >/dev/null || die "$API_URL/health javob bermayapti"
