@@ -45,7 +45,7 @@ const _symbols = <String, String>{
   r'\psi': 'ψ', r'\omega': 'ω',
   r'\Gamma': 'Γ', r'\Delta': 'Δ', r'\Theta': 'Θ', r'\Lambda': 'Λ',
   r'\Xi': 'Ξ', r'\Pi': 'Π', r'\Sigma': 'Σ', r'\Phi': 'Φ',
-  r'\Psi': 'Ψ', r'\Omega': 'Ω',
+  r'\Psi': 'Ψ', r'\Omega': 'Ω', r'\Upsilon': 'Υ',
   r'\infty': '∞', r'\partial': '∂', r'\nabla': '∇',
   r'\times': '×', r'\cdot': '·', r'\div': '÷', r'\pm': '±', r'\mp': '∓',
   r'\leq': '≤', r'\le': '≤', r'\geq': '≥', r'\ge': '≥',
@@ -63,6 +63,12 @@ const _symbols = <String, String>{
   r'\%': '%', r'\$': r'$', r'\&': '&', r'\_': '_',
   r'\,': ' ', r'\;': ' ', r'\!': '', r'\quad': '  ', r'\qquad': '    ',
   r'\left': '', r'\right': '',
+
+  // Faqat joylashuvga ta'sir qiladigan buyruqlar — matnda ma'nosi yo'q.
+  // `\displaystyle` bazada 48 marta uchraydi va aynan shu sababdan
+  // o'quvchiga "Hisoblang: \displaystyle ∫₀² x³ dx" bo'lib ko'rinardi.
+  r'\displaystyle': '', r'\textstyle': '', r'\scriptstyle': '',
+  r'\scriptscriptstyle': '', r'\limits': '', r'\nolimits': '',
 };
 
 /// Funksiya nomlari. LaTeX'da ular `\log`, `\sin` deb yoziladi.
@@ -238,9 +244,14 @@ String renderMathText(String? input) {
     s = s.replaceAllMapped(
         RegExp(r'\\sqrt\s*(\w)'), (m) => '√${m.group(1)}');
 
-    // 4) Matn bloklari: \text{...} -> ...
+    // 4) Matn va bezak bloklari: \text{...} -> ...
+    //    `\overline{AB}` uchun haqiqiy chiziq chizilmaydi — birlashtiruvchi
+    //    belgi (U+0305) shriftlarda ishonchsiz. Mazmuni saqlanadi: "AB".
+    //    Bezakni tashlab, matnni saqlash — matnni tashlashdan yaxshiroq.
     s = s.replaceAllMapped(
-        RegExp(r'\\(?:text|mathrm|mathbf|operatorname)\s*\{([^{}]*)\}'),
+        RegExp(r'\\(?:text|mathrm|mathbf|mathit|mathsf|mathbb|mathcal'
+               r'|operatorname|overline|underline|overbrace|underbrace)'
+               r'\s*\{([^{}]*)\}'),
         (m) => m.group(1)!);
 
     // 4.5) Funksiya nomlari — kontekstga qarab bo'shliq bilan.
@@ -252,6 +263,36 @@ String renderMathText(String? input) {
     for (final k in keys) {
       s = s.replaceAll(k, _symbols[k]!);
     }
+
+    // 5.5) NOMA'LUM BUYRUQLAR UCHUN HIMOYA TO'RI.
+    //
+    // Bu yergacha yetib kelgan `\buyruq` — yuqoridagi jadvallarda YO'Q,
+    // ya'ni uni chizib bo'lmaydi. Ilgari bunday buyruq matnda XOM holda
+    // qolardi va o'quvchi "Hisoblang: \displaystyle ∫₀² x³ dx" ni ko'rardi.
+    // `\displaystyle` shu xatoning bitta ko'rinishi edi; bazada `\overline`,
+    // `\mathbb`, `\underbrace` ham bor. Bittasini nomma-nom tuzatish
+    // keyingisini oldini olmaydi — shuning uchun umumiy qoida.
+    //
+    // Qoida uzunlikka qarab ikkiga bo'linadi, chunki bazada ikki xil narsa
+    // bor va ularga teskari munosabat kerak:
+    //
+    //   * 1–2 harfli (`\x`, `\xy`, `\a`) — 60 ga yaqin joyda uchraydi va
+    //     bular LaTeX buyrug'i EMAS, manbadan kelgan adashgan teskari
+    //     chiziq. Harflar SAQLANADI: `2\x` -> `2x`. Tashlansa o'zgaruvchi
+    //     yo'qolib, savol ma'nosini yo'qotardi.
+    //
+    //   * 3+ harfli — haqiqiy LaTeX buyrug'i (`\displaystyle`,
+    //     `\underbrace`). To'liq TASHLANADI: nomini ko'rsatish
+    //     ("underbraceAB") ko'rsatmaslikdan yomonroq.
+    //
+    // Bu qoidaning eng katta xavfi — jadvalda YO'Q, lekin ma'noli buyruq
+    // jimgina yo'qolishi. Shuning uchun jadval oldin to'ldirilgan:
+    // bosh harfli yunon harflari (`\Delta`, `\Omega`) allaqachon bor edi,
+    // `\Upsilon` qo'shildi. Yangi buyruq uchrasa — avval jadvalga qo'sh,
+    // keyin bu yerga tushishiga yo'l qo'y.
+    s = s.replaceAllMapped(RegExp(r'\\([a-zA-Z]{1,2})(?![a-zA-Z])'),
+        (m) => m.group(1)!);
+    s = s.replaceAll(RegExp(r'\\[a-zA-Z]+'), '');
 
     // 6) Daraja va indeks.
     s = s.replaceAllMapped(RegExp(r'\^\s*\{([^{}]*)\}'), (m) {

@@ -546,9 +546,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           autocorrect: false,
           enableSuggestions: false,
           inputFormatters: [
+            // HARF YO'Q. Ilgari ro'yxatda `e` va `r` turardi va sonli
+            // javobga harf yozib bo'lardi. `e` ayniqsa zararli edi:
+            // serverdagi `float()` "1e3" ni JIM QABUL QILADI va uni 1000
+            // deb o'qiydi, ya'ni tasodifan bosilgan harf javobni butunlay
+            // boshqa songa aylantirardi. Qolgan belgilar — pastdagi
+            // tugmalar qatori chiqaradigan belgilar.
             if (numericOnly)
               FilteringTextInputFormatter.allow(
-                  RegExp(r'[0-9,.\-+/()πer√^ ]')),
+                  RegExp(r'[0-9,.\-+/()π√^ ]')),
           ],
           onChanged: (_) => setState(() {}),
           onSubmitted: (_) {
