@@ -170,17 +170,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: _RailBrand(),
                       ),
-                      // Pastdagi qisqa yo'llar. Ular panelning bo'sh qismini
-                      // to'ldiradi va — muhimi — Daftarim bilan Sozlamalarga
-                      // desktopda boshqa yo'l yo'q edi: ular faqat bosh
-                      // ekranning footerida turardi, ya'ni Reyting yoki
-                      // Bellashuv tabida umuman ko'rinmasdi.
-                      trailing: Expanded(
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: _RailShortcuts(extended: extended),
-                        ),
-                      ),
+                      // Qisqa yo'llar — manzillardan darhol keyin.
+                      //
+                      // `Expanded` bilan pastga QOQIB QO'YIB BO'LMAYDI: rail
+                      // `IntrinsicHeight` ichida turadi (kalta ekranda
+                      // toshib ketmasligi uchun), intrinsic o'lchov esa
+                      // flex bolani hisoblay olmaydi va butun ilova oq
+                      // ekranga aylanadi:
+                      //   BoxConstraints.debugAssertIsValid → RenderFlex
+                      //   → RenderIntrinsicHeight.performLayout
+                      // Bu `flutter analyze` ko'rmaydigan, faqat ISH
+                      // VAQTIDA chiqadigan xato — shuning uchun
+                      // `test/rail_desktop_test.dart` qo'shildi.
+                      trailing: _RailShortcuts(extended: extended),
                       destinations: [
                         for (final d in dests)
                           NavigationRailDestination(
@@ -254,32 +256,29 @@ class _RailShortcuts extends StatelessWidget {
       }),
     ];
 
+    // HECH QANDAY `Expanded` VA `double.infinity` — bu vidjet
+    // `NavigationRail` ning `trailing` i sifatida `IntrinsicHeight` ichiga
+    // tushadi. Intrinsic o'lchov cheksiz kenglikni ham, flex bolani ham
+    // hisoblay olmaydi va butun ilova OQ EKRANGA aylanadi:
+    //     BoxConstraints forces an infinite width
+    // Bu `flutter analyze` ko'rmaydigan, faqat ish vaqtida chiqadigan
+    // xato — `test/rail_desktop_test.dart` shuning uchun bor.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(top: 8, bottom: 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Divider(color: palette.hairline, indent: 12, endIndent: 12),
           for (final (icon, label, onTap) in items)
-            // Yoyilgan panelda matn bilan, tor panelda faqat ikonka —
-            // manzillarning o'zi ham xuddi shu qoidaga bo'ysunadi.
+            // Yoyilgan panelda ikonka + matn, tor panelda faqat ikonka —
+            // manzillarning o'zi ham xuddi shu qoidaga bo'ysunadi. Ikkala
+            // holatda ham kenglik BOLA bo'yicha aniqlanadi.
             extended
-                ? SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: onTap,
-                      icon: Icon(icon, size: 20, color: palette.muted),
-                      label: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(label,
-                            style: TextStyle(
-                                fontSize: 13, color: palette.muted)),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                      ),
-                    ),
+                ? TextButton.icon(
+                    onPressed: onTap,
+                    icon: Icon(icon, size: 20, color: palette.muted),
+                    label: Text(label,
+                        style: TextStyle(fontSize: 13, color: palette.muted)),
                   )
                 : IconButton(
                     onPressed: onTap,
