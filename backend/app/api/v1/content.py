@@ -39,7 +39,8 @@ from app.core import antiabuse
 from app.core.ratelimit import client_ip, hit as ratelimit_hit
 from app.core.redis import get_redis
 from app.models import (
-    Option, Question, Submission, Subject, SubjectTranslation, Topic, User,
+    Option, Question, QuestionTranslation, Submission, Subject,
+    SubjectTranslation, Topic, User,
 )
 from app.schemas.question import GradeResult, SubmissionIn
 from app.services import grading
@@ -116,6 +117,30 @@ async def list_subjects(
         )).all()
     }
 
+    # --- so'ralgan tilda haqiqatan tarjima qilingan savollar ---------------
+    #
+    # `to_public` tarjima topilmasa jimgina `uz-Latn` ga tushadi. Bu ruscha
+    # tanlagan o'quvchi uchun eng yomon holat: interfeys ruscha, savollar
+    # o'zbekcha, hech qanday tushuntirish yo'q — ilova buzuq ko'rinadi.
+    # Klient buni ayta olishi uchun raqam kerak, taxmin emas.
+    #
+    # Asosiy tilda so'rov kelganda qo'shimcha JOIN qilmaymiz: u yerda javob
+    # ta'rifan `question_count` ning o'zi.
+    if lang == _settings.default_lang:
+        translated = None
+    else:
+        translated = {
+            sid: int(n or 0)
+            for sid, n in (await db.execute(
+                select(Question.subject_id, func.count(Question.id))
+                .join(QuestionTranslation,
+                      QuestionTranslation.question_id == Question.id)
+                .where(Question.status == "active",
+                       QuestionTranslation.lang == lang)
+                .group_by(Question.subject_id)
+            )).all()
+        }
+
     # --- shaxsiy progress -------------------------------------------------
     mine: dict = {}
     if user is not None and str(user.id) != _settings.guest_user_id:
@@ -148,6 +173,11 @@ async def list_subjects(
             "name": names.get(lang) or names.get(_settings.default_lang)
                     or next(iter(names.values()), s.code),
             "question_count": q_count,
+            # So'ralgan tildagi savollar soni. Asosiy tilda `question_count`
+            # bilan bir xil. Klient `question_count > 0` bo'lsa-yu bu 0 bo'lsa
+            # o'quvchini ogohlantiradi.
+            "translated_count": q_count if translated is None
+                                else translated.get(s.id, 0),
             "topic_count": t_count,
             "answered": answered,
             "correct": correct,

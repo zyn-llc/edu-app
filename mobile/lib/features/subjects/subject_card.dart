@@ -71,7 +71,7 @@ class SubjectCard extends StatelessWidget {
     final style = SubjectPalette.of(subject.code);
     final accent = style.color(theme.brightness);
 
-    // Savoli yo'q fan (kimyo, fizika — seed'da bor, kontent hali yo'q).
+    // Savoli yo'q fan (2026-08-09 holatiga ko'ra — geometriya).
     // Karta ko'rinadi, lekin bosilmaydi va sababi ochiq yoziladi. Bo'sh
     // ekranga olib boradigan bosiladigan karta — eng yomon variant:
     // foydalanuvchi ilova buzuq deb o'ylaydi.

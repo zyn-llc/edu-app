@@ -198,11 +198,44 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ),
           ),
           const VerticalDivider(width: 1, thickness: 1),
-          // 1920 px monitorda kontent butun ekran bo'ylab cho'zilib ketmasin:
-          // uzun qatorda ko'z bir satrdan ikkinchisiga o'ta olmaydi. Rail
-          // rejimida bitta shu joyda cheklaymiz — har bir tab ekranini
-          // alohida o'rash shart emas.
-          Expanded(child: ContentWidth(maxWidth: 1100, child: body)),
+          // Kontent butun monitor bo'ylab cho'zilib ketmasin: uzun qatorda
+          // ko'z bir satrdan ikkinchisiga o'ta olmaydi. Rail rejimida bitta
+          // shu joyda cheklaymiz — har bir tab ekranini alohida o'rash shart
+          // emas.
+          //
+          // Chegara chizig'i bilan (2026-08-09). Ilgari markaziy ustun va
+          // undan tashqaridagi bo'shliq AYNAN bir xil rangda edi
+          // (`scaffoldBackgroundColor`), ya'ni keng monitorda kontent
+          // chetlari yo'q edi: kartochkalar shunchaki bo'sh maydon o'rtasida
+          // osilib turardi va ilova ekranga sig'magandek ko'rinardi. Endi
+          // ustun ikki yonidan yupqa chiziq bilan ajratiladi — bu "sahifa"
+          // chegarasini beradi va ikkala mavzuda ham ishlaydi, chunki
+          // `hairline` har mavzuda o'z qiymatiga ega.
+          //
+          // Chiziq faqat ustun HAQIQATAN cheklanganda kerak; ekran undan
+          // tor bo'lsa ikkita ma'nosiz vertikal chiziq qoladi.
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final maxW = size.contentMaxWidth;
+                final bounded = c.maxWidth > maxW;
+                return ContentWidth(
+                  maxWidth: maxW,
+                  child: bounded
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border.symmetric(
+                              vertical:
+                                  BorderSide(color: palette.hairline, width: 1),
+                            ),
+                          ),
+                          child: body,
+                        )
+                      : body,
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -220,6 +253,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 /// 2026-08-07: haqiqiy logotip keldi (`assets/logo.png`, `pubspec.yaml` da
 /// bundle qilingan). Ilgari bu joyda `Icons.school_rounded` turardi —
 /// brendga aloqasi yo'q vaqtinchalik belgi edi.
+///
+/// 2026-08-09: fayl 1254×1254 (504 KB) edi va shu holda web bundle'ga
+/// tushardi — 36 px doira uchun yarim megabayt. 192×192 ga keltirildi
+/// (9 KB): eng katta ishlatilish joyi shu vidjet va footer, ikkalasi ham
+/// `radius: 18`. Asl o'lcham kerak bo'lsa — `git show 5b1e973:mobile/
+/// assets/logo.png`. Logotip kattaroq joyda ishlatiladigan bo'lsa, asl
+/// fayldan yangi o'lchamda chiqar; bu faylni KATTALASHTIRMA.
 class _RailBrand extends StatelessWidget {
   const _RailBrand();
 

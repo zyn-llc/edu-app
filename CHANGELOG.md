@@ -7,6 +7,95 @@ Sanalar — ish qilingan kun, reliz emas.
 
 ---
 
+## 2026-08-09 (kechqurun) — fizika, kimyo va uch ko'rinish muammosi
+
+### Fizika + kimyo: 11 753 savol
+
+Ikkala fan bazada bor edi, lekin bo'sh — kartochkalar «Tez orada» deb turardi.
+Kontent aslida bor ekan: `D:\data_subjects\fizika` va `\kimyo`. U yerga
+tushmaganining sababi — bu ikki bank normalizatordan o'tmagan va o'z shakli
+bilan yotgan edi:
+
+* fayl nomlari izchil emas (`10.json`, `core (1).json`, `8_core.json`);
+* fizikada variant identifikatorlari `opt_a`, qolgan 24 ming savolda `a`;
+* `kimyo9/core.json` da ikki obyekt orasida vergul yo'q edi — JSON umuman
+  ochilmasdi (`diagnose_json.py --fix` bilan tuzatildi, 795/795 mos).
+
+`stage_phys_chem.py` shu farqlarni yopadi va kontentga tegmaydi. Nega yangi
+skript, `normalize_all.sh` emas: normalizator o'z chiqishini kirish papkasiga
+yozadi va ID prefikslarini qayta ishlaydi (CLAUDE.md tuzoq 9–10), bu yerda
+esa savollar allaqachon kanonik shaklga yaqin edi.
+
+**1 093 savol yuklanmadi** — manbada javob kaliti yo'q yoki variantlar
+umuman chiqmagan (PDF'dan olishda yo'qolgan). Ular majburan yuklanmadi:
+javobsiz savol o'quvchini o'zi javob bera olmaydigan holatga qo'yadi.
+
+**~700 savol `draft` bo'lib tushdi.** Matnida «Rasmda uchta g'isht...» bor,
+rasmning o'zi yo'q. Bu ikki bankda `has_image` maydoni umuman yo'q edi,
+shuning uchun bayroq matndan aniqlanadi. `rasm` ga so'z chegarasi bilan
+tegib bo'lmaydi (o'zbekchada qo'shimcha ergashadi), shuning uchun prefiks
+bo'yicha qidirilib `rasmiy`/`rasman` ochiq istisno qilindi; kimyodagi
+«davriy jadval» ham istisno — u devordagi plakat, savolga ilova emas.
+
+Prodda tekshirildi: `audit_grading` 35 884 savolda 0 muammo; fizika va kimyo
+savoli uchidan-uchiga yuborildi — to'g'ri javobda kalit beriladi, noto'g'risida
+berilmaydi.
+
+### Rus tili: jim fallback o'rniga uzr
+
+`to_public` tarjima topmasa `uz-Latn` ga tushadi. Ruscha tanlagan o'quvchi
+ruscha menyu va o'zbekcha savollarni ko'rardi — hech qanday izohsiz. Bu eng
+yomon variant: ilova buzuq ko'rinadi.
+
+Ogohlantirish vidjeti bor edi, lekin faqat bosh sahifada va sharti klientda
+qattiq yozilgan edi (`lang == 'ru'`). Endi:
+
+* `/v1/subjects` `translated_count` qaytaradi — so'ralgan tildagi aktiv
+  savollar soni (asosiy tilda qo'shimcha JOIN qilinmaydi);
+* ogohlantirish bosh sahifa, fanlar ro'yxati va mashq tanlash ekranida;
+* matnga uzr qo'shildi va nima bo'layotgani ochiq yozildi.
+
+Birinchi ruscha savol yuklangan kuni ogohlantirish o'z-o'zidan yo'qoladi.
+Aynan shuning uchun shart serverdan keladi: qo'lda o'chiriladigan narsa
+o'chirilmay qoladi.
+
+### Keng monitorda kontentning chegarasi yo'q edi
+
+Rail rejimida markaziy ustun 1100 px bilan cheklangan, tashqarisi esa AYNAN
+bir xil rangda edi. 27 dyuymli monitorda (2560 px) bu ikki yonda 700 px dan
+bo'sh maydon degani — kartochkalar bo'shliqda osilib turardi.
+
+* `WindowSize.extraLarge` da ustun 1440 px;
+* ustun ikki yonidan `hairline` chiziq bilan ajratiladi, lekin faqat ekran
+  undan keng bo'lganda — tor ekranda ikkita ma'nosiz chiziq qolmasin;
+* `test/rail_desktop_test.dart` ga 2560 px qamrovi qo'shildi. Bu kenglikda
+  boshqa vidjet daraxti quriladi va qamrovsiz qoldirilsa xato faqat katta
+  monitorli foydalanuvchida ko'rinardi.
+
+### Birinchi yuklanish sekinligi
+
+Shikoyat «yangi foydalanuvchilarda sekin» degan edi va aynan shu ajratma
+sababni ko'rsatdi: qaytgan foydalanuvchida kesh bor, yangi foydalanuvchi esa
+~8 MB CanvasKit wasm va 3.8 MB `main.dart.js` so'raydi — nginx esa ularni
+**har so'rovda qaytadan gzip qilardi**. 2 yadroli VPS'da bu bir necha soniya
+CPU, va bir vaqtda kirgan bir nechta yangi foydalanuvchi navbatga tushardi.
+
+* `deploy.sh` build'dan keyin `.gz` fayllarni bir marta yaratadi (`-9`);
+* nginx'da `gzip_static on` — tayyor faylni beradi, topmasa eski yo'lga
+  tushadi, ya'ni bu qadam yiqilsa ham sayt ishlaydi;
+* `.symbols` fayllari (4.7 MB) deploydan chiqarildi — brauzer ularni hech
+  qachon so'ramaydi;
+* `assets/logo.png` 1254×1254 (504 KB) edi va 36 px doira uchun shu holda
+  bundle'ga tushardi → 192×192 (9 KB).
+
+### Data auditi
+
+Xom papkalar clean_data bilan MATN bo'yicha solishtirildi (ID bo'yicha emas:
+normalizator identifikatorni almashtiradi va ID solishtiruvi 7 767 ta
+"yo'qolgan" savol ko'rsatardi — aslida 1 661). Batafsili CLAUDE.md da.
+
+---
+
 ## 2026-08-09 — xavfsizlik auditi va uning natijalari
 
 To'liq adversarial audit o'tkazildi (backend, klient, SQL, deploy). Topilgan

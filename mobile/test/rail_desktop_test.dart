@@ -62,6 +62,17 @@ void main() {
     expect(find.byType(NavigationRail), findsOneWidget);
   });
 
+  // 27 dyuymli monitor. `WindowSize.extraLarge` markaziy ustunni 1440 px ga
+  // kengaytiradi va uni ikki yondan chegara chizig'iga o'raydi — ya'ni bu
+  // kenglikda 1440/1920 dan BOSHQA vidjet daraxti quriladi. Qamrovsiz
+  // qoldirilsa, aynan shu yerda `LayoutBuilder` + `DecoratedBox` juftligi
+  // jim buzilib, faqat katta monitorli foydalanuvchida ko'rinardi.
+  testWidgets('keng monitorda (2560) layout xatosiz quriladi', (tester) async {
+    await pumpAt(tester, const Size(2560, 1440));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(NavigationRail), findsOneWidget);
+  });
+
   testWidgets('telefon kengligida (390) pastki navigatsiya chiqadi',
       (tester) async {
     await pumpAt(tester, const Size(390, 844));

@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/motion.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/ru_content_notice.dart';
 import '../quiz/picker_screen.dart';
 import 'subject_card.dart';
 import 'subjects.dart';
@@ -44,9 +45,21 @@ class SubjectGridScreen extends ConsumerWidget {
               onAction: () => ref.invalidate(subjectsProvider),
             );
           }
-          return GridView.builder(
-            padding: const EdgeInsets.fromLTRB(
-                Spacing.md, Spacing.sm, Spacing.md, Spacing.lg),
+          // Ogohlantirish grid bilan BIR skroll ichida: ustiga alohida
+          // qo'yilsa u ekranda qotib qolardi va telefonda kartalar uchun
+          // joyni yeb turardi. Rus tili tanlanmagan bo'lsa vidjet nol
+          // balandlik qaytaradi, ya'ni sliver'lar tartibi o'zgarmaydi.
+          return CustomScrollView(
+            slivers: [
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                    Spacing.md, Spacing.sm, Spacing.md, 0),
+                sliver: SliverToBoxAdapter(child: RuContentNotice()),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.md, Spacing.sm, Spacing.md, Spacing.lg),
+                sliver: SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 340,
               crossAxisSpacing: Spacing.ms,
@@ -57,14 +70,18 @@ class SubjectGridScreen extends ConsumerWidget {
               // balandlik ham o'sadi — aks holda matn kesilib qolardi.
               mainAxisExtent: subjectCardHeight(context),
             ),
-            itemCount: subjects.length,
-            itemBuilder: (_, i) => SubjectCard(
-              subject: subjects[i],
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => PickerScreen(subjects[i])),
+                  itemCount: subjects.length,
+                  itemBuilder: (_, i) => SubjectCard(
+                    subject: subjects[i],
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => PickerScreen(subjects[i])),
+                    ),
+                  ).enterStaggered(i),
+                ),
               ),
-            ).enterStaggered(i),
+            ],
           );
         },
       ),

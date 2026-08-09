@@ -206,6 +206,29 @@ deploy_app() {
     || die "build'da yangi kod yo'q — 'flutter clean' qilib qaytadan urinib ko'ring"
   ok "yangi kod build'da bor"
 
+  # ---- statikani oldindan siqish -----------------------------------------
+  #
+  # Sabab: birinchi tashrifda brauzer ~8 MB CanvasKit wasm va 3.8 MB
+  # `main.dart.js` so'raydi. `gzip on` bilan nginx ularni HAR SO'ROVDA
+  # qaytadan siqadi — 2 yadroli VPS'da bu bir necha soniya CPU, va bir
+  # nechta yangi foydalanuvchi bir vaqtda kirsa navbat hosil bo'ladi.
+  # Qaytgan foydalanuvchida kesh borligi uchun muammo faqat YANGILARDA
+  # ko'rinardi.
+  #
+  # `gzip_static on` bilan nginx tayyor `.gz` ni beradi: siqish bir marta,
+  # shu yerda bo'ladi. `-9` shu sababdan — build vaqtida qimmat emas.
+  # `.gz` topilmasa nginx odatdagidek o'zi siqadi, ya'ni bu qadam
+  # yiqilsa ham sayt ishlaydi.
+  step "2.5/4  Statikani oldindan siqish"
+  # `.symbols` — stack trace'ni ochish uchun, brauzer ularni HECH QACHON
+  # so'ramaydi. Diskda 4.7 MB va har deployda rsync orqali o'tadi.
+  find mobile/build/web -name "*.symbols" -delete
+  find mobile/build/web \
+       \( -name "*.js" -o -name "*.css" -o -name "*.json" -o -name "*.wasm" \
+          -o -name "*.svg" \) -size +1k -print0 \
+    | xargs -0 -r -n 8 gzip -9 -k -f
+  ok "$(find mobile/build/web -name '*.gz' | wc -l) ta fayl oldindan siqildi"
+
   step "3/4  Yuklash"
   # Arxiv ildizi `web/` — VPS'da manba /tmp/web/ bo'ladi, /tmp/web/web/ EMAS.
   tar -czf /tmp/topagon-web.tar.gz -C mobile/build web

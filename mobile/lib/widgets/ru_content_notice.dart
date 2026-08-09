@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
+import '../features/subjects/subjects.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/spacing.dart';
@@ -20,9 +21,22 @@ import '../theme/spacing.dart';
 ///
 /// ## Qaror
 ///
-/// Yashirin fallback o'rniga OCHIQ xabar. Foydalanuvchi holatni biladi va
-/// bir bosishda o'zbek tiliga qaytishi mumkin. Ruscha kontent tayyor
-/// bo'lgach, bu vidjetni chaqirishni olib tashlash kifoya.
+/// Yashirin fallback o'rniga OCHIQ xabar va uzr. Foydalanuvchi holatni biladi
+/// va bir bosishda o'zbek tiliga qaytishi mumkin.
+///
+/// ## Qachon yo'qoladi
+///
+/// O'zi. Server `/v1/subjects` da `translated_count` qaytaradi — so'ralgan
+/// tildagi savollar soni. Birinchi ruscha savol bazaga tushgan kuni bu raqam
+/// noldan katta bo'ladi va ogohlantirish ko'rinmay qoladi. Vidjetni qo'lda
+/// o'chirish kerak emas; aynan shuning uchun shart klientda emas, serverda.
+///
+/// ## Qayerda ko'rsatiladi
+///
+/// Bosh sahifa, fanlar ro'yxati va mashq tanlash ekrani — ya'ni o'quvchi
+/// birinchi o'zbekcha savolni ko'rishidan OLDINGI uchta joy. Bir joyda
+/// ko'rsatish yetarli emas edi: fanlar ro'yxatiga to'g'ridan-to'g'ri
+/// o'tilganda hech qanday izoh chiqmasdi.
 class RuContentNotice extends ConsumerWidget {
   const RuContentNotice({super.key});
 
@@ -30,6 +44,7 @@ class RuContentNotice extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(localeCodeProvider);
     if (lang != 'ru') return const SizedBox.shrink();
+    if (ref.watch(hasTranslatedContentProvider)) return const SizedBox.shrink();
 
     final l = L10n.of(context);
     final text = Theme.of(context).textTheme;

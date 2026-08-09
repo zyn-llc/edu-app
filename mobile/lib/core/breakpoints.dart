@@ -42,6 +42,16 @@ enum WindowSize {
   bool get useExtendedRail =>
       this == WindowSize.large || this == WindowSize.extraLarge;
 
+  /// Rail rejimida markaziy ustunning eng katta kengligi (px).
+  ///
+  /// Qulay o'qish uzunligi matn uchun ~720 px, lekin bosh ekran matn emas —
+  /// u kartochkalar gridi. 1100 px 27 dyuymli monitorda (2560 px) ikki yonida
+  /// 700 px dan bo'sh fon qoldirardi va ilova ekranning uchdan biriga
+  /// siqilgandek ko'rinardi. Savol matni ekranlari o'zlarining ichki
+  /// `ContentWidth` i bilan baribir 720–760 px da qoladi, ya'ni bu yerdagi
+  /// kengaytirish uzun satr muammosini qaytarmaydi.
+  double get contentMaxWidth => this == WindowSize.extraLarge ? 1440 : 1100;
+
   /// Fan kartochkalari gridi uchun ustunlar soni.
   int get gridColumns => switch (this) {
         WindowSize.compact => 2,

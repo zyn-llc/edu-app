@@ -5,6 +5,7 @@ import '../../core/breakpoints.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/subject_palette.dart';
+import '../../widgets/ru_content_notice.dart';
 import '../subjects/subjects.dart';
 import 'quiz_data.dart';
 import 'quiz_screen.dart';
@@ -146,6 +147,11 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
       children: [
+        // Ruscha savollar hali yo'q — buni mashq BOSHLANISHIDAN oldin aytish
+        // kerak. Bosh sahifadagi bir marta ko'rsatilgan xabar bu yergacha
+        // esda qolmaydi, chorrahaga to'g'ridan-to'g'ri kelgan bo'lsa esa
+        // umuman ko'rinmagan bo'ladi.
+        const RuContentNotice(),
         Text(l.pickGradeTitle,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 16),
