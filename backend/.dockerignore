@@ -1,0 +1,29 @@
+# Image'ga tushmasligi kerak bo'lganlar. .env ayniqsa — sirlar env_file
+# orqali runtime'da beriladi, image ichida qotib qolmasligi kerak.
+.env
+.env.*
+!.env.example
+!.env.prod.example
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+.git/
+.gitignore
+*.md
+!DEPLOY.md
+
+tests/
+scripts/system_test.py
+scripts/smoke_phase2b.py
+
+backups/
+*.dump
+*.sql.gz
+*.log

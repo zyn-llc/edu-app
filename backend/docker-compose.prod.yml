@@ -1,0 +1,79 @@
+# =============================================================================
+#  Bilim — prod compose.
+#
+#  Dev compose'dan uchta printsipial farq:
+#    1. db va redis TASHQARIGA OCHILMAGAN — `ports:` yo'q. Ular faqat compose
+#       tarmog'i ichida ko'rinadi. VPS'da 5432 ochiq qolsa, bir hafta ichida
+#       bot topadi.
+#    2. api faqat 127.0.0.1 ga bog'langan — tashqi trafik faqat nginx orqali,
+#       ya'ni TLS'siz ulanish imkonsiz.
+#    3. 001_init.sql initdb'ga mount QILINMAGAN — hamma migratsiya
+#       scripts/migrate.sh orqali, tartib bilan va qayd qilinib qo'llanadi.
+#
+#    docker compose -f docker-compose.prod.yml up -d
+# =============================================================================
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER kerak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD kerak}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB kerak}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # ports: YO'Q — ataylab. Psql kerak bo'lsa: docker compose exec db psql ...
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # appendonly: OTP va rate-limit hisoblagichlari qayta ishga tushganda
+    # yo'qolmasin. Yo'qolsa halokat emas, lekin restart paytida hamma
+    # cheklov nolga tushib ketishi kerak emas.
+    #
+    # maxmemory MAJBURIY. `noeviction` cheksiz xotira bilan birga xavfli:
+    # VPS'da 2 GB RAM bor va uni Postgres bilan bo'lishadi. Chegara
+    # qo'yilmasa Redis o'sib boradi, OOM-killer esa odatda Postgres'ni
+    # o'ldiradi. 256 MB bu yerdagi yuk uchun katta zaxira: reyting sorted
+    # set'lari, OTP kalitlari va hisoblagichlar — hammasi TTL bilan.
+    command: ["redis-server", "--appendonly", "yes",
+              "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    # ports: YO'Q — ataylab.
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # FAQAT loopback. nginx shu manzilga proxy qiladi.
+    ports:
+      - "127.0.0.1:8000:8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  pgdata:
+  redisdata:

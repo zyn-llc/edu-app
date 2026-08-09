@@ -1,0 +1,75 @@
+# =============================================================================
+#  MUHIM: bu fayldagi birinchi blok — SIRLAR. Ularning bittasi ham GitHub'ga
+#  tushmasligi kerak. Push qilishdan oldin tekshir:
+#      git ls-files | grep -Ei '\.env|\.dump|secret|token'
+#  Chiqish BO'SH bo'lishi shart.
+# =============================================================================
+
+# ---- Sirlar -----------------------------------------------------------------
+# `.env.prod` ALOHIDA yozilgan — `.env` naqshi uni QAMRAMAYDI.
+# `*.example` fayllar esa repoda qolishi kerak: ular namuna, sir emas.
+.env
+.env.prod
+.env.local
+.env.*
+!.env.example
+!.env.prod.example
+*.pem
+*.key
+!**/lib/**/*.key
+id_rsa*
+*.p12
+*.jks
+*.keystore
+
+# ---- Ma'lumotlar bazasi nusxalari -------------------------------------------
+# 6–10 MB, va ular ichida foydalanuvchi ma'lumotlari bo'lishi mumkin.
+*.dump
+*.sql.gz
+backups/
+
+# ---- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+.venv-1/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ---- Flutter / Dart ---------------------------------------------------------
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.idea/
+mobile/*.iml
+# Generatsiya qilinadi: `flutter gen-l10n`. Manba — `app_uz.arb` / `app_ru.arb`.
+mobile/lib/l10n/app_localizations*.dart
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/key.properties
+
+# ---- Vositalar --------------------------------------------------------------
+# Claude Code'ning MASHINAGA XOS ruxsatlar fayli. `.local.` — aynan shu
+# "bo'lishilmaydi" degani. Loyiha sozlamalari kerak bo'lsa ular
+# `.claude/settings.json` da (bu esa repoda qoladi).
+.claude/settings.local.json
+
+# ---- OS / muharrir ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- Bir martalik chiqish ---------------------------------------------------
+# `psql ... > fayl.txt` natijalari. Ular tahlil paytida foydali, repoda emas.
+*.log
+audit.txt
+deep.txt
+cleanup.txt
+restore.txt

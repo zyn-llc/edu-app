@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img"
+     aria-label="Topag'on — 5-sinfdan 11-sinfgacha savollar banki">
+  <rect width="1200" height="630" fill="#0E1116"/>
+  <g stroke="#16357F" stroke-width="1" opacity=".35">
+    <path d="M24 0v630M48 0v630M72 0v630M96 0v630M120 0v630M144 0v630M168 0v630M192 0v630M216 0v630M240 0v630M264 0v630M288 0v630M312 0v630M336 0v630M360 0v630M384 0v630M408 0v630M432 0v630M456 0v630M480 0v630M504 0v630M528 0v630M552 0v630M576 0v630M600 0v630M624 0v630M648 0v630M672 0v630M696 0v630M720 0v630M744 0v630M768 0v630M792 0v630M816 0v630M840 0v630M864 0v630M888 0v630M912 0v630M936 0v630M960 0v630M984 0v630M1008 0v630M1032 0v630M1056 0v630M1080 0v630M1104 0v630M1128 0v630M1152 0v630M1176 0v630"/>
+    <path d="M0 24h1200M0 48h1200M0 72h1200M0 96h1200M0 120h1200M0 144h1200M0 168h1200M0 192h1200M0 216h1200M0 240h1200M0 264h1200M0 288h1200M0 312h1200M0 336h1200M0 360h1200M0 384h1200M0 408h1200M0 432h1200M0 456h1200M0 480h1200M0 504h1200M0 528h1200M0 552h1200M0 576h1200M0 600h1200"/>
+  </g>
+
+  <path d="M92 118 L110 136 L146 96" fill="none" stroke="#C1362F" stroke-width="11"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="92" y="268" fill="#E8EDE9" font-family="Onest, Arial, sans-serif"
+        font-weight="800" font-size="92" letter-spacing="-3">HAR BIR SAVOL —</text>
+  <text x="92" y="360" fill="#E8EDE9" font-family="Onest, Arial, sans-serif"
+        font-weight="800" font-size="92" letter-spacing="-3">BIR QADAM OLDINGA</text>
+
+  <text x="92" y="440" fill="#9AA6B2" font-family="Manrope, Arial, sans-serif"
+        font-size="30">5-sinfdan 11-sinfgacha. 23 000 dan ortiq savol.</text>
+
+  <rect x="92" y="492" width="286" height="66" rx="10" fill="#F8721C"/>
+  <text x="235" y="534" fill="#2A1000" text-anchor="middle"
+        font-family="Manrope, Arial, sans-serif" font-weight="600" font-size="24">Ilovani yuklab olish</text>
+
+  <text x="1108" y="534" fill="#9AA6B2" text-anchor="end"
+        font-family="JetBrains Mono, monospace" font-size="22">topagon.uz</text>
+</svg>

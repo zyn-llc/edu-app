@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topag'on — 5-sinfdan 11-sinfgacha savollar banki</title>
+<meta name="description" content="O'zbekiston maktab dasturi bo'yicha 23 000 dan ortiq savol. Mashq qiling, do'stingiz bilan bellashing, natijangizni kuzating.">
+<meta name="theme-color" content="#0E1116">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Topag'on — 5-sinfdan 11-sinfgacha savollar banki">
+<meta property="og:description" content="23 000 dan ortiq savol. Mashq qiling, do'stingiz bilan bellashing.">
+<meta property="og:url" content="https://topagon.uz">
+<!-- SVG'ni Telegram va Facebook ko'rsatmaydi — README dagi ro'yxatga qarang. -->
+<meta property="og:image" content="https://topagon.uz/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@500;800&family=Manrope:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Asosiy qismga o‘tish</a>
+
+<!-- ===================================================================
+     1. HERO
+     Matn markup'da to'liq yozilgan: JS o'chirilganda ham o'qiladi.
+     Niqob bilan ochilish faqat `html.js-motion` bo'lganda qo'shiladi.
+     =================================================================== -->
+<header class="hero" id="hero">
+  <canvas class="hero__canvas" id="bubbles" aria-hidden="true"></canvas>
+
+  <div class="hero__inner wrap">
+    <p class="hero__brand"><span class="mark-tick" aria-hidden="true"></span>Topag‘on</p>
+
+    <h1 class="hero__title" id="hero-title">
+      <span class="line"><span class="line__in">HAR BIR SAVOL —</span></span>
+      <span class="line"><span class="line__in">BIR QADAM</span></span>
+      <span class="line"><span class="line__in">OLDINGA</span></span>
+    </h1>
+
+    <p class="hero__sub" id="hero-sub">5-sinfdan 11-sinfgacha. 23 000 dan ortiq savol. Bitta yo‘l.</p>
+
+    <div class="hero__actions">
+      <a class="btn btn--brand" href="https://app.topagon.uz" id="hero-cta">Ilovani ochish</a>
+      <p class="hero__proof" id="hero-proof">Brauzerda ishlaydi. Ro‘yxatdan o‘tmasdan ham sinab ko‘rasiz.</p>
+    </div>
+  </div>
+
+  <p class="hero__hint" aria-hidden="true">Pastga</p>
+</header>
+
+<main id="main">
+
+<!-- ===================================================================
+     2. SINF ZINASI — signature bo'lim
+     Markup — oddiy tartiblangan ro'yxat. JS uni pinlanadigan zinaga
+     aylantiradi; JS'siz yoki reduced-motion'da shundayligicha o'qiladi.
+     =================================================================== -->
+<section class="ladder" id="zina" aria-labelledby="zina-title">
+  <div class="wrap">
+    <p class="eyebrow">Sinf zinasi</p>
+    <h2 class="h2" id="zina-title">Besh yildan o‘n bir yilgacha</h2>
+    <p class="lead" id="zina-lead">Har sinfda o‘z fanlaringiz va o‘z savollaringiz bor. Zinadan yuqoriga chiqqan sari bank kengayadi.</p>
+  </div>
+
+  <div class="ladder__stage" id="ladder-stage">
+    <div class="wrap ladder__grid">
+
+      <!-- Chap ustun: SVG zina. JS'siz ham ko'rinadi, shunchaki harakatsiz. -->
+      <div class="ladder__rail" aria-hidden="true">
+        <svg class="rail" viewBox="0 0 120 700" preserveAspectRatio="xMidYMin meet" focusable="false">
+          <line class="rail__pole" x1="34" y1="24" x2="34" y2="676"/>
+          <line class="rail__pole" x1="86" y1="24" x2="86" y2="676"/>
+          <g class="rail__rungs">
+            <line x1="34" y1="640" x2="86" y2="640"/>
+            <line x1="34" y1="536" x2="86" y2="536"/>
+            <line x1="34" y1="432" x2="86" y2="432"/>
+            <line x1="34" y1="328" x2="86" y2="328"/>
+            <line x1="34" y1="224" x2="86" y2="224"/>
+            <line x1="34" y1="120" x2="86" y2="120"/>
+            <line x1="34" y1="36"  x2="86" y2="36"/>
+          </g>
+          <g class="rail__marker" id="rail-marker">
+            <circle cx="60" cy="640" r="13"/>
+            <path d="M60 653 v22 M60 660 l-11 9 M60 660 l11 9 M60 675 l-9 16 M60 675 l9 16"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- O'ng ustun: yetti bosqich -->
+      <ol class="rungs" id="rungs">
+
+        <li class="rung" data-grade="5">
+          <p class="rung__grade">5-sinf</p>
+          <p class="rung__count"><span class="num" data-count="1832">1 832</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li><li>Biologiya</li>
+          </ul>
+          <p class="rung__line">Boshlanish. Uch fandan birinchi bank tayyor.</p>
+        </li>
+
+        <li class="rung" data-grade="6">
+          <p class="rung__grade">6-sinf</p>
+          <p class="rung__count"><span class="num" data-count="4168">4 168</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li><li>Biologiya</li><li>O‘zbekiston tarixi</li>
+          </ul>
+          <p class="rung__line">Tarix qo‘shiladi. Endi to‘rt fandan mashq qilasiz.</p>
+        </li>
+
+        <li class="rung" data-grade="7">
+          <p class="rung__grade">7-sinf</p>
+          <p class="rung__count"><span class="num" data-count="4482">4 482</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li><li>O‘zbekiston tarixi</li>
+          </ul>
+          <p class="rung__line">Eng katta bank shu yerda — matematikadan 2 559 savol.</p>
+        </li>
+
+        <li class="rung" data-grade="8">
+          <p class="rung__grade">8-sinf</p>
+          <p class="rung__count"><span class="num" data-count="2680">2 680</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li><li>Biologiya</li><li>Huquq</li>
+          </ul>
+          <p class="rung__line">Huquq boshlanadi. Fizika va kimyo tayyorlanmoqda.</p>
+        </li>
+
+        <li class="rung" data-grade="9">
+          <p class="rung__grade">9-sinf</p>
+          <p class="rung__count"><span class="num" data-count="3673">3 673</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li><li>Biologiya</li><li>Huquq</li>
+          </ul>
+          <p class="rung__line">To‘qqizinchi sinf — bitiruv. Hamma fandan takrorlash.</p>
+        </li>
+
+        <li class="rung" data-grade="10">
+          <p class="rung__grade">10-sinf</p>
+          <p class="rung__count"><span class="num" data-count="2920">2 920</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>Geografiya</li>
+          </ul>
+          <p class="rung__line">Geografiya va matematika chuqurlashadi.</p>
+        </li>
+
+        <li class="rung" data-grade="11">
+          <p class="rung__grade">11-sinf</p>
+          <p class="rung__count"><span class="num" data-count="2865">2 865</span></p>
+          <p class="rung__label">shu sinf uchun tayyorlangan savol</p>
+          <ul class="chips">
+            <li>Matematika</li><li>O‘zbekiston tarixi</li><li>Jahon tarixi</li>
+          </ul>
+          <p class="rung__line">Jahon tarixi qo‘shiladi. Savollar DTM formatiga yaqin.</p>
+        </li>
+
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     3. FANLAR TOKCHASI
+     Standart holat — barmoq bilan suriladigan gorizontal ro'yxat
+     (scroll-snap bilan). JS desktopda uni scroll'ga bog'lab suradi.
+     =================================================================== -->
+<section class="shelf" id="fanlar" aria-labelledby="fanlar-title">
+  <div class="wrap">
+    <p class="eyebrow">Fanlar</p>
+    <h2 class="h2" id="fanlar-title">Yetti fan, yetti bank</h2>
+    <p class="lead">Har fan alohida yig‘ilgan va alohida tekshirilgan.</p>
+  </div>
+
+  <div class="shelf__viewport" id="shelf-viewport">
+    <ul class="shelf__track" id="shelf-track">
+      <li class="scard"><p class="scard__name">Matematika</p><p class="scard__grades">5–11-sinf</p><p class="scard__num"><span class="num">9 942</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">Geografiya</p><p class="scard__grades">5–10-sinf</p><p class="scard__num"><span class="num">7 365</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">O‘zbekiston tarixi</p><p class="scard__grades">6–11-sinf</p><p class="scard__num"><span class="num">2 420</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">Biologiya</p><p class="scard__grades">5–9-sinf</p><p class="scard__num"><span class="num">1 658</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">Ona tili</p><p class="scard__grades">Barcha sinflar</p><p class="scard__num"><span class="num">834</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">Huquq</p><p class="scard__grades">8–9-sinf</p><p class="scard__num"><span class="num">645</span></p><p class="scard__unit">savol</p></li>
+      <li class="scard"><p class="scard__name">Jahon tarixi</p><p class="scard__grades">11-sinf</p><p class="scard__num"><span class="num">620</span></p><p class="scard__unit">savol</p></li>
+    </ul>
+  </div>
+
+  <p class="wrap shelf__note">Fizika va kimyo banklari yig‘ilmoqda. Tayyor bo‘lgach qo‘shiladi.</p>
+</section>
+
+<!-- ===================================================================
+     4. BITTA SAVOLDAN BUTUN BANKGACHA
+     Savol kartasi — haqiqiy DOM. Orqadagi maydon — canvas (bezak),
+     JS'siz shunchaki bo'sh qoladi va hech narsa buzilmaydi.
+     =================================================================== -->
+<section class="zoom" id="bank" aria-labelledby="bank-title">
+  <div class="zoom__stage" id="zoom-stage">
+    <canvas class="zoom__canvas" id="field" aria-hidden="true"></canvas>
+
+    <div class="zoom__card" id="zoom-card">
+      <div class="qcard">
+        <p class="qcard__meta"><span>Geografiya</span><span>7-sinf</span><span class="qcard__timer">0:30</span></p>
+        <p class="qcard__stem">O‘rta Osiyodagi eng issiq harorat qayerda kuzatilgan?</p>
+        <ol class="qcard__opts">
+          <li><span class="qcard__key">A</span>Termiz</li>
+          <li class="is-correct"><span class="qcard__key">B</span>Qoraqum<span class="qcard__tick" aria-hidden="true"></span></li>
+          <li><span class="qcard__key">C</span>Qizilqum</li>
+          <li><span class="qcard__key">D</span>Shimoliy Afg‘oniston</li>
+        </ol>
+        <p class="qcard__note">Har savolga 30 soniya</p>
+      </div>
+    </div>
+
+    <div class="zoom__caption wrap" id="zoom-caption">
+      <h2 class="h2 h2--light" id="bank-title">23 484 ta savol. Har biri tekshirilgan.</h2>
+      <p class="lead lead--light">Shundan 17 266 tasi hozir ilovada ochiq. Qolgani ko‘rib chiqilmoqda va tayyor bo‘lgach qo‘shiladi.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     5. REYTING
+     Jadval semantik <table>. JS FLIP bilan qatorlarni bir marta
+     almashtiradi — takrorlanmaydi, chunki tsikl soxta ko'rinadi.
+     =================================================================== -->
+<section class="board" id="reyting" aria-labelledby="reyting-title">
+  <div class="wrap">
+    <p class="eyebrow">Bellashuv</p>
+    <h2 class="h2" id="reyting-title">Haftalik reyting</h2>
+    <p class="lead">To‘g‘ri javob XP beradi, XP esa o‘rin. Do‘stingizga havola yuborib, bevosita bellashishingiz ham mumkin.</p>
+
+    <div class="board__panel">
+      <p class="board__disclaimer">Namuna: reyting shunday ishlaydi</p>
+      <table class="board__table" id="board-table">
+        <caption class="sr-only">Haftalik reyting namunasi</caption>
+        <thead>
+          <tr><th scope="col">O‘rin</th><th scope="col">Ism</th><th scope="col">XP</th></tr>
+        </thead>
+        <tbody id="board-body">
+          <tr data-id="r1"><td class="board__rank">1</td><td>Nodira</td><td class="board__xp" data-from="2140" data-to="2140">2 140</td></tr>
+          <tr data-id="r2"><td class="board__rank">2</td><td>Jasur</td><td class="board__xp" data-from="1980" data-to="2310">1 980</td></tr>
+          <tr data-id="r3"><td class="board__rank">3</td><td>Malika</td><td class="board__xp" data-from="1875" data-to="1875">1 875</td></tr>
+          <tr data-id="r4" class="is-me"><td class="board__rank">4</td><td>Siz</td><td class="board__xp" data-from="1640" data-to="2065">1 640</td></tr>
+          <tr data-id="r5"><td class="board__rank">5</td><td>Otabek</td><td class="board__xp" data-from="1520" data-to="1520">1 520</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================================================================
+     6. FUTER
+     App Store belgisi YO'Q — iOS versiyasi mavjud emas.
+     =================================================================== -->
+<footer class="foot" id="yuklab-olish">
+  <div class="wrap foot__grid">
+    <div>
+      <h2 class="h2 h2--light">Hozircha Android uchun</h2>
+      <p class="lead lead--light">iOS versiyasi yo‘q. Tayyor bo‘lganda shu yerda paydo bo‘ladi. Hozircha ilovani brauzerda ochishingiz mumkin.</p>
+    </div>
+
+    <div class="foot__links">
+      <a class="badge" id="dl-link" href="#" aria-label="Google Play’dan yuklab olish">
+        <svg class="badge__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3.6 2.2 13.9 12 3.6 21.8a1.6 1.6 0 0 1-.6-1.3V3.5c0-.5.2-1 .6-1.3Z"/>
+          <path d="M16.3 9.4 5.6 3.3l9.3 8.7 1.4-2.6Z"/>
+          <path d="M16.3 14.6 14.9 12l-9.3 8.7 10.7-6.1Z"/>
+          <path d="M20.4 10.6c1 .6 1 1.9 0 2.5l-2.4 1.4-1.6-2.9 1.6-2.9 2.4 1.9Z"/>
+        </svg>
+        <span class="badge__text"><span class="badge__small">Yuklab olish</span><span class="badge__big">Google Play</span></span>
+      </a>
+
+      <a class="flink" href="https://app.topagon.uz">Brauzerda ochish</a>
+      <a class="flink" href="https://t.me/topagonuzbot">Telegram</a>
+      <a class="flink" href="mailto:zayniddin686@gmail.com">Aloqa</a>
+    </div>
+  </div>
+  <p class="wrap foot__rights">© 2026 Topag‘on</p>
+</footer>
+
+<script src="content.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js" defer></script>
+<script src="main.js" defer></script>
+</body>
+</html>

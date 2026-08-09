@@ -1,0 +1,1076 @@
+openapi: 3.1.0
+info:
+  title: edu-platform
+  version: 0.1.0
+paths:
+  /v1/subjects:
+    get:
+      summary: List Subjects
+      operationId: list_subjects_v1_subjects_get
+      parameters:
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/subjects/{subject_id}/catalog:
+    get:
+      summary: Subject Catalog
+      description: 'Returns the grades / topics / exam_contexts that actually have
+        active
+
+        questions for this subject, each with a count. The client renders a
+
+        responsive grid from this — no hardcoded screens. Math (many topics) and a
+
+        sparse subject use the same screen.'
+      operationId: subject_catalog_v1_subjects__subject_id__catalog_get
+      parameters:
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Subject Id
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/questions:
+    get:
+      summary: List Questions
+      operationId: list_questions_v1_questions_get
+      parameters:
+      - name: subject_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Subject Id
+      - name: grade
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Grade
+      - name: topic_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Topic Id
+      - name: exam_context
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exam Context
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          default: 20
+          title: Limit
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/submissions:
+    post:
+      summary: Submit
+      operationId: submit_v1_submissions_post
+      parameters:
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      - name: x-debug-user-id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Debug-User-Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/auth/otp/request:
+    post:
+      tags:
+      - auth
+      summary: Request Otp
+      operationId: request_otp_v1_auth_otp_request_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequestIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/auth/otp/verify:
+    post:
+      tags:
+      - auth
+      summary: Verify Otp
+      operationId: verify_otp_v1_auth_otp_verify_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/auth/refresh:
+    post:
+      tags:
+      - auth
+      summary: Refresh
+      operationId: refresh_v1_auth_refresh_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Logout
+      operationId: logout_v1_auth_logout_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/auth/me:
+    get:
+      tags:
+      - auth
+      summary: Me
+      operationId: me_v1_auth_me_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - auth
+      summary: Update Me
+      operationId: update_me_v1_auth_me_patch
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/leaderboard:
+    get:
+      tags:
+      - ranking
+      summary: Leaderboard
+      operationId: leaderboard_v1_leaderboard_get
+      parameters:
+      - name: scope
+        in: query
+        required: false
+        schema:
+          type: string
+          default: total
+          title: Scope
+      - name: key
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Key
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          default: 50
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/me:
+    get:
+      tags:
+      - ranking
+      summary: Me Overview
+      operationId: me_overview_v1_me_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/me/analysis:
+    get:
+      tags:
+      - ranking
+      summary: My Analysis
+      operationId: my_analysis_v1_me_analysis_get
+      parameters:
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/me/coins:
+    get:
+      tags:
+      - ranking
+      summary: My Coins
+      operationId: my_coins_v1_me_coins_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/regions:
+    get:
+      tags:
+      - ranking
+      summary: Regions
+      description: Static reference for the profile region picker + region leaderboard
+        keys.
+      operationId: regions_v1_regions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/parent/link-code:
+    post:
+      tags:
+      - parent
+      summary: Create Link Code
+      operationId: create_link_code_v1_parent_link_code_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkCodeOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/parent/link:
+    post:
+      tags:
+      - parent
+      summary: Link Child
+      operationId: link_child_v1_parent_link_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/parent/children:
+    get:
+      tags:
+      - parent
+      summary: List Children
+      operationId: list_children_v1_parent_children_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildrenOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/parent/children/{student_id}:
+    get:
+      tags:
+      - parent
+      summary: Child Detail
+      operationId: child_detail_v1_parent_children__student_id__get
+      parameters:
+      - name: student_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Student Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildSummary'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/parent/children/{student_id}/analysis:
+    get:
+      tags:
+      - parent
+      summary: Child Analysis
+      operationId: child_analysis_v1_parent_children__student_id__analysis_get
+      parameters:
+      - name: student_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Student Id
+      - name: accept-language
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accept-Language
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    ChildSummary:
+      properties:
+        student_id:
+          type: string
+          title: Student Id
+        display_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Display Name
+        grade:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Grade
+        region_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region Code
+        progress:
+          $ref: '#/components/schemas/ProgressOut'
+      type: object
+      required:
+      - student_id
+      - progress
+      title: ChildSummary
+    ChildrenOut:
+      properties:
+        children:
+          items:
+            $ref: '#/components/schemas/ChildSummary'
+          type: array
+          title: Children
+          default: []
+      type: object
+      title: ChildrenOut
+    GradeResult:
+      properties:
+        question_id:
+          type: string
+          title: Question Id
+        is_correct:
+          type: boolean
+          title: Is Correct
+        score:
+          type: integer
+          title: Score
+        max_score:
+          type: integer
+          title: Max Score
+        correct_option_ids:
+          items:
+            type: string
+          type: array
+          title: Correct Option Ids
+        explanation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Explanation
+      type: object
+      required:
+      - question_id
+      - is_correct
+      - score
+      - max_score
+      title: GradeResult
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    LeaderboardEntry:
+      properties:
+        rank:
+          type: integer
+          title: Rank
+        user_id:
+          type: string
+          title: User Id
+        display_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Display Name
+        region_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region Code
+        score:
+          type: integer
+          title: Score
+        is_me:
+          type: boolean
+          title: Is Me
+          default: false
+      type: object
+      required:
+      - rank
+      - user_id
+      - score
+      title: LeaderboardEntry
+    LeaderboardOut:
+      properties:
+        scope:
+          type: string
+          title: Scope
+        key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Key
+        entries:
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+          type: array
+          title: Entries
+        me:
+          anyOf:
+          - $ref: '#/components/schemas/LeaderboardEntry'
+          - type: 'null'
+        total_ranked:
+          type: integer
+          title: Total Ranked
+          default: 0
+      type: object
+      required:
+      - scope
+      title: LeaderboardOut
+    LinkCodeOut:
+      properties:
+        code:
+          type: string
+          title: Code
+        expires_in_seconds:
+          type: integer
+          title: Expires In Seconds
+      type: object
+      required:
+      - code
+      - expires_in_seconds
+      title: LinkCodeOut
+      description: 'A student generates this and reads it to a parent (or shares it).
+        The
+
+        parent enters it to establish guardianship. Short-lived, single-use.'
+    LinkIn:
+      properties:
+        code:
+          type: string
+          title: Code
+      type: object
+      required:
+      - code
+      title: LinkIn
+    OtpRequestIn:
+      properties:
+        phone:
+          type: string
+          title: Phone
+        role:
+          type: string
+          title: Role
+          default: student
+      type: object
+      required:
+      - phone
+      title: OtpRequestIn
+    OtpRequestOut:
+      properties:
+        retry_after_seconds:
+          type: integer
+          title: Retry After Seconds
+        expires_in_seconds:
+          type: integer
+          title: Expires In Seconds
+        debug_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Debug Code
+      type: object
+      required:
+      - retry_after_seconds
+      - expires_in_seconds
+      title: OtpRequestOut
+    OtpVerifyIn:
+      properties:
+        phone:
+          type: string
+          title: Phone
+        code:
+          type: string
+          maxLength: 8
+          minLength: 4
+          title: Code
+        display_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Display Name
+        region_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region Code
+        grade:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Grade
+      type: object
+      required:
+      - phone
+      - code
+      title: OtpVerifyIn
+    ProfileUpdateIn:
+      properties:
+        display_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Display Name
+        region_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region Code
+        grade:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Grade
+        locale:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Locale
+      type: object
+      title: ProfileUpdateIn
+    ProgressOut:
+      properties:
+        xp:
+          type: integer
+          title: Xp
+          default: 0
+        level:
+          type: integer
+          title: Level
+          default: 1
+        streak_days:
+          type: integer
+          title: Streak Days
+          default: 0
+        answered:
+          type: integer
+          title: Answered
+          default: 0
+        correct:
+          type: integer
+          title: Correct
+          default: 0
+        accuracy:
+          type: number
+          title: Accuracy
+          default: 0.0
+      type: object
+      title: ProgressOut
+    RefreshIn:
+      properties:
+        refresh_token:
+          type: string
+          title: Refresh Token
+      type: object
+      required:
+      - refresh_token
+      title: RefreshIn
+    SubmissionIn:
+      properties:
+        question_id:
+          type: string
+          title: Question Id
+        payload:
+          additionalProperties: true
+          type: object
+          title: Payload
+        response_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Response Ms
+      type: object
+      required:
+      - question_id
+      - payload
+      title: SubmissionIn
+      description: 'Whatever the student sends. Shape depends on question type.
+
+
+        mcq          : {"option_ids": ["a"]}
+
+        multi_select : {"option_ids": ["a","c"]}
+
+        numeric      : {"value": 3.14}
+
+        open_keyword : {"text": "Toshkent"}
+
+        matching     : {"pairs": [["L1","R2"], ["L2","R1"]]}
+
+        ordering     : {"order": ["B","A","C"]}'
+    TokenPair:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        refresh_token:
+          type: string
+          title: Refresh Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+        expires_in:
+          type: integer
+          title: Expires In
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      title: TokenPair
+    UserOut:
+      properties:
+        id:
+          type: string
+          title: Id
+        role:
+          type: string
+          title: Role
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        display_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Display Name
+        region_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region Code
+        grade:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Grade
+        locale:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Locale
+      type: object
+      required:
+      - id
+      - role
+      title: UserOut
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

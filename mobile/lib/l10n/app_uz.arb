@@ -1,0 +1,595 @@
+{
+  "@@locale": "uz",
+  "appTitle": "Topag‘on",
+  "greeting": "Assalomu alaykum",
+  "subjects": "Fanlar",
+  "seeAll": "Barchasi",
+  "dailyChallenge": "Kunlik bellashuv",
+  "dailyChallengeSub": "{count} savol · {minutes} daqiqa",
+  "@dailyChallengeSub": {
+    "placeholders": {
+      "count": {},
+      "minutes": {}
+    }
+  },
+  "startNow": "Boshlash",
+  "streakDays": "kunlik seriya",
+  "level": "{n}-daraja",
+  "@level": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "mastered": "{pct}% o'zlashtirildi",
+  "@mastered": {
+    "placeholders": {
+      "pct": {}
+    }
+  },
+  "newLabel": "Yangi",
+  "grade": "Sinf",
+  "gradeN": "{n}-sinf",
+  "@gradeN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "goal": "Maqsad",
+  "goalSchool": "Maktab",
+  "goalEntrance": "Abituriyent (DTM)",
+  "topic": "Mavzu",
+  "allTopics": "Barcha mavzular",
+  "continueLabel": "Davom etish",
+  "setupTitle": "Mashqni sozlash",
+  "modePractice": "Mashq",
+  "modePracticeSub": "Vaqtsiz, o'rganish",
+  "modeTest": "Sinov",
+  "modeTestSub": "Vaqtli, reytingga",
+  "questionCount": "Savollar soni",
+  "submitAnswer": "Javobni tasdiqlash",
+  "leaderboard": "Reyting",
+  "lbTotal": "Umumiy",
+  "lbSubject": "Fan",
+  "lbRegion": "Hudud",
+  "you": "Siz",
+  "behindBy": "{place}-o'rindan atigi {points} ball orqadasiz",
+  "@behindBy": {
+    "placeholders": {
+      "place": {},
+      "points": {}
+    }
+  },
+  "language": "Til",
+  "next": "Keyingi",
+  "finish": "Yakunlash",
+  "correct": "To'g'ri!",
+  "incorrect": "Noto'g'ri",
+  "questionOf": "Savol {i}/{n}",
+  "@questionOf": {
+    "placeholders": {
+      "i": {},
+      "n": {}
+    }
+  },
+  "resultTitle": "Natija",
+  "scoreLine": "{score} / {total} ball",
+  "@scoreLine": {
+    "placeholders": {
+      "score": {},
+      "total": {}
+    }
+  },
+  "backHome": "Bosh sahifa",
+  "tryAgain": "Yana bir marta",
+  "loadingQuestions": "Savollar yuklanmoqda...",
+  "noQuestions": "Bu bo'lim uchun savollar topilmadi",
+  "selectAnswer": "Javobni tanlang",
+  "greatJob": "Ajoyib!",
+  "keepGoing": "Zo'r, davom et!",
+  "reviewNeeded": "Mashq qilishda davom et",
+  "pickGradeTitle": "Qaysi sinf uchun?",
+  "allLevels": "Barcha darajalar",
+  "allLevelsSub": "Hamma sinflar",
+  "gradeSuffix": "sinf",
+  "includeTitle": "Nimani qo'shamiz?",
+  "allTopicsSub": "Barcha mavzulardan",
+  "topicBased": "Mavzu bo'yicha",
+  "topicBasedSub": "Mavzuni tanlang",
+  "timerQuestion": "Vaqt kerakmi?",
+  "yes": "Ha",
+  "no": "Yo'q",
+  "navHome": "Asosiy",
+  "navLeaderboard": "Reyting",
+  "navChallenges": "Bellashuv",
+  "navParent": "Ota-ona",
+  "greetingHi": "Salom!",
+  "pickSubject": "Fan tanlang",
+  "recentQuizzes": "So'nggi mashqlar",
+  "noRecentQuizzes": "Hali mashqlar yo'q. Fan tanlab boshlang!",
+  "comingSoon": "Tez orada",
+  "settings": "Sozlamalar",
+  "soundLabel": "Ovoz effektlari",
+  "languageLabel": "Til",
+  "themeLabel": "Ko'rinish",
+  "themeSystem": "Tizim",
+  "themeLight": "Yorug'",
+  "themeDark": "Tungi",
+  "leaderboardSoon": "Reyting jadvali tez orada — eng yaxshi o'quvchilar shu yerda bo'ladi.",
+  "challengesSoon": "Bellashuvlar tez orada — do'stlaringiz bilan bellashing.",
+  "parentSoon": "Ota-ona nazorati tez orada — farzandingiz natijalarini kuzating.",
+  "authLoginTitle": "Kirish",
+  "authParentTitle": "Ota-ona kirishi",
+  "authPhoneLabel": "Telefon raqamingiz",
+  "authPhoneHint": "90 123 45 67",
+  "authLoginBenefit": "Reyting, XP va seriyangizni saqlash uchun kiring.",
+  "authSendCode": "Kod yuborish",
+  "authCodeTitle": "Tasdiqlash kodi",
+  "authCodeSentTo": "Kod {phone} raqamiga yuborildi",
+  "@authCodeSentTo": {
+    "placeholders": {
+      "phone": {}
+    }
+  },
+  "authDevCode": "Test kodi: {code}",
+  "@authDevCode": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "authVerify": "Tasdiqlash",
+  "authResend": "Boshqa raqam / qayta yuborish",
+  "authInvalidPhone": "Telefon raqamini to'liq kiriting",
+  "authInvalidCode": "Kod noto'g'ri yoki muddati o'tgan",
+  "authNetworkError": "Ulanishda xatolik. Qayta urinib ko'ring.",
+  "authTooMany": "Juda ko'p urinish. Birozdan so'ng qayta urining.",
+  "lbEmpty": "Hozircha reyting bo'sh. Birinchi bo'ling!",
+  "lbLoginPrompt": "O'z o'rningizni ko'rish uchun kiring.",
+  "lbRegionNeedsProfile": "Hudud reytingi uchun profilingizda hududni belgilang.",
+  "lbAnonymous": "O'quvchi",
+  "lbYourRank": "Sizning o‘rningiz",
+  "lbPoints": "{n} ball",
+  "@lbPoints": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "retry": "Qayta urinish",
+  "parentStudentTitle": "Ota-onangizni ulang",
+  "parentStudentDesc": "Quyidagi kodni ota-onangizga bering. Ular shu kod orqali profilingizni qo‘shib, natijalaringizni kuzatishlari mumkin.",
+  "parentGenerateCode": "Kod yaratish",
+  "parentRegenerate": "Yangi kod",
+  "parentCodeExpires": "Kod {minutes} daqiqa amal qiladi",
+  "@parentCodeExpires": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "parentAddChild": "Farzand qo'shish",
+  "parentEnterCode": "Farzand kodi",
+  "parentLink": "Ulash",
+  "parentNoChildren": "Hali farzand ulanmagan. Farzandingiz ilovadan kod yaratadi.",
+  "parentLinkError": "Kod noto'g'ri yoki muddati o'tgan",
+  "parentLinked": "Farzand ulandi",
+  "parentLoginCta": "Ota-ona sifatida kirish",
+  "parentLoginDesc": "Farzandingiz natijalarini kuzatish uchun ota-ona hisobi bilan kiring.",
+  "statLevel": "Daraja",
+  "statXp": "XP",
+  "statStreak": "kunlik seriya",
+  "statRank": "Reytingda",
+  "statAccuracy": "Aniqlik",
+  "accountSection": "Hisob",
+  "accountGuest": "Mehmon",
+  "roleParent": "Ota-ona",
+  "roleStudent": "O'quvchi",
+  "logout": "Chiqish",
+  "greetingNamed": "Salom, {name}!",
+  "@greetingNamed": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "profileTitle": "Profil",
+  "profileName": "Ismingiz",
+  "profileNameHint": "Masalan, Ali",
+  "profileNameError": "Ismni kiriting (1–40 belgi)",
+  "profileRegion": "Hudud",
+  "profileRegionHint": "Hududni tanlang",
+  "profileGrade": "Sinf",
+  "profileGradeHint": "Sinfni tanlang",
+  "profileSave": "Saqlash",
+  "profileSaved": "Profil saqlandi",
+  "statCoins": "Noncoin",
+  "analysisTitle": "Tahlil",
+  "analysisWeak": "Zaif mavzular",
+  "analysisStrong": "Kuchli mavzular",
+  "analysisEmpty": "Tahlil uchun avval bir nechta savol yeching.",
+  "cancel": "Bekor qilish",
+  "copy": "Nusxalash",
+  "ok": "OK",
+  "questionsShort": "savol",
+  "coinBalance": "noncoin balansi",
+  "coinAdRewarded": "+{n} noncoin qo'shildi!",
+  "@coinAdRewarded": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "challengeNew": "Yangi bellashuv",
+  "challengeJoinByCode": "Kod orqali qo‘shilish",
+  "challengeJoin": "Qo'shilish",
+  "challengeCodeHint": "Masalan: A7K2XQ",
+  "challengeEmpty": "Hozircha bellashuvlar yo'q. Do'stingizni chorlang!",
+  "challengeLoginNeeded": "Bellashuv uchun avval tizimga kiring — g'olib noncoinlarni oladi!",
+  "challengeSubject": "Fan",
+  "challengeQuestionCount": "Savollar soni",
+  "challengeStakeLabel": "Tikilgan noncoin",
+  "challengeCreate": "Bellashuv yaratish",
+  "challengeCreatedTitle": "Bellashuv tayyor!",
+  "challengeShareCode": "Ushbu kodni do'stingizga yuboring:",
+  "challengeCodeCopied": "Kod nusxalandi: {code}",
+  "@challengeCodeCopied": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "challengeWaitingOpponent": "Raqib kutilmoqda",
+  "challengeYourTurn": "Navbat sizniki",
+  "challengeWaitingThem": "Raqib o'ynashi kutilmoqda",
+  "challengeWon": "Siz yutdingiz! 🏆",
+  "challengeLost": "Bellashuv yakunlandi",
+  "challengeDraw": "Durrang",
+  "challengePlay": "O'ynash",
+  "challengeFinish": "Yakunlash",
+  "challengeLeaveTitle": "Chiqishni istaysizmi?",
+  "challengeLeaveBody": "Javoblaringiz hali yuborilmadi. Keyinroq qaytadan o'ynashingiz mumkin.",
+  "challengeLeave": "Chiqish",
+  "challengeSheetInTitle": "Javoblar qabul qilindi",
+  "challengeSheetInBody": "Natijangiz: {score}/{max}. Raqib o'ynagach, g'olib aniqlanadi.",
+  "@challengeSheetInBody": {
+    "placeholders": {
+      "score": {},
+      "max": {}
+    }
+  },
+  "challengeDrawBody": "Durrang! {stake} noncoin qaytarildi.",
+  "@challengeDrawBody": {
+    "placeholders": {
+      "stake": {}
+    }
+  },
+  "challengeSettledTitle": "Bellashuv yakunlandi",
+  "challengeSettledBody": "Natijangiz: {score}/{max}. G'olib {pot} noncoin oladi. Natijani ro'yxatda ko'ring.",
+  "@challengeSettledBody": {
+    "placeholders": {
+      "score": {},
+      "max": {},
+      "pot": {}
+    }
+  },
+  "typedAnswerLabel": "Javobingiz",
+  "typedAnswerHint": "Masalan: 0,5 yoki 1/3",
+  "supportSection": "Yordam",
+  "supportTelegram": "Telegram orqali yordam olish",
+  "supportFeedback": "Fikr yoki muammo yuborish",
+  "supportFeedbackSub": "Taklif va muammolaringizni bizga yuboring.",
+  "supportMessageHint": "Muammo yoki taklifingizni yozing...",
+  "supportContactLabel": "Aloqa (ixtiyoriy)",
+  "supportContactHint": "Telefon yoki Telegram",
+  "supportSend": "Yuborish",
+  "supportSent": "Rahmat! Xabaringiz yuborildi.",
+  "supportFailed": "Yuborilmadi. Internetni tekshirib, qayta urining.",
+  "errNoConnection": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring.",
+  "errServer": "Serverda xatolik yuz berdi. Birozdan so'ng urinib ko'ring.",
+  "errSessionExpired": "Sessiya tugadi — qaytadan kiring.",
+  "errTooFast": "Juda ko'p so'rov — bir daqiqadan keyin davom eting.",
+  "errTitle": "Yuklab bo'lmadi",
+  "authOtherMethods": "Boshqa usullar",
+  "notifyTelegramLabel": "Telegram xabarlari",
+  "notifyTelegramHint": "Bellashuv chaqiruvi, natija va uziladigan seriya haqida bot xabar beradi. Kuniga ko'pi bilan 2 ta.",
+  "pwButtonSubtitleExisting": "Mavjud hisobga kirish",
+  "errGeneric": "Xatolik yuz berdi. Qayta urinib ko'ring.",
+  "save": "Saqlash",
+  "delete": "O'chirish",
+  "notesTitle": "Daftarim",
+  "notesNew": "Yangi eslatma",
+  "notesEdit": "Eslatmani tahrirlash",
+  "notesFieldTitle": "Sarlavha (ixtiyoriy)",
+  "notesFieldBody": "Eslatma matni",
+  "notesEmptyTitle": "Daftar hozircha bo'sh",
+  "notesEmptyHint": "Yangi narsa o'rganganingda shu yerga yozib qo'y — test yechayotganda ham eslatma qo'shsa bo'ladi.",
+  "notesLoginRequired": "Eslatmalar uchun hisob kerak",
+  "notesLoginRequiredHint": "Eslatmalar hisobingga bog'lanadi, shuning uchun avval tizimga kir.",
+  "notesDeleteTitle": "Eslatma o'chirilsinmi?",
+  "notesDeleteBody": "Bu amalni qaytarib bo'lmaydi.",
+  "newsTitle": "Yangiliklar",
+  "newsEmptyTitle": "Hozircha yangilik yo'q",
+  "newsEmptyHint": "Yangilanishlar va e'lonlar shu yerda chiqadi.",
+  "authOr": "yoki",
+  "authTelegramButton": "Telegram orqali kirish",
+  "authInviteButton": "Taklif kodim bor",
+  "inviteTitle": "Taklif kodi",
+  "inviteCodeLabel": "Kodni kiriting",
+  "inviteNameLabel": "Ismingiz",
+  "inviteNameHint": "Masalan: Aziz",
+  "inviteHint": "Kod o'qituvchingiz yoki o'quv markazingiz tomonidan beriladi. Telefon raqami kerak emas.",
+  "inviteSubmit": "Kirish",
+  "inviteInvalid": "Kod juda qisqa",
+  "inviteRejected": "Kod noto'g'ri, ishlatilib bo'lingan yoki muddati o'tgan",
+  "inviteDisabled": "Taklif kodi bilan kirish hozir yopiq",
+  "telegramTitle": "Telegram orqali kirish",
+  "telegramExplainer": "Telegram ilovasi ochiladi va botga «Start» yuborasiz. Shundan so'ng hisobingizga avtomatik kirasiz — telefon raqami kiritish yoki SMS kodini kutish talab etilmaydi.",
+  "telegramOpen": "Telegramni ochish",
+  "telegramWaiting": "Telegramda «Start» bosishingizni kutyapmiz...",
+  "telegramExpired": "Havola muddati tugadi. Qaytadan urinib ko'ring.",
+  "telegramRetry": "Qaytadan",
+  "telegramDisabled": "Telegram orqali kirish hozir yopiq",
+  "telegramNotInstalled": "Telegram ochilmadi. Ilova o'rnatilganini tekshiring.",
+  "typedAnswerHelp": "Kasrni ham yozish mumkin: 1/3, -16/3. O'nlik uchun vergul ham, nuqta ham bo'ladi: 0,5 yoki 0.5",
+  "subjectComingSoon": "Savollar tayyorlanmoqda",
+  "subjectComingSoonHint": "Bu fan bo‘yicha mashqlar tez orada platformaga qo‘shiladi.",
+  "guestProgressTitle": "Natijangiz saqlanmayapti",
+  "guestProgressHint": "Siz mehmon sifatida mashq qilyapsiz, shuning uchun XP, noncoin va reyting hisoblanmaydi. Hisobga kirsangiz — barchasi saqlanib boradi.",
+  "guestProgressCta": "Kirish",
+  "guestSolvedCount": "Siz {n} ta savol yechdingiz.",
+  "@guestSolvedCount": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "guestLater": "Keyinroq",
+  "topicsShort": "bo'lim",
+  "subjectByTopics": "Mavzular bo‘yicha mashqlar",
+  "subjectSolved": "ta to‘g‘ri javob",
+  "subjectNotStartedHint": "Bu fandan hali mashq qilmagansiz.",
+  "lastPractice": "Oxirgi mashq",
+  "todayLabel": "bugun",
+  "yesterdayLabel": "kecha",
+  "daysAgoSuffix": "kun oldin",
+  "dashXpToday": "bugun",
+  "dashGoalTitle": "Bugungi maqsad",
+  "dashGoalDone": "Bugungi maqsad bajarildi",
+  "dashQuickStart": "Tezkor mashq",
+  "lbPodium": "Yetakchilar",
+  "lbEmptyTitle": "Reyting hali shakllanmagan",
+  "lbEmptyHint": "Birinchi mashqni yeching — natijangiz shu yerda paydo bo'ladi.",
+  "lbRegionNeedsProfileFull": "Hudud bo'yicha reytingni ko'rish uchun profilingizda hududingizni belgilang.",
+  "challengeEmptyFull": "Hozircha faol bellashuv mavjud emas. Birinchi bo'lib do'stingizni bellashuvga taklif qiling!",
+  "challengeRewardLabel": "Mukofot",
+  "challengeRewardHint": "G'olib ikkala tarafning noncoinini oladi",
+  "rewardXp": "+{n} XP",
+  "@rewardXp": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "rewardCoins": "+{n} noncoin",
+  "@rewardCoins": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "rewardRepeat": "Bu savolni oldin to'g'ri yechgansiz — XP va noncoin faqat birinchi marta beriladi.",
+  "rewardGuest": "Mehmon rejimida XP va noncoin saqlanmaydi. Hisobga kiring — natijangiz yig'ila boshlaydi.",
+  "authPhoneButton": "Telefon raqami orqali",
+  "authPhoneSubtitle": "SMS kodini kutasiz",
+  "authTelegramSubtitle": "Eng tez yo'l — bir bosishda",
+  "authInviteSubtitle": "Sinovchilarga berilgan kod bo'lsa",
+  "authNoMethods": "Hozircha kirish yo'llari vaqtincha yopiq. Birozdan keyin urinib ko'ring.",
+  "parentIAmParent": "Ota-ona sifatida",
+  "parentIAmStudent": "O‘quvchi sifatida",
+  "parentAddChildDesc": "Farzandingiz ilovasida ko‘rsatilgan 6 belgili kodni kiriting.",
+  "parentCopyCode": "Kodni nusxalash",
+  "parentCodeCopied": "Kod nusxalandi",
+  "parentShareCode": "Ulashish",
+  "parentShareCopied": "Matn nusxalandi — endi yopishtiring",
+  "parentShareText": "Topag'on ilovasida natijalarimni kuzatish uchun shu kodni kiriting: {code}\n\nIlova: https://topagon.uz",
+  "@parentShareText": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "parentSelfLink": "Bu sizning o'z kodingiz. Farzandingiz yaratgan kodni kiriting.",
+  "parentNeedLogin": "Buning uchun hisobga kirish kerak",
+  "challengeShareLinkHint": "Havolani do'stingizga yuboring — u bosishi bilan bellashuvga qo'shiladi.",
+  "challengeCopyLink": "Havolani nusxalash",
+  "challengeLinkCopied": "Havola nusxalandi",
+  "challengeShareTelegram": "Telegramda ulashish",
+  "challengeInviteText": "Topag'onda bellashamizmi? Havolani bos va qo'shil.",
+  "inviteFriendsButton": "Do‘stlaringizni Topag‘onga taklif qiling",
+  "inviteFriendsSubtitle": "Havolani ulashing va birgalikda bilim bellashuvlarida qatnashing.",
+  "inviteFriendsTitle": "Do‘stlaringizni Topag‘onga taklif qiling",
+  "inviteFriendsHint": "Havola orqali kirgan do'stingiz sizning nomingiz bilan bog'lanadi. Hozircha mukofot yo'q — buni oshirish rejalashtirilgan.",
+  "inviteFriendsShareText": "Topag‘on — bilim va raqobat maydoni. Maktab o‘quvchilari va abituriyentlar uchun mavzulashtirilgan testlar, interaktiv o‘yinlar hamda bilim musobaqalari.",
+  "profileAvatarHint": "Avatar — ismingiz bosh harfi. Rangni tanlang.",
+  "noQuestionsHint": "Tanlangan sinf va bo'lim bo'yicha savol yo'q. Boshqa bo'lim yoki «Barcha bo'limlar» ni tanlab ko'ring.",
+  "back": "Orqaga",
+  "challengeGetLink": "Havola",
+  "parentThisWeek": "Shu hafta",
+  "parentActiveDays": "Faol kunlar",
+  "parentAccuracy7d": "To‘g‘ri javoblar",
+  "parentNeverPracticed": "Hali mashq qilmagan",
+  "parentOpenDetail": "Batafsil",
+  "ruContentTitle": "Ruscha savollar tayyorlanmoqda",
+  "ruContentBody": "Interfeys ruschaga o‘tdi, lekin savollar hozircha faqat o‘zbek tilida. Ular tarjima qilinmoqda. Hozircha o‘zbek tilida mashq qilishingiz mumkin.",
+  "ruSwitchBack": "O‘zbek tiliga qaytish",
+  "pwButton": "Foydalanuvchi nomi va parol",
+  "pwButtonSubtitle": "Bir marta o‘rnatasiz — keyin bir bosishda kirasiz",
+  "pwLoginTitle": "Kirish",
+  "pwRegisterTitle": "Ro‘yxatdan o‘tish",
+  "pwLoginLead": "Foydalanuvchi nomingiz va parolingizni kiriting.",
+  "pwRegisterLead": "Nom va parol tanlang. Telegram kerak emas.",
+  "pwUsernameLabel": "Foydalanuvchi nomi",
+  "pwPasswordLabel": "Parol",
+  "pwPasswordHint": "Kamida 6 belgi",
+  "pwNameLabel": "Ismingiz",
+  "pwLoginSubmit": "Kirish",
+  "pwRegisterSubmit": "Hisob yaratish",
+  "pwNoAccount": "Hisobingiz yo‘qmi? Ro‘yxatdan o‘ting",
+  "pwHaveAccount": "Hisobingiz bormi? Kirish",
+  "pwShow": "Ko‘rsatish",
+  "pwHide": "Yashirish",
+  "pwUsernameFree": "Bu nom bo‘sh",
+  "pwUsernameTaken": "Bu nom band — boshqasini tanlang",
+  "pwUsernameTooShort": "Nom kamida 3 belgidan iborat bo‘lsin",
+  "pwUsernameShape": "Faqat lotin harflari, raqamlar va _ (3–20 belgi)",
+  "pwTooShort": "Parol kamida 6 belgidan iborat bo‘lsin",
+  "pwBadCredentials": "Foydalanuvchi nomi yoki parol noto‘g‘ri",
+  "pwInvalidInput": "Kiritilgan ma’lumot noto‘g‘ri",
+  "pwUnavailable": "Bu yo‘l hozircha yopiq",
+  "pwNoRecovery": "Parolni tiklash yo‘li yo‘q — uni eslab qoling. Telegramni ulasangiz, parolni unutsangiz ham hisobingizga kira olasiz.",
+  "pwInviteRequired": "Ro‘yxatdan o‘tish uchun taklif kodi kerak",
+  "pwInviteHelp": "Yopiq beta davrida yangi hisob faqat taklif kodi bilan ochiladi.",
+  "pwSetTitle": "Parol o‘rnatish",
+  "pwSetLead": "Shundan keyin Telegramsiz ham kira olasiz.",
+  "pwSetSubmit": "Saqlash",
+  "pwSaved": "Parol saqlandi",
+  "pwProfileTitle": "Parol",
+  "pwProfileNotSet": "O‘rnatilmagan — har safar Telegram orqali kirasiz",
+  "pwProfileSet": "O‘rnatilgan",
+  "pwProfileChange": "Parolni almashtirish",
+  "pickerNeedGrade": "Sinfni tanlang",
+  "pickerNeedTopic": "Bo‘limni tanlang",
+  "topicSearchHint": "Bo‘lim qidirish",
+  "topicSearchEmpty": "Bunday bo‘lim topilmadi",
+  "dashGoalProgress": "Bugun: {done}/{total} savol",
+  "dashGoalLead": "Har kuni {total} ta savol — seriyangizni davom ettiring",
+  "subjectEmptyHint": "Fan tanlang va mashqlarni bajarish orqali natijangizni kuzatib boring.",
+  "comingSoonChip": "Tez orada",
+  "nameInvalidChars": "Ismda faqat harflar, raqam, bo‘shliq va - ‘ belgilaridan foydalaning",
+  "@dashGoalProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@dashGoalLead": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ctaLetsGo": "Ketdik",
+  "ctaTodayLesson": "Bugungi dars",
+  "ctaKeepGoing": "Davom etamiz",
+  "ctaOneMore": "Yana bitta",
+  "subjectXpPerQuestion": "+{xp} XP / savol",
+  "@subjectXpPerQuestion": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "notesSearchHint": "Yozuvlardan qidirish",
+  "notesSearchEmpty": "Bunday yozuv topilmadi",
+  "notesStatNotes": "{n} yozuv",
+  "@notesStatNotes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notesStatSubjects": "{n} fan",
+  "@notesStatSubjects": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notesStatFromQuiz": "{n} mashqdan",
+  "@notesStatFromQuiz": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notesQuickHint": "Nima esda qolsin?",
+  "notesFeature1": "Mashq paytida ham yozuv qo‘shasiz",
+  "notesFeature2": "Har bir yozuv fanga bog‘lanadi",
+  "notesFeature3": "Qidiruv bilan bir zumda topasiz",
+  "notesSaved": "Saqlandi",
+  "notesFromQuiz": "Mashqdan",
+  "notesUntitled": "Sarlavhasiz",
+  "notesEmptyCta": "Birinchi yozuvni yarating",
+  "dashGoalRemaining": "Yana {n} ta savol",
+  "@dashGoalRemaining": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "dashGoalTomorrow": "Ertangi maqsad: {total} ta savol",
+  "@dashGoalTomorrow": {
+    "placeholders": {
+      "total": {}
+    }
+  },
+  "dashAccuracyValue": "{pct}% aniqlik",
+  "@dashAccuracyValue": {
+    "placeholders": {
+      "pct": {}
+    }
+  },
+  "dashStreakDays": "{n} kunlik seriya",
+  "@dashStreakDays": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "dashQuestionsCount": "{n} ta savol",
+  "@dashQuestionsCount": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "dashDaysActive": "{n} kun faol",
+  "@dashDaysActive": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "footerCopyright": "© {year} Topag‘on",
+  "@footerCopyright": {
+    "placeholders": {
+      "year": {}
+    }
+  },
+  "dashWeekTitle": "Bu hafta",
+  "weekdayShorts": "Du,Se,Ch,Pa,Ju,Sh,Ya",
+  "@weekdayShorts": {
+    "description": "Hafta kunlarining qisqartmasi, dushanbadan boshlab, vergul bilan ajratilgan. AYNAN 7 ta bo'lishi shart."
+  },
+  "dashContinueTitle": "Davom ettiring",
+  "dashResultsTitle": "Sizning natijalaringiz",
+  "dashChallengeBody": "O‘zingizni sinab ko‘ring: do‘stingizni chorlang va natijalaringizni solishtiring.",
+  "dashChallengeCta": "Bellashuvni boshlash",
+  "footerTagline": "Bilimni sinab ko‘r. Natijangni ko‘rsat.",
+  "footerPlatform": "Platforma",
+  "footerHelp": "Yordam",
+  "footerContact": "Biz bilan",
+  "lbSoloTitle": "Siz 1-o‘rindasiz",
+  "lbSoloHint": "Hozircha bu reytingda sizdan boshqa ishtirokchi yo‘q.",
+  "lbSoloInvite": "Do‘stni taklif qilish",
+  "lbSoloPractice": "Mashqni davom ettirish",
+  "statRankValue": "{n}-o‘rin",
+  "@statRankValue": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "quizTimeUp": "Vaqt tugadi",
+  "quizTimeUpHint": "Bu savol yechilmagan bo‘lib qoldi — keyinroq yana uchraydi.",
+  "quizWrongHint": "To‘g‘ri javob va izoh savolni yechganingizda ochiladi.",
+  "@quizWrongHint": {
+    "description": "Noto'g'ri javobdan keyin. Server kalitni ataylab bermaydi — aks holda bir marta xato qilib, javobni o'qib, qayta yuborish orqali XP va noncoin cheksiz yig'ilardi."
+  },
+  "telegramCodeLabel": "Botda shu kodni tasdiqlang",
+  "telegramCodeHint": "Bot xuddi shu kodni ko‘rsatadi. Kod boshqacha bo‘lsa yoki siz kirishga urinmagan bo‘lsangiz — botda «Bekor qilish» ni bosing."
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Topag'on">
+  <rect width="64" height="64" rx="12" fill="#0E1116"/>
+  <g stroke="#16357F" stroke-width="1.5" opacity=".55">
+    <path d="M16 0v64M32 0v64M48 0v64M0 16h64M0 32h64M0 48h64"/>
+  </g>
+  <path d="M14 33.5 L26 45 L50 19" fill="none" stroke="#C1362F" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
