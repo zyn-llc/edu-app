@@ -324,7 +324,7 @@
   "telegramRetry": "Qaytadan",
   "telegramDisabled": "Telegram orqali kirish hozir yopiq",
   "telegramNotInstalled": "Telegram ochilmadi. Ilova o'rnatilganini tekshiring.",
-  "typedAnswerHelp": "Kasrni ham yozish mumkin: 1/3, -16/3. O'nlik uchun vergul ham, nuqta ham bo'ladi: 0,5 yoki 0.5",
+  "typedAnswerHelp": "Kasr: 1/3, -16/3. O'nlik uchun vergul ham, nuqta ham bo'ladi: 0,5 yoki 0.5. Belgilar ham ishlaydi: π/2, √2, 2^3",
   "subjectComingSoon": "Savollar tayyorlanmoqda",
   "subjectComingSoonHint": "Bu fan bo‘yicha mashqlar tez orada platformaga qo‘shiladi.",
   "guestProgressTitle": "Natijangiz saqlanmayapti",
