@@ -164,12 +164,29 @@ deploy_backend() {
 # --------------------------------------------------------------------------- #
 deploy_app() {
   need_dir mobile
-  # ILOVA `app.topagon.uz` DA, apex domen esa reklama sahifasi
-  # (deploy/nginx-app.conf, deploy/nginx-landing.conf). Standart qiymat
-  # `https://topagon.uz` edi — ya'ni `WEB_BASE_URL` eksport qilinmagan har
-  # bir build'da bellashuv havolasi (`?join=KOD`) reklama sahifasiga olib
-  # borardi va u yerda `?join=` ni o'qiydigan hech narsa yo'q.
-  local web_base="${WEB_BASE_URL:-https://app.topagon.uz}"
+  # Bellashuv havolasi (`?join=KOD`) SHU manzilga quriladi.
+  #
+  # Standart — ilova HOZIR turgan joy, kelajakda turadigan joy emas.
+  # `app.topagon.uz` `split` bajarilgandan keyin paydo bo'ladi; undan oldin
+  # uni standart qilib qo'yish har bir taklif havolasini mavjud bo'lmagan
+  # domenga yuboradi (DNS_PROBE_FINISHED_NXDOMAIN) — va buni faqat havolani
+  # bosgan odam ko'radi, deploy esa "muvaffaqiyatli" deb tugaydi.
+  # `split` tugagach: WEB_BASE_URL=https://app.topagon.uz bash deploy.sh app
+  local web_base="${WEB_BASE_URL:-https://topagon.uz}"
+
+  # MANZIL HAQIQATAN OCHILADIMI. Yuqoridagi xato aynan shu tekshiruv
+  # yo'qligi uchun prodga chiqdi: build muvaffaqiyatli tugadi, havola esa
+  # ochilmadi va buni faqat uni bosgan odam ko'rdi.
+  #
+  # `nslookup` ATAYLAB ishlatilmadi: Windows'da u mavjud bo'lmagan domen
+  # uchun ham 0 qaytaradi, ya'ni qo'riqchi jim o'tkazib yuborardi. `curl`
+  # esa DNS, TLS va HTTP — uchalasini birdan tekshiradi, va aynan shu
+  # havolani bosgan odam boshdan kechiradigan yo'l.
+  curl -sfI --max-time 10 "$web_base" >/dev/null 2>&1 || die \
+"WEB_BASE_URL=$web_base ochilmadi (DNS yo'q yoki sayt javob bermayapti).
+   Taklif havolalari (?join=KOD) shu manzilga quriladi — build to'xtatildi.
+   Ilova hozir qayerda bo'lsa, o'shani bering:
+     WEB_BASE_URL=https://topagon.uz bash deploy.sh app"
 
   step "1/4  Flutter build"
   (

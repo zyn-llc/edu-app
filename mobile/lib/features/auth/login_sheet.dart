@@ -109,13 +109,18 @@ class LoginSheet extends ConsumerWidget {
       _Options(methods: m, open: _open);
 }
 
-/// Kirish usullari: BITTA asosiy tugma + «Boshqa usullar».
+/// Kirish usullari: IKKI asosiy tugma + «Boshqa usullar».
 ///
-/// Ilgari to'rttasi ham teng kattalikda, ketma-ket turardi. Bu ilovadagi eng
-/// ko'p odam yo'qotadigan nuqta va u yerda to'rtta teng variant tanlov
-/// falajini beradi: yangi kelgan odam qaysi biri «to'g'ri» ekanini bilmaydi.
-/// Endi eng oson yo'l (odatda Telegram — yozadigan narsa yo'q) yagona katta
-/// tugma, qolganlari esa bir bosish orqasida.
+/// Ikkita, bittasi emas. To'rtta teng variant tanlov falajini berardi, lekin
+/// faqat Telegramni qoldirish undan ham yomon bo'ldi: HISOBI BOR odam o'z
+/// yo'lini (parol) umuman ko'rmaydi va har safar Telegramdan qayta kirishga
+/// majbur bo'ladi — bu esa aynan parol yo'li hal qilish uchun qo'shilgan
+/// muammoning o'zi (`CHANGELOG.md`, 2026-08-06).
+///
+/// Shuning uchun ikkalasi ham ko'rinadi va ular TURLI vazifani bajaradi:
+///   Telegram — YANGI odam uchun, yozadigan narsa yo'q;
+///   parol    — QAYTIB kirayotgan odam uchun.
+/// Taklif kodi va telefon esa kamdan-kam kerak — ular «Boshqa usullar» da.
 class _Options extends StatefulWidget {
   const _Options({required this.methods, required this.open});
 
@@ -196,13 +201,19 @@ class _OptionsState extends State<_Options> {
         ),
     ];
 
-    // Bitta usul bo'lsa yashiradigan narsa yo'q.
-    final rest = tiles.length > 1 ? tiles.sublist(1) : const <Widget>[];
+    // Doim ko'rinadigan qism: Telegram (yangi odam) + parol (qaytgan odam).
+    // Ikkalasi ham yoqilmagan bo'lsa — bor narsaning birinchi ikkitasi.
+    final visibleCount = tiles.length >= 2 ? 2 : tiles.length;
+    final visible = tiles.sublist(0, visibleCount);
+    final rest = tiles.sublist(visibleCount);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        tiles.first,
+        for (var i = 0; i < visible.length; i++) ...[
+          if (i > 0) const Gap.sm(),
+          visible[i],
+        ],
         if (rest.isNotEmpty && !_expanded) ...[
           const Gap.sm(),
           TextButton(

@@ -7,6 +7,9 @@ import '../challenges/challenge_invite.dart';
 import '../challenges/challenges_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../parent/parent_screen.dart';
+import '../../theme/app_colors.dart';
+import '../notes/notes_screen.dart';
+import '../settings/settings_screen.dart';
 import 'dashboard_screen.dart';
 
 /// Ochiq tab indeksi: 0 Asosiy · 1 Reyting · 2 Bellashuv · 3 Ota-ona.
@@ -80,6 +83,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final size = context.windowSize;
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final tab = ref.watch(homeTabProvider);
     // Ochilgan tabni belgilab qo'yamiz. `build` ichida mutatsiya ataylab:
     // amal idempotent va qayta qurishni keltirib chiqarmaydi, `IndexedStack`
@@ -127,32 +131,65 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: [
           // `NavigationRail` cheksiz balandlikda quriladi, shuning uchun
           // kichik ekranda toshib ketmasligi uchun scroll bilan o'raymiz.
-          LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: NavigationRail(
-                    selectedIndex: tab,
-                    onDestinationSelected: _select,
-                    extended: extended,
-                    // MUHIM: `extended: true` bo'lganda `labelType` NULL
-                    // bo'lishi SHART — aks holda Flutter assert bilan yiqiladi
-                    // ("Cannot set both extended and labelType").
-                    labelType:
-                        extended ? null : NavigationRailLabelType.selected,
-                    leading: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: _RailBrand(),
-                    ),
-                    destinations: [
-                      for (final d in dests)
-                        NavigationRailDestination(
-                          icon: Icon(d.icon),
-                          selectedIcon: Icon(d.selectedIcon),
-                          label: Text(d.label),
+          // Yon panel FONI.
+          //
+          // Ilgari u `scheme.surface` — kontent bilan AYNAN bir xil oq edi,
+          // ya'ni panel alohida hudud sifatida umuman ko'rinmasdi: to'rtta
+          // yozuv bo'shliqda osilib turardi. Juda yumshoq apelsin tint
+          // (yuqoridan pastga so'nadi) uni brend hududiga aylantiradi,
+          // lekin kontentdan diqqatni tortmaydi.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  palette.primaryTint,
+                  palette.primaryTint.withValues(alpha: 0.25),
+                ],
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: NavigationRail(
+                      selectedIndex: tab,
+                      onDestinationSelected: _select,
+                      extended: extended,
+                      // Fon yuqorida chizilgan — rail o'zi shaffof bo'lishi
+                      // kerak, aks holda gradientni bosib qo'yadi.
+                      backgroundColor: Colors.transparent,
+                      // MUHIM: `extended: true` bo'lganda `labelType` NULL
+                      // bo'lishi SHART — aks holda Flutter assert bilan
+                      // yiqiladi ("Cannot set both extended and labelType").
+                      labelType:
+                          extended ? null : NavigationRailLabelType.selected,
+                      leading: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: _RailBrand(),
+                      ),
+                      // Pastdagi qisqa yo'llar. Ular panelning bo'sh qismini
+                      // to'ldiradi va — muhimi — Daftarim bilan Sozlamalarga
+                      // desktopda boshqa yo'l yo'q edi: ular faqat bosh
+                      // ekranning footerida turardi, ya'ni Reyting yoki
+                      // Bellashuv tabida umuman ko'rinmasdi.
+                      trailing: Expanded(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: _RailShortcuts(extended: extended),
                         ),
-                    ],
+                      ),
+                      destinations: [
+                        for (final d in dests)
+                          NavigationRailDestination(
+                            icon: Icon(d.icon),
+                            selectedIcon: Icon(d.selectedIcon),
+                            label: Text(d.label),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -189,6 +226,68 @@ class _RailBrand extends StatelessWidget {
     return const CircleAvatar(
       radius: 18,
       backgroundImage: AssetImage('assets/logo.png'),
+    );
+  }
+}
+
+/// Yon panelning pastidagi qisqa yo'llar: Daftarim va Sozlamalar.
+///
+/// Ular tab EMAS — `IndexedStack` da o'z ekrani yo'q va shu holda qolishi
+/// kerak: to'rtta asosiy bo'lim ustiga yana ikkita qo'shish navigatsiyani
+/// og'irlashtiradi. Lekin desktopda ularga kirishning yagona yo'li bosh
+/// ekran footeri edi, ya'ni boshqa tabda turgan odam ularni topa olmasdi.
+class _RailShortcuts extends StatelessWidget {
+  const _RailShortcuts({required this.extended});
+
+  final bool extended;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L10n.of(context);
+    final palette = Theme.of(context).extension<AppPalette>()!;
+
+    final items = <(IconData, String, VoidCallback)>[
+      (Icons.menu_book_rounded, l.notesTitle, () => NotesScreen.open(context)),
+      (Icons.settings_rounded, l.settings, () {
+        Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SettingsScreen()));
+      }),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(color: palette.hairline, indent: 12, endIndent: 12),
+          for (final (icon, label, onTap) in items)
+            // Yoyilgan panelda matn bilan, tor panelda faqat ikonka —
+            // manzillarning o'zi ham xuddi shu qoidaga bo'ysunadi.
+            extended
+                ? SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: onTap,
+                      icon: Icon(icon, size: 20, color: palette.muted),
+                      label: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(label,
+                            style: TextStyle(
+                                fontSize: 13, color: palette.muted)),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    onPressed: onTap,
+                    tooltip: label,
+                    icon: Icon(icon, size: 20, color: palette.muted),
+                  ),
+        ],
+      ),
     );
   }
 }

@@ -172,10 +172,19 @@ class AppFooter extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Brend blokiga ustunlarnikidan ko'proq joy: unda logo va
-                // ikki qatorli shior bor.
-                Expanded(flex: 4, child: brand),
-                for (final col in columns) Expanded(flex: 3, child: col),
+                // Brend BO'SH JOYNI oladi, ustunlar esa o'z eniga teng va
+                // o'ngga yig'iladi.
+                //
+                // Ilgari hammasi `Expanded(4:3:3:3)` edi. Har bir ustun keng
+                // slotga tushib, matni chapga tekislanardi — natijada oxirgi
+                // ustundan keyin footerning o'ng choragi bo'sh ko'rinardi
+                // (1920 px da ayniqsa yaqqol). Endi bo'sh joy BITTA joyda,
+                // brend bilan ustunlar orasida — bu odatiy footer naqshi.
+                Expanded(child: brand),
+                for (final col in columns) ...[
+                  const SizedBox(width: Spacing.xxl),
+                  col,
+                ],
               ],
             )
           else ...[
@@ -198,11 +207,17 @@ class AppFooter extends ConsumerWidget {
                     style: text.labelSmall?.copyWith(color: palette.faint)),
               ),
               // Tilni almashtirish sozlamalarda; bu yerda unga qisqa yo'l.
+              //
+              // Ikonka 16 px edi va matn `labelSmall` — ikkalasi ham shu
+              // qadar kichik ediki, foydalanuvchi buni bosiladigan element
+              // deb tanimasdi. 20 px + `labelMedium` + aniq apelsin rang:
+              // hali ham ikkilamchi, lekin endi ko'rinadi.
               TextButton.icon(
                 onPressed: () => _push(context, const SettingsScreen()),
                 icon: Icon(Icons.language_rounded,
-                    size: 16, color: scheme.primary),
-                label: Text(l.language, style: text.labelSmall),
+                    size: 20, color: scheme.primary),
+                label: Text(l.language,
+                    style: text.labelMedium?.copyWith(color: scheme.primary)),
               ),
             ],
           ),
