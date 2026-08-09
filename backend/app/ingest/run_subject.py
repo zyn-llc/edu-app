@@ -88,6 +88,41 @@ _RISKY_ANSWER_RE = re.compile(r"[ ,;=()\[\]{}/]")
 IMAGE_QUESTIONS_AS_DRAFT = True
 
 
+# Bo'lim kodi oldidagi darslik raqamlashi: `94-§.`, `14.1-bo'lim.`.
+#
+# Matematika manbasida bo'lim kodi darslik sarlavhasining o'zi
+# ("100-§. Hosilaning geometrik ma'nosi"). Kodda u qolishi KERAK — ingest
+# idempotentligi shunga tayanadi — lekin o'quvchiga ko'rsatiladigan
+# sarlavhada raqamning o'rni yo'q: u bo'limni mavzu bo'yicha tanlaydi,
+# darslik sahifasi bo'yicha emas, va qaysi darslik ekani hech qayerda
+# aytilmagan.
+#
+# Shart ataylab tor — raqamdan keyin `-§` yoki `-bo'lim` kelishi shart.
+# Jahon tarixida "1991-2017-yillarda ..." kabi sarlavhalar bor va u yerda
+# raqam ma'noning o'zi; keng shart ularni buzardi.
+#
+# DIQQAT: `sql/029_topic_titles.sql` AYNAN shu mantiqni bazadagi mavjud
+# qatorlarga qo'llaydi. Bittasini o'zgartirsang, ikkinchisini ham.
+_TOPIC_NUMBER_RE = re.compile(r"^\d+(\.\d+)*\s*-\s*(§|bo['‘’ʻʼ]lim)\.?\s*")
+_WRAPPED_RE = re.compile(r"^\(([^()]*)\)$")
+
+
+def topic_title(code: str) -> str:
+    """Bo'lim kodidan o'quvchiga ko'rsatiladigan sarlavha."""
+    t = code.replace("_", " ").strip()
+    t = _TOPIC_NUMBER_RE.sub("", t).strip()
+    # "104-§ (test qismi, variant 47)" dan prefiks olingach butun sarlavha
+    # qavs ichida qoladi. Ichki qavs bo'lmagandagina ochamiz — aks holda
+    # "aniq integral (qo'shimcha manba)" buzilardi.
+    m = _WRAPPED_RE.match(t)
+    if m:
+        t = m.group(1).strip()
+    # `.capitalize()` EMAS: u qolgan harflarni kichraytiradi va
+    # "Xitoy Xalq Respublikasi" ni "Xitoy xalq respublikasi" qilib qo'yadi.
+    # Bizga faqat bosh harf kerak.
+    return t[:1].upper() + t[1:] if t else t
+
+
 def parse_prefix(prefix):
     m = re.match(r"(.+?)_g(\d+)$", prefix)
     if m:
@@ -435,7 +470,7 @@ async def load(records, batch=200):
                                     tid = t.id
                                     db.add(TopicTranslation(
                                         topic_id=tid, lang="uz-Latn",
-                                        title=it.topic_code.replace("_", " ").strip().capitalize()))
+                                        title=topic_title(it.topic_code)))
                                 topic_cache[ck] = tid
 
                         q = Question(subject_id=sid, topic_id=tid, grade=it.grade,
