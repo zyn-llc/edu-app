@@ -591,5 +591,13 @@
     "description": "Noto'g'ri javobdan keyin. Server kalitni ataylab bermaydi — aks holda bir marta xato qilib, javobni o'qib, qayta yuborish orqali XP va noncoin cheksiz yig'ilardi."
   },
   "telegramCodeLabel": "Botda shu kodni tasdiqlang",
-  "telegramCodeHint": "Bot xuddi shu kodni ko‘rsatadi. Kod boshqacha bo‘lsa yoki siz kirishga urinmagan bo‘lsangiz — botda «Bekor qilish» ni bosing."
+  "telegramCodeHint": "Bot xuddi shu kodni ko‘rsatadi. Kod boshqacha bo‘lsa yoki siz kirishga urinmagan bo‘lsangiz — botda «Bekor qilish» ni bosing.",
+  "parentRhythmTitle": "Shug'ullanish ritmi",
+  "parentStrugglesTitle": "Qayerda qiynalyapti",
+  "parentAnsweredWeek": "savol (7 kun)",
+  "parentActiveDays": "faol kun",
+  "parentAccuracyWeek": "to'g'ri javob",
+  "parentAnalysisEmptyTitle": "Hali ma'lumot yetarli emas",
+  "parentAnalysisEmptyBody": "Farzandingiz bir necha mavzudan savol yechgach, qaysi mavzular qiyin kelayotgani shu yerda ko'rinadi.",
+  "parentPrivacyNote": "Siz faqat umumiy natijalarni ko'rasiz. Farzandingiz qaysi savolga qanday javob bergani ko'rsatilmaydi — bu ataylab shunday."
 }
