@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/auth_controller.dart';
 import '../../auth/token_store.dart';
 import '../../core/breakpoints.dart';
+import '../../core/prefs.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/spacing.dart';
@@ -59,10 +60,35 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   bool? _free;
   Timer? _debounce;
 
+  /// Nom maydonini qurilmada saqlangan qiymat to'ldirganmi. Ro'yxatdan
+  /// o'tishga o'tilganda uni tozalash uchun kerak.
+  bool _prefilled = false;
+
   @override
   void initState() {
     super.initState();
     _username.addListener(_onUsernameChanged);
+    // Qaytib kirayotgan odam nomini QAYTA TERMASIN.
+    //
+    // Sinovchilar shikoyati aynan shu edi: hisob bor, lekin har safar
+    // nomni eslab, harfma-harf yozish kerak. Bitta harf xato bo'lsa server
+    // «nom yoki parol noto'g'ri» deydi (ataylab — qaysi biri xato ekanini
+    // aytish hisob bor-yo'qligini oshkor qiladi), o'quvchi esa parolni
+    // ayblab, uni qayta-qayta almashtiradi.
+    //
+    // Faqat KIRISH holatida to'ldiriladi: ro'yxatdan o'tishda eski nom
+    // maydonda tursa, foydalanuvchi uni band deb o'ylaydi.
+    if (!_register) {
+      final saved = ref
+          .read(sharedPreferencesProvider)
+          .getString(PrefKeys.lastUsername);
+      if (saved != null && saved.isNotEmpty) {
+        _username.text = saved;
+        _prefilled = true;
+        // Kursor parolga tushsin — nom allaqachon tayyor.
+        _passwordFocus.requestFocus();
+      }
+    }
   }
 
   @override
@@ -152,6 +178,12 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               referredBy: ref.read(pendingReferrerProvider))
           : await repo.login(name, pw);
       await ref.read(authControllerProvider.notifier).completeLogin(pair);
+      // Nom shu qurilmada eslab qolinadi — keyingi kirishda maydon tayyor.
+      // Parol EMAS, faqat nom: u reytingda va bellashuv havolasida
+      // allaqachon ochiq ko'rinadi, ya'ni sir emas.
+      await ref
+          .read(sharedPreferencesProvider)
+          .setString(PrefKeys.lastUsername, name);
       if (mounted) Navigator.pop(context, true);
     } on DioException catch (e) {
       final code = e.response?.statusCode;
@@ -349,6 +381,15 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                         _register = !_register;
                         _error = null;
                         _free = null;
+                        // Ro'yxatdan o'tishga o'tilganda oldindan
+                        // to'ldirilgan ESKI nom tozalanadi. Aks holda
+                        // foydalanuvchi o'z nomini ko'radi, ustiga
+                        // "bu nom band" chiqadi va bu qarama-qarshi
+                        // tuyuladi — nom band emas, u O'ZINIKI.
+                        if (_register && _prefilled) {
+                          _username.clear();
+                          _prefilled = false;
+                        }
                       }),
               child: Text(_register ? l.pwHaveAccount : l.pwNoAccount),
             ),
