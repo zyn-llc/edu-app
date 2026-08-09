@@ -30,22 +30,28 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
 # `.env` ni O'ZIMIZ o'qiymiz.
 #
-# NEGA (2026-08-06 da deploy paytida topilgan). Ilgari bu yerda
+# NEGA UMUMAN O'QIYMIZ (2026-08-06, deploy paytida topilgan). Ilgari bu yerda
 # `${POSTGRES_USER:-edu}` turardi va skript muhit o'zgaruvchisiga tayanardi.
 # Lekin `ssh host "./scripts/migrate.sh"` da hech qanday muhit uzatilmaydi —
 # skript `edu` ga tushib qolardi va psql `role "edu" does not exist` berardi.
-# Migratsiya holati umuman ko'rinmasdi.
 #
-# `set -a` — fayldagi har bir o'zgaruvchi avtomatik eksport qilinadi.
-if [ -f .env ]; then
-    set -a
-    # shellcheck disable=SC1091
-    . ./.env
-    set +a
-fi
+# NEGA `source` EMAS (2026-08-09). `. ./.env` faylni SHELL sifatida bajaradi,
+# `.env` esa shell emas. Tirnoqsiz bo'sh joyli qiymat butun skriptni
+# o'ldirardi — batafsili `scripts/envlib.sh` da.
+# shellcheck source=scripts/envlib.sh
+. "$(dirname "$0")/envlib.sh"
 
-DB_USER="${POSTGRES_USER:-postgres}"
-DB_NAME="${POSTGRES_DB:-postgres}"
+# Tartib: MUHIT > `.env` > standart.
+#
+# Muhit birinchi turishi lokal ish uchun zarur: dev `docker-compose.yml`
+# bazani `edu` bilan yaratadi, `.env` esa boshqa nom saqlashi mumkin
+# (prod qiymatlari qolib ketgan bo'lsa). O'shanda skript `.env` ga tayansa
+# psql `role does not exist` beradi va sabab ko'rinmaydi.
+#
+#   COMPOSE_FILE=docker-compose.yml POSTGRES_USER=edu POSTGRES_DB=edu \
+#     ./scripts/migrate.sh --status
+DB_USER="${POSTGRES_USER:-$(env_get POSTGRES_USER postgres)}"
+DB_NAME="${POSTGRES_DB:-$(env_get POSTGRES_DB postgres)}"
 
 # Testlash uchun almashtiriladigan buyruq. Standart: konteyner ichidagi psql.
 PSQL_CMD="${PSQL_CMD:-docker compose -f $COMPOSE_FILE exec -T db psql -U $DB_USER -d $DB_NAME}"

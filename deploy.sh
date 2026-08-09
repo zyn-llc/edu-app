@@ -12,6 +12,8 @@
 #      bash deploy.sh backend   — faqat API (kod + migratsiya)
 #      bash deploy.sh app       — faqat Flutter Web
 #      bash deploy.sh landing   — faqat reklama sahifasi
+#      bash deploy.sh nginx     — API nginx konfiguratsiyasi (admin IP bilan)
+#      bash deploy.sh webhook   — Telegram webhook'ni qayta o'rnatish
 #      bash deploy.sh split     — domenlarni ajratish (app.topagon.uz)
 #      bash deploy.sh all       — backend + app + landing (split'siz)
 #
@@ -52,7 +54,15 @@ BUILD_MARKER="Ertangi"
 
 ok()   { printf '\n\033[32m✓\033[0m %s\n' "$*"; }
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$*"; }
+warn() { printf '\033[33m!  %s\033[0m\n' "$*"; }
 die()  { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+
+# VPS `.env` dan bitta qiymatni oladi. Faylni SHELL SIFATIDA BAJARMAYDI —
+# sabab `backend/scripts/envlib.sh` da (tirnoqsiz bo'sh joyli qiymat butun
+# deployni to'xtatardi).
+remote_env() {
+  ssh "$VPS" "sed -n 's/^[[:space:]]*$1=//p' $REMOTE_BACKEND/.env | tail -1 | tr -d '\"'" 2>/dev/null || true
+}
 
 need_dir() {
   [ -d "$1" ] || die "Papka topilmadi: $1 — skriptni \"D:\\platform edu\" da ishga tushiring"
@@ -63,6 +73,16 @@ need_dir() {
 # --------------------------------------------------------------------------- #
 deploy_backend() {
   need_dir backend/app
+
+  step "0/5  VPS sozlamalari tekshiruvi"
+  # Bu ikkitasi deployni TO'XTATMAYDI, lekin jim ham qolmaydi. Ikkalasi ham
+  # "ishlayapti" ko'rinishida bo'lib, aslida yo'q bo'lgan himoya turi:
+  # zaxira faqat o'sha diskda yotadi, admin yuzasi esa ochiq qoladi.
+  [ -n "$(remote_env BACKUP_REMOTE)" ] \
+    || warn "VPS .env da BACKUP_REMOTE yo'q — zaxira FAQAT o'sha VPS'da qoladi."
+  [ -n "$(remote_env ADMIN_IP)" ] \
+    || warn "VPS .env da ADMIN_IP yo'q — 'bash deploy.sh nginx' admin cheklovini qo'ya olmaydi."
+
   step "1/5  Backend kodini VPS'ga ko'chirish"
   # `__pycache__` ATAYLAB tashlanadi: Windows'da yaratilgan .pyc fayllari
   # konteynerdagi Python versiyasiga mos kelmaydi va faqat chalkashtiradi.
@@ -72,9 +92,21 @@ deploy_backend() {
   rm -f /tmp/topagon-backend.tar.gz
 
   step "2/5  Zaxira (migratsiyadan oldin)"
-  ssh "$VPS" "cd $REMOTE_BACKEND && set -a && . ./.env && set +a && \
-    $COMPOSE exec -T db pg_dump -U \$POSTGRES_USER -d \$POSTGRES_DB -Fc \
-      -f /tmp/pre-deploy.dump && \
+  # `.env` SHELL SIFATIDA BAJARILMAYDI.
+  #
+  # Ilgari bu yerda `set -a && . ./.env && set +a` turardi. `.env` esa shell
+  # emas: `OTP_MESSAGE_TEMPLATE=Topag'on tasdiqlash kodi: {code}` kabi
+  # tirnoqsiz qator bash uchun "`tasdiqlash` buyrug'ini ishga tushir" degani,
+  # va `set -e` bilan birga u BUTUN DEPLOYNI shu yerda to'xtatadi —
+  # zaxira olinmaydi, lekin sabab «command not found» bo'lib ko'rinadi.
+  #
+  # Bu qadam `scripts/envlib.sh` dan foydalana OLMAYDI: u VPS'ga faqat
+  # 3-qadamda tushadi, zaxira esa undan oldin olinishi shart. Shuning uchun
+  # ikkita qiymat shu yerda `sed` bilan olinadi.
+  ssh "$VPS" "cd $REMOTE_BACKEND && \
+    PGU=\$(sed -n 's/^[[:space:]]*POSTGRES_USER=//p' .env | tail -1 | tr -d '\"') && \
+    PGD=\$(sed -n 's/^[[:space:]]*POSTGRES_DB=//p'   .env | tail -1 | tr -d '\"') && \
+    $COMPOSE exec -T db pg_dump -U \$PGU -d \$PGD -Fc -f /tmp/pre-deploy.dump && \
     $COMPOSE cp db:/tmp/pre-deploy.dump ./pre-deploy.dump && \
     ls -lh pre-deploy.dump"
 
@@ -92,14 +124,12 @@ deploy_backend() {
     $COMPOSE up -d --build api"
 
   step "4/5  Migratsiya holati"
-  # `.env` migrate.sh ichida ham o'qiladi, lekin bu yerda ham beramiz —
-  # eski `migrate.sh` qolgan bo'lsa ham ishlashi uchun.
-  ssh "$VPS" "cd $REMOTE_BACKEND && set -a && . ./.env && set +a && \
-    ./scripts/migrate.sh --status | tail -10"
+  # Muhit uzatilmaydi: `migrate.sh` `.env` ni o'zi, `envlib.sh` orqali
+  # xavfsiz o'qiydi (3-qadamda VPS'ga tushdi).
+  ssh "$VPS" "cd $REMOTE_BACKEND && ./scripts/migrate.sh --status | tail -10"
   echo
   read -r -p "Yuqorida faqat YANGI migratsiya 'kutmoqda' bo'lsa Enter bosing (to'xtatish: Ctrl+C) " _
-  ssh "$VPS" "cd $REMOTE_BACKEND && set -a && . ./.env && set +a && \
-    ./scripts/migrate.sh"
+  ssh "$VPS" "cd $REMOTE_BACKEND && ./scripts/migrate.sh"
 
   step "5/5  Tekshiruv"
   sleep 4
@@ -199,6 +229,74 @@ deploy_landing() {
 # --------------------------------------------------------------------------- #
 #  DOMENLARNI AJRATISH — topagon.uz → landing, app.topagon.uz → ilova
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+#  API nginx konfiguratsiyasi — admin IP bilan
+#
+#  NEGA ALOHIDA BUYRUQ. `deploy/nginx.conf` da ikkita to'ldiriladigan joy bor:
+#  `__DOMAIN__` va `__ADMIN_IP__`. Ular REPODA QOLADI — haqiqiy IP git'ga
+#  tushmasligi kerak (u sizning uy/ofis manzilingiz, va u o'zgarib turadi).
+#  Qiymat VPS `.env` da `ADMIN_IP=` sifatida saqlanadi, `.env` esa git'da yo'q.
+#
+#  `ADMIN_IP` bo'sh bo'lsa konfiguratsiya YIQILMAYDI: `allow all` qo'yiladi va
+#  ogohlantirish chiqadi. Sabab: himoyasiz admin yuzasidan ko'ra ishlaydigan
+#  sayt afzal, va kalit + 20/soat cheklov baribir joyida turadi.
+# --------------------------------------------------------------------------- #
+deploy_nginx() {
+  step "1/3  Admin IP ni aniqlash"
+  local admin_ip
+  admin_ip="$(remote_env ADMIN_IP)"
+  if [ -z "$admin_ip" ]; then
+    warn "VPS .env da ADMIN_IP yo'q — admin yuzasi IP bo'yicha CHEKLANMAYDI."
+    warn "Tuzatish (VPS'da):  echo 'ADMIN_IP=<sizning-ip>' >> $REMOTE_BACKEND/.env"
+    warn "IP ni bilish:       curl -s ifconfig.me"
+    admin_ip="all"
+  else
+    ok "ADMIN_IP = $admin_ip"
+  fi
+
+  step "2/3  Konfiguratsiyani o'rnatish"
+  # Eski konfiguratsiya saqlanadi: `nginx -t` yiqilsa qaytarish uchun.
+  ssh "$VPS" "cd $REMOTE_BACKEND && \
+    cp -f /etc/nginx/sites-available/bilim /etc/nginx/sites-available/bilim.bak 2>/dev/null || true; \
+    sed -e 's/__DOMAIN__/api.topagon.uz/g' \
+        -e 's/allow __ADMIN_IP__;/allow $admin_ip;/' \
+        deploy/nginx.conf > /etc/nginx/sites-available/bilim && \
+    ln -sf /etc/nginx/sites-available/bilim /etc/nginx/sites-enabled/bilim"
+
+  step "3/3  Sintaksis va qayta yuklash"
+  # `nginx -t` yiqilsa eski konfiguratsiya qaytariladi — sayt o'chib qolmasin.
+  ssh "$VPS" "nginx -t || { \
+      echo 'nginx -t YIQILDI — eski konfiguratsiya qaytarilmoqda'; \
+      cp -f /etc/nginx/sites-available/bilim.bak /etc/nginx/sites-available/bilim 2>/dev/null; \
+      exit 1; }" || die "nginx konfiguratsiyasi yaroqsiz — hech narsa o'zgarmadi"
+  ssh "$VPS" "systemctl reload nginx"
+
+  curl -fsS "$API_URL/health" >/dev/null || die "$API_URL/health javob bermayapti"
+  ok "nginx yangilandi (admin: $admin_ip)"
+}
+
+# --------------------------------------------------------------------------- #
+#  Telegram webhook
+#
+#  QAYTA ISHGA TUSHIRISH KERAK bo'ladigan holat: `allowed_updates` o'zgarganda.
+#  2026-08-09 da unga `callback_query` qo'shildi (kirishni tasdiqlash tugmasi).
+#  Eski webhook'da bu tur umuman kelmaydi — tugma jim ishlamaydi, xato ham
+#  chiqmaydi. Aynan shu sababli buni deploy qadamiga aylantirdik.
+# --------------------------------------------------------------------------- #
+deploy_webhook() {
+  step "1/2  Webhook o'rnatish"
+  ssh "$VPS" "cd $REMOTE_BACKEND && $COMPOSE exec -T api \
+    python scripts/telegram_setup.py --webhook $API_URL/v1/telegram/webhook"
+
+  step "2/2  Tekshirish"
+  ssh "$VPS" "cd $REMOTE_BACKEND && $COMPOSE exec -T api \
+    python scripts/telegram_setup.py --info" | tee /tmp/tg-info.txt
+  grep -q "callback_query" /tmp/tg-info.txt \
+    || warn "javobda 'callback_query' ko'rinmadi — tasdiqlash tugmasi ishlamasligi mumkin"
+  rm -f /tmp/tg-info.txt
+  ok "Webhook o'rnatildi"
+}
+
 do_split() {
   step "1/5  DNS tekshiruvi"
   local ip
@@ -239,7 +337,13 @@ case "${1:-}" in
   backend) deploy_backend ;;
   app)     deploy_app ;;
   landing) deploy_landing ;;
+  nginx)   deploy_nginx ;;
+  webhook) deploy_webhook ;;
   split)   do_split ;;
+  # `nginx` va `webhook` `all` ICHIGA KIRMAYDI — ataylab. Ikkalasi ham
+  # ishlab turgan xizmatni to'xtatib qo'yishi mumkin (nginx qayta yuklanadi,
+  # webhook esa Telegram tomonda almashadi), shuning uchun ular ongli,
+  # alohida qadam bo'lishi kerak.
   all)     deploy_backend; deploy_app; deploy_landing ;;
   *)
     cat <<'USAGE'
@@ -247,14 +351,18 @@ Ishlatish:
   bash deploy.sh backend   — API (kod + migratsiya)
   bash deploy.sh app       — Flutter Web
   bash deploy.sh landing   — reklama sahifasi (fayllar)
+  bash deploy.sh nginx     — API nginx konfiguratsiyasi (VPS .env dagi ADMIN_IP bilan)
+  bash deploy.sh webhook   — Telegram webhook (allowed_updates o'zgarganda MAJBURIY)
   bash deploy.sh split     — domenlarni ajratish (DNS tayyor bo'lsa)
   bash deploy.sh all       — backend + app + landing
 
 Tavsiya etilgan tartib:
   1. bash deploy.sh all
-  2. telefonda sinab ko'ring
-  3. DNS tayyor bo'lsa: bash deploy.sh split
-  4. WEB_BASE_URL=https://app.topagon.uz bash deploy.sh app
+  2. bash deploy.sh nginx        (admin IP cheklovi + CSP)
+  3. bash deploy.sh webhook      (kirishni tasdiqlash tugmasi uchun)
+  4. telefonda sinab ko'ring
+  5. DNS tayyor bo'lsa: bash deploy.sh split
+  6. WEB_BASE_URL=https://app.topagon.uz bash deploy.sh app
 USAGE
     exit 1 ;;
 esac

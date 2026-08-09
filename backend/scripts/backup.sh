@@ -23,17 +23,17 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 BACKUP_DIR="${BACKUP_DIR:-backups}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 
-# `.env` dan o'qiymiz. `set -a` — o'qilgan o'zgaruvchilar avtomatik eksport
-# qilinadi. Qiymatlar HECH QAYERGA chop etilmaydi.
-if [ -f .env ]; then
-    set -a
-    # shellcheck disable=SC1091
-    . ./.env
-    set +a
-fi
+# `.env` dan o'qiymiz — BAJARMASDAN. `. ./.env` faylni shell skripti sifatida
+# ishga tushiradi va tirnoqsiz bo'sh joyli qiymat (masalan
+# `OTP_MESSAGE_TEMPLATE=Topag'on tasdiqlash kodi: {code}`) butun skriptni
+# to'xtatadi — ya'ni zaxira JIM RAVISHDA olinmay qoladi. Batafsili
+# `scripts/envlib.sh` da. Qiymatlar hech qayerga chop etilmaydi.
+# shellcheck source=scripts/envlib.sh
+. "$(dirname "$0")/envlib.sh"
 
-DB_USER="${POSTGRES_USER:-edu}"
-DB_NAME="${POSTGRES_DB:-edu}"
+# Tartib: MUHIT > `.env` > standart (migrate.sh dagi bilan bir xil sabab).
+DB_USER="${POSTGRES_USER:-$(env_get POSTGRES_USER edu)}"
+DB_NAME="${POSTGRES_DB:-$(env_get POSTGRES_DB edu)}"
 
 mkdir -p "$BACKUP_DIR"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -87,7 +87,8 @@ echo "[$(date '+%F %T')] OK — $(numfmt --to=iec "$SIZE" 2>/dev/null || echo "$
 #
 #  Sozlanmagan bo'lsa skript YIQILMAYDI (yangi o'rnatishni to'xtatmaslik
 #  uchun), lekin cron log'ida HAR KUNI ogohlantirish chiqadi — jim qolmaydi.
-BACKUP_REMOTE="${BACKUP_REMOTE:-}"
+# Muhit o'zgaruvchisi ustun, aks holda `.env` dan.
+BACKUP_REMOTE="${BACKUP_REMOTE:-$(env_get BACKUP_REMOTE)}"
 if [ -n "$BACKUP_REMOTE" ]; then
     if ! command -v rclone >/dev/null 2>&1; then
         echo "!! XATO: BACKUP_REMOTE sozlangan, lekin rclone o'rnatilmagan." >&2
