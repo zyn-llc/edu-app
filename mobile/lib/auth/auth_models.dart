@@ -19,22 +19,14 @@ class UserMe {
   final String role; // student | parent | admin
   final String? phone;
 
-  /// Parol bilan kirish uchun nom (`users.username`). `null` — bu hisob
-  /// hozircha faqat Telegram yoki taklif kodi orqali kiradi, ya'ni profilda
-  /// "parol o'rnatish" taklifi ko'rsatiladi.
   final String? username;
   final String? displayName;
   final String? regionCode;
   final int? grade;
   final String? locale;
 
-  /// Avatar palitrasi indeksi (0..11) — `users.avatar_color`. `null` bo'lsa
-  /// klient ism hash'idan barqaror rang tanlaydi (`widgets/avatar.dart`).
   final int? avatarColor;
 
-  /// Telegram xabarlari yoqilganmi. `null` = foydalanuvchi hali tanlamagan;
-  /// server buni YOQILGAN deb hisoblaydi (`IS DISTINCT FROM false`), shuning
-  /// uchun klient ham `?? true` qiladi.
   final bool? tgNotifications;
 
   UserMe({
@@ -67,10 +59,6 @@ class UserMe {
       );
 }
 
-/// Bitta kun — haftalik chiziq uchun (`/v1/me` → `progress.week`).
-///
-/// Sana MAHALLIY (UTC+5) kalendar kuni. Serverda ham xuddi shu ofset
-/// ishlatiladi, ya'ni "bugun" ikkala tomonda bir xil kun.
 class DayStat {
   final DateTime date;
   final int answered;
@@ -88,8 +76,6 @@ class DayStat {
 
   factory DayStat.fromJson(Map<String, dynamic> j) => DayStat(
         // `DateTime.parse` YYYY-MM-DD ni mahalliy yarim tun deb o'qiydi —
-        // aynan shu kerak: bu sana allaqachon UTC+5 da hisoblangan va uni
-        // yana bir marta zona bo'yicha siljitish kunni buzardi.
         date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
         answered: (j['answered'] as num?)?.toInt() ?? 0,
         correct: (j['correct'] as num?)?.toInt() ?? 0,
@@ -105,24 +91,17 @@ class Progress {
   final int correct;
   final double accuracy; // 0..1
 
-  /// Bugungi kesim. Ilgari bu maydonlar YO'Q edi va bosh ekrandagi
-  /// "Bugungi maqsad" progressni umuman ko'rsata olmasdi — u faqat
   /// "bajarildi / bajarilmadi" ni fanlarning `lastPracticedAt` idan taxmin
-  /// qilardi.
   final int answeredToday;
   final int correctToday;
   final int xpToday;
 
-  /// So'nggi 7 kun.
   final int answered7d;
   final int correct7d;
   final double accuracy7d; // 0..1
   final int xp7d;
   final int activeDays7d;
 
-  /// Har doim 7 ta element (eng eskisidan boshlab) — server bo'sh kunlarni
-  /// ham to'ldirib yuboradi. Eski serverda maydon yo'q → bo'sh ro'yxat, va
-  /// haftalik chiziq shunchaki ko'rsatilmaydi.
   final List<DayStat> week;
 
   const Progress({
@@ -143,8 +122,6 @@ class Progress {
     this.week = const [],
   });
 
-  /// Bugungi aniqlik — 0..1. Savol yechilmagan bo'lsa `null` (nol EMAS:
-  /// "0% aniqlik" bilan "hali javob yo'q" butunlay boshqa narsa).
   double? get accuracyToday =>
       answeredToday == 0 ? null : correctToday / answeredToday;
 

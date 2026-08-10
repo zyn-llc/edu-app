@@ -10,30 +10,13 @@ import '../analysis/topic_mastery_view.dart';
 import '../home/activity_sections.dart';
 import 'parent_data.dart';
 
-/// Bitta farzandning batafsil ko'rinishi — FAQAT O'QISH uchun.
 ///
-/// ## Nega bu ekran qayta yozildi
 ///
-/// U bolaning O'ZI ko'radigan raqamlarni takrorlardi: Daraja, XP, kunlik
-/// seriya, umumiy aniqlik. `services/progress.parent_signals` izohida bu
-/// aynan xato deb yozilgan edi — ota-ona XP nima ekanini bilmaydi va u
-/// bilan hech narsa qila olmaydi. Kod esa o'sha izohga zid ish qilardi.
 ///
-/// Ota-ona amalda ikkita savolga javob izlaydi, va ekran endi shu tartibda
-/// javob beradi:
 ///
 ///   1. **Bolam umuman shug'ullanyaptimi?**  → haftalik ritm (7 nuqta),
-///      oxirgi mashq qachon. Bu raqam emas, SHAKL — bir qarashda tushuniladi
-///      va tushuntirish talab qilmaydi.
-///   2. **Qayerda qiynalyapti?**            → zaif mavzular, foiz bilan.
-///      Bu ota-ona HARAKAT qila oladigan yagona ma'lumot: repetitorga
-///      aytadi, o'zi so'raydi, yoki shu mavzuni takrorlashni taklif qiladi.
 ///
-/// Kuchli mavzular ham qoladi, lekin PASTDA: ular xotirjamlik beradi,
-/// qaror emas.
 ///
-/// Umumiy XP/daraja ataylab OLIB TASHLANDI — u ota-ona kartochkasida ham,
-/// bu yerda ham takrorlanardi, ya'ni ekranning yarmi ma'nosiz edi.
 class ChildDetailScreen extends ConsumerWidget {
   final ChildSummary child;
   const ChildDetailScreen({super.key, required this.child});
@@ -53,8 +36,6 @@ class ChildDetailScreen extends ConsumerWidget {
         elevation: 0,
         title: Row(
           children: [
-            // Avatar shu yergacha yetib kelmagan edi (CLAUDE.md dagi ochiq
-            // band). Bir nechta farzandi bor ota-ona uchun u nomdan tezroq
             // ishlaydi.
             UserAvatar(name: name, colorIndex: child.avatarColor, size: 32),
             const SizedBox(width: Spacing.sm),
@@ -87,8 +68,6 @@ class ChildDetailScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(vertical: Spacing.xl),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              // Xato holati ham chiqish yo'li bilan: ilgari bu yerda bitta
-              // kulrang qator va kichkina "Qayta urinish" tugmasi turardi.
               error: (_, __) => SizedBox(
                 height: 220,
                 child: EmptyState(
@@ -102,10 +81,6 @@ class ChildDetailScreen extends ConsumerWidget {
               ),
               data: (a) {
                 if (a.weakest.isEmpty && a.strongest.isEmpty) {
-                  // Bo'sh holat ota-onaga QACHON to'lishini aytadi. Ilgari
-                  // "Tahlil uchun avval bir nechta savol yeching" derdi —
-                  // lekin bu ota-onaning qo'lidagi ish emas, u savol
-                  // yechmaydi. Endi matn kimga qaratilgani to'g'ri.
                   return SizedBox(
                     height: 240,
                     child: EmptyState(
@@ -140,9 +115,6 @@ class _SectionTitle extends StatelessWidget {
       );
 }
 
-/// Ota-onaga xos uchta raqam. Ular `ChildSummary` da allaqachon bor edi va
-/// ota-ona kartochkasida ko'rsatilardi — bu ekranda esa nomaʼlum sababga
-/// ko'ra XP/daraja bilan almashtirilgan edi.
 class _SignalRow extends StatelessWidget {
   const _SignalRow({required this.child});
   final ChildSummary child;

@@ -16,16 +16,6 @@ import '../referral/invite_friends.dart';
 import '../subjects/subjects.dart';
 import 'leaderboard_data.dart';
 
-/// Reyting ekrani.
-///
-/// Ilgari bu ekran shunchaki bir xil qatorlar ro'yxati edi — musobaqa hissi
-/// yo'q edi. Endi eng yuqori uchtasi PODIUM ko'rinishida: birinchi o'rin
-/// o'rtada va balandroq turadi. Bu shunchaki bezak emas — o'quvchi bir
-/// qarashda "cho'qqi" qayerdaligini ko'radi va o'z qatorigacha bo'lgan masofa
-/// aniq bo'ladi.
-///
-/// Qolgan qatorlar oddiy ro'yxat; foydalanuvchining o'z qatori ajratib
-/// ko'rsatiladi, ro'yxatdan tashqarida bo'lsa pastda yopishib turadi.
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -36,7 +26,7 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 3, vsync: this);
-  String? _subjectCode; // tanlangan fan bo'yicha reyting
+  String? _subjectCode;
 
   @override
   void dispose() {
@@ -74,7 +64,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 }
 
-/// Fan tabi: yuqorida fan tanlagich, pastida shu fan bo'yicha reyting.
 class _SubjectBoard extends ConsumerWidget {
   const _SubjectBoard({required this.selected, required this.onSelect});
 
@@ -131,7 +120,6 @@ class _SubjectBoard extends ConsumerWidget {
   }
 }
 
-/// Hudud tabi: kirgan foydalanuvchining hududi bo'yicha.
 class _RegionBoard extends ConsumerWidget {
   const _RegionBoard();
 
@@ -194,21 +182,10 @@ class _BoardList extends ConsumerWidget {
           );
         }
 
-        // YOLG'IZ HOLAT. Bitta qatorli "reyting" ma'lumotlar bazasining
-        // tasodifan bitta yozuvi qolgan jadvaliga o'xshaydi — mahsulotga
-        // emas. Bu holat ATAYLAB boshqacha ko'rsatiladi: o'rin va ball
-        // yirik, ostida esa nima uchun ro'yxat bo'shligi tushuntiriladi va
-        // buni tuzatadigan yagona harakat taklif qilinadi.
-        //
-        // Soxta ishtirokchi QO'SHILMAYDI. Bo'shlikni to'ldirish uchun
-        // o'ylab topilgan ismlar birinchi qarashda ishlaydi, keyin esa
-        // butun reytingga ishonchni yo'q qiladi.
         if (data.entries.length == 1 && data.entries.first.isMe) {
           return _SoloBoard(entry: data.entries.first);
         }
 
-        // Podium faqat uchtadan kam bo'lmaganda mantiqiy: ikkita ishtirokchili
-        // "podium" bo'sh va g'alati ko'rinadi.
         final hasPodium = data.entries.length >= 3;
         final top = hasPodium ? data.entries.take(3).toList() : const <LbEntry>[];
         final rest = hasPodium ? data.entries.skip(3).toList() : data.entries;
@@ -231,9 +208,6 @@ class _BoardList extends ConsumerWidget {
                             _Podium(top: top).enterFade(),
                             const Gap.lg(),
                           ],
-                          // Qatorlar yuqoridan pastga ketma-ket ochiladi —
-                          // reyting "hisoblanayotgandek" ko'rinadi va ko'z
-                          // birinchi o'rinlardan boshlab pastga suriladi.
                           for (final (i, e) in rest.indexed) ...[
                             _Row(entry: e).enterStaggered(i),
                             const Gap.sm(),
@@ -254,11 +228,6 @@ class _BoardList extends ConsumerWidget {
   }
 }
 
-/// Reytingda faqat foydalanuvchining o'zi bor.
-///
-/// Ro'yxat ko'rinishida bu "1 · Siz · 3 ball" degan bitta qator bo'lardi va
-/// sahifaning qolgan qismi bo'sh qolardi. Bu yerda esa bo'shlik MA'NOLI:
-/// natija yirik ko'rsatiladi, sababi aytiladi va keyingi qadam beriladi.
 class _SoloBoard extends ConsumerWidget {
   const _SoloBoard({required this.entry});
 
@@ -294,7 +263,6 @@ class _SoloBoard extends ConsumerWidget {
                       ),
                       child: Column(
                         children: [
-                          // Medal — bu ekrandagi yagona yirik belgi.
                           const Icon(Icons.emoji_events_rounded,
                               size: 56, color: AppColors.gold),
                           const Gap.md(),
@@ -320,8 +288,6 @@ class _SoloBoard extends ConsumerWidget {
                     ),
                     const Gap.sm(),
                     TextButton(
-                      // Reyting bosh ekrandagi mashqdan o'sadi — shu sababli
-                      // ikkinchi harakat "Asosiy" tabiga qaytarish.
                       onPressed: () =>
                           ref.read(homeTabProvider.notifier).state = 0,
                       child: Text(l.lbSoloPractice),
@@ -342,7 +308,6 @@ class _SoloBoard extends ConsumerWidget {
 class _Podium extends StatelessWidget {
   const _Podium({required this.top});
 
-  /// Aynan uchta element, reyting tartibida (1, 2, 3).
   final List<LbEntry> top;
 
   @override
@@ -418,9 +383,6 @@ class _PodiumSpot extends StatelessWidget {
         else
           const SizedBox(height: 22),
         const Gap.xs(),
-        // Medal rangidagi halqa ICHIDA foydalanuvchining o'z avatari:
-        // o'rin (oltin/kumush/bronza) va shaxs (rang + bosh harf) — ikki
-        // xil ma'lumot, shuning uchun ikkalasi ham ko'rinadi.
         Container(
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
@@ -450,7 +412,6 @@ class _PodiumSpot extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const Gap.sm(),
-        // Poydevor — balandligi o'rinni ko'rsatadi.
         Container(
           height: pedestal,
           margin: const EdgeInsets.symmetric(horizontal: Spacing.xs),
@@ -468,8 +429,6 @@ class _PodiumSpot extends StatelessWidget {
     );
   }
 
-  // `_initial` olib tashlandi: bosh harfni endi `UserAvatar` o'zi hisoblaydi
-  // (`avatarInitials`), ya'ni mantiq bitta joyda.
 }
 
 class _Row extends StatelessWidget {
@@ -502,8 +461,6 @@ class _Row extends StatelessWidget {
           color: entry.isMe ? scheme.primary : palette.hairline,
           width: entry.isMe ? 1.4 : 1,
         ),
-        // Qatorlar oq fonda "yopishib" turmasin: yengil soya har birini
-        // alohida kartochka qilib ko'rsatadi.
         boxShadow: Shadows.card(context),
       ),
       child: Row(
@@ -537,8 +494,6 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// Foydalanuvchi ro'yxatning ko'rinadigan qismidan tashqarida bo'lsa — pastda
-/// yopishib turadigan qator. Skroll qilmasdan o'z o'rnini ko'rsatadi.
 class _MeCard extends StatelessWidget {
   const _MeCard({required this.entry});
 
@@ -599,7 +554,6 @@ class _LoginBanner extends StatelessWidget {
   }
 }
 
-/// Yuklanish skeleti — podium + uchta qator.
 class _BoardSkeleton extends StatelessWidget {
   const _BoardSkeleton();
 

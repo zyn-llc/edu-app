@@ -1,18 +1,11 @@
 -- =============================================================================
 --  010_retire_legacy_duplicates.sql
---  Eski geo yuklamasi legacy ID formatida saqlangan ('geo_g10_q836'), yangi
 --  canonical yuklama esa zero-padded ('geo_g10_q0836'). source_ref mos
---  kelmagani uchun idempotency ishlamagan -> bir savol bazada ikki marta.
 --
---  O'CHIRMAYMIZ: submissions.question_id FK'da ON DELETE yo'q (RESTRICT), va
---  o'quvchi javob tarixini yo'qotmaslik kerak. O'rniga status='retired' —
---  content API uch joyda ham status='active' filtrlaydi, ya'ni retired savol
---  hech qayerda ko'rsatilmaydi.
 --
 --    docker compose exec -T db psql -U edu -d edu < sql/010_retire_legacy_duplicates.sql
 -- =============================================================================
 
--- ---- 1) OLDIN KO'R: nechta satr retired bo'ladi -----------------------------
 SELECT count(*) AS "retire bo'ladigan legacy dublikatlar"
 FROM questions q
 WHERE q.status = 'active'
@@ -25,7 +18,6 @@ WHERE q.status = 'active'
         AND n.id <> q.id
   );
 
--- ---- 2) Juftligi YO'Q legacy satrlar (bular saqlanadi, faqat xabar uchun) ---
 SELECT count(*) AS "juftsiz legacy satrlar (active qoladi)"
 FROM questions q
 WHERE q.status = 'active'

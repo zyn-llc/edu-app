@@ -4,53 +4,23 @@ import 'package:flutter/material.dart';
 
 import '../theme/spacing.dart';
 
-/// Ilova iqtisodiyotining vizual tili: **noncoin** va **XP**.
+/// Reward colours.
 ///
-/// ## Nega tanga emas
-///
-/// Oltin tanga (🪙) — dunyodagi har uchinchi ilovada bor. U hech narsa
-/// anglatmaydi va brendga tegishli emas: skrinshotda ko'rgan odam qaysi
-/// ilova ekanini ayta olmaydi. **noncoin** esa nomi ham, shakli ham
-/// Topag'onniki: qirrali kristall, ikki rangli, 24 px da ham 128 px da ham
-/// tanib olinadi.
-///
-/// ## Backend O'ZGARMAYDI
-///
-/// Serverda maydon nomi baribir `coins` bo'lib qoladi (`/v1/me`,
-/// `GradeResult.coins_awarded`, `challenges.stake`). Bu ATAYLAB: valyuta
-/// nomi — mahsulot qarori, ma'lumot sxemasi emas. Migratsiya, API versiyasi
-/// va mavjud hisoblarni buzmasdan nomni istalgan vaqtda yana o'zgartirish
-/// mumkin. Faqat UI qatlami «noncoin» deydi.
-///
-/// ## Ikki alohida valyuta
-///
-/// * **XP** — o'sish. Kamaymaydi, sarflanmaydi, darajani beradi.
-/// * **noncoin** — sarflanadigan resurs: bellashuv garovi, kelajakda
-///   avatar bezaklari, qiyin savolni o'tkazib yuborish.
-///
-/// Ikkalasining rangi ham FARQ QILADI (XP — apelsin/energiya, noncoin —
-/// binafsha-siyoh/qimmatbaho), aks holda foydalanuvchi ikkita raqamni bitta
-/// narsa deb o'qiydi.
+/// XP and coins are separate currencies and never share a colour:
+/// warm orange for XP, cool violet for coins.
 abstract final class Rewards {
-  /// XP rangi — brend apelsini. "Energiya" ma'nosi.
   static const xp = Color(0xFFF8721C);
 
-  /// noncoin rangi — sovuq binafsha. Apelsindan aniq ajraladi va
-  /// "qimmatbaho tosh" assotsiatsiyasini beradi.
+  /// Coin colour, kept clearly apart from the XP orange.
   static const coinDark = Color(0xFF6A53C7);
 
   /// Kristallning yorug' qirralari.
   static const coinLight = Color(0xFF9C86F0);
 }
 
-/// noncoin belgisi — qirrali kristall.
+/// The coin mark: a faceted crystal.
 ///
-/// Shakl: olti burchak, ichida yuqoridan tushgan yorug'lik chizig'i. Ikki
-/// rang — bittasi bilan u yassi dog' bo'lib qolardi.
 ///
-/// [sparkle] `true` bo'lsa har ~5 soniyada ustidan yorug'lik yaltirab
-/// o'tadi. Bu faqat KATTA ko'rinishlarda (stat kartochkasi) yoqiladi:
-/// ro'yxatdagi 20 ta yaltiragan ikonka — diskoteka.
 class NonCoinIcon extends StatefulWidget {
   const NonCoinIcon({super.key, this.size = 20, this.sparkle = false});
 
@@ -117,7 +87,6 @@ class _GemPainter extends CustomPainter {
     final cx = w / 2;
 
     // Olti burchak: yuqori va pastki uchi o'tkir, yon qirralari tekis.
-    // Bu "tosh kesilgan" shakl — doira "tanga" bo'lib qolardi.
     final outer = Path()
       ..moveTo(cx, 0)
       ..lineTo(w * 0.94, h * 0.28)
@@ -137,8 +106,6 @@ class _GemPainter extends CustomPainter {
         ).createShader(Offset.zero & size),
     );
 
-    // Ichki qirra — yuqori uchdan yon burchaklarga tushadigan ikki chiziq.
-    // Aynan shu ikki chiziq shaklni "hajmli" qiladi.
     final facet = Paint()
       ..color = Colors.white.withValues(alpha: 0.55)
       ..style = PaintingStyle.stroke
@@ -160,8 +127,6 @@ class _GemPainter extends CustomPainter {
 
     if (t <= 0) return;
 
-    // Yaltirash: yupqa oq chiziq shakl ustidan diagonal o'tadi. Siklning
-    // faqat 18% ida ko'rinadi — qolgan vaqtda tosh tinch turadi.
     const window = 0.18;
     if (t > window) return;
     final u = t / window; // 0..1
@@ -184,9 +149,6 @@ class _GemPainter extends CustomPainter {
 
 /// XP belgisi — olti burchak ichida chaqmoq.
 ///
-/// Nega ramka: yalang'och `Icons.bolt` matn yonida shunchaki ikonka bo'lib
-/// qoladi. Ramka uni BELGIGA aylantiradi — noncoin kristalli bilan bir
-/// oilada ko'rinadi va ikkalasi birga "iqtisodiyot tili" bo'ladi.
 class XpIcon extends StatelessWidget {
   const XpIcon({super.key, this.size = 20, this.color});
 
@@ -241,7 +203,6 @@ class _HexPainter extends CustomPainter {
   bool shouldRepaint(_HexPainter old) => old.color != color;
 }
 
-/// «⚡ 12 XP» / «✦ 480 noncoin» ko'rinishidagi chip.
 class RewardChip extends StatelessWidget {
   const RewardChip.xp(this.text, {super.key})
       : _coin = false,
@@ -276,20 +237,12 @@ class RewardChip extends StatelessWidget {
   }
 }
 
-/// Mukofot yuqoriga uchib ketadi: «+12 XP ⚡» paydo bo'ladi, ko'tariladi,
 /// so'nadi.
 ///
-/// ## Nega bu kerak
 ///
-/// Raqamning jimgina o'zgarishi — hisobot. Uchib ketgan «+12» — voqea.
-/// O'yin dizaynida bu «juicy feedback» deb ataladi va u yagona narsa
-/// bo'lib, foydalanuvchini keyingi savolga majburlamasdan undaydi.
 ///
-/// ## Nega Overlay
 ///
-/// Animatsiya `Overlay` da ijro etiladi, ya'ni u karta chegarasidan
 /// TASHQARIGA chiqib keta oladi (`Stack` ichida `clipBehavior` uni kesib
-/// tashlagan bo'lardi) va layoutga umuman ta'sir qilmaydi — sahifa
 /// sakramaydi.
 ///
 /// ## Ishlatish
@@ -298,8 +251,6 @@ class RewardChip extends StatelessWidget {
 /// RewardFly.show(context, xp: 10, coins: 2);
 /// ```
 ///
-/// `context` — mukofot QAYERDAN uchishini belgilaydi (odatda javob
-/// tugmasi yoki fikr-mulohaza bloki).
 abstract final class RewardFly {
   static void show(
     BuildContext context, {
@@ -309,7 +260,6 @@ abstract final class RewardFly {
     String coinLabel = 'noncoin',
   }) {
     if (xp <= 0 && coins <= 0) return;
-    // OS darajasida animatsiya o'chirilgan bo'lsa — hech narsa qilmaymiz.
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return;
 
     final overlay = Overlay.maybeOf(context);
@@ -322,8 +272,6 @@ abstract final class RewardFly {
     late final OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => Positioned(
-        // Chip kengligi oldindan noma'lum, shuning uchun markazga
-        // `FractionalTranslation` bilan keltiramiz.
         left: origin.dx,
         top: origin.dy,
         child: FractionalTranslation(
@@ -334,8 +282,6 @@ abstract final class RewardFly {
             xpLabel: xpLabel,
             coinLabel: coinLabel,
             onDone: () {
-              // `mounted` tekshiruvi shart: ekran animatsiya tugashidan
-              // oldin yopilsa entry allaqachon olib tashlangan bo'ladi.
               if (entry.mounted) entry.remove();
             },
           ),
@@ -391,9 +337,7 @@ class _FlyBodyState extends State<_FlyBody> with SingleTickerProviderStateMixin 
         builder: (_, child) {
           final t = _c.value;
           // Ko'tarilish sekinlashib boradi (easeOut) — havoga otilgan
-          // narsa kabi. Chiziqli harakat "lift" bo'lib ko'rinardi.
           final dy = -64 * Curves.easeOutCubic.transform(t);
-          // Boshida tez paydo bo'ladi, oxirgi 45% da so'nadi.
           final opacity = t < 0.12
               ? t / 0.12
               : (t > 0.55 ? 1 - (t - 0.55) / 0.45 : 1.0);

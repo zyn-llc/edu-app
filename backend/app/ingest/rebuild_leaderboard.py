@@ -31,7 +31,6 @@ import re
 import sys
 from collections import defaultdict
 
-
 def resolve_url() -> str:
     """`.env` dagi manzilni HOST mashinadan ishlaydigan shaklga keltiradi.
 
@@ -45,7 +44,6 @@ def resolve_url() -> str:
     """
     from app.ingest.dsn import resolve_url as _resolve
     return _resolve()
-
 
 async def main(dry: bool) -> int:
     from sqlalchemy import select, func as sqlfunc
@@ -127,7 +125,6 @@ async def main(dry: bool) -> int:
             tmp = key + ":rebuild"
             await redis.delete(tmp)
             if mapping:
-                # ZADD bo'laklab: bitta ulkan buyruq Redis'ni qotirmasin.
                 items = list(mapping.items())
                 for i in range(0, len(items), 500):
                     await redis.zadd(tmp, dict(items[i:i + 500]))
@@ -139,7 +136,6 @@ async def main(dry: bool) -> int:
     finally:
         await close_redis()
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(asyncio.run(main("--dry-run" in sys.argv)))

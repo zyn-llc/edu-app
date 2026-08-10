@@ -25,12 +25,8 @@ Future<void> main() async {
   final savedLocale = prefs.getString(PrefKeys.locale) ?? 'uz-Latn';
   final savedSound = prefs.getBool(PrefKeys.sound) ?? true;
 
-  // Bellashuv havolasi: `https://topagon.uz/?join=KOD`. Manzil FAQAT shu
-  // yerda, ilova ko'tarilishidan oldin o'qiladi — keyinroq Flutter Web
-  // manzilni o'zgartirib yuborishi mumkin.
+  // Read the deep-link codes before the router can rewrite the URL.
   final joinCode = pendingJoinCodeFromUrl();
-  // Umumiy taklif havolasi: `https://topagon.uz/?ref=USERNAME`. `?join=`
-  // dan farqli o'laroq bellashuvga emas, ilovaning o'ziga taklif.
   final referrer = pendingReferrerFromUrl();
 
   runApp(ProviderScope(
@@ -79,16 +75,9 @@ class TopagonApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('uz'), Locale('ru')],
-      // Oldin bu yerda qattiq `maxWidth: 460` turardi — ilova desktopda va
-      // webda telefon shaklidagi tor ustunga qamalib qolar edi. Endi kenglik
-      // cheklovi yo'q: `HomeShell` keng ekranda `NavigationRail` ga o'tadi,
-      // matnli ichki ekranlar esa `ContentWidth` bilan o'raladi.
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         return MediaQuery(
-          // Tizim shrifti juda katta qilib qo'yilsa (Androidda 2.0 gacha
-          // mumkin) tugmalardagi matn sig'may, layout overflow beradi.
-          // 1.3 — o'qish uchun yetarli, dizaynni buzmaydigan chegara.
           data: mq.copyWith(
             textScaler: mq.textScaler.clamp(
               minScaleFactor: 0.85,

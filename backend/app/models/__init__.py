@@ -18,10 +18,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-
 def _uuid_pk():
     return mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
 
 class Subject(Base):
     __tablename__ = "subjects"
@@ -34,7 +32,6 @@ class Subject(Base):
     translations: Mapped[list["SubjectTranslation"]] = relationship(
         back_populates="subject", lazy="selectin")
 
-
 class SubjectTranslation(Base):
     __tablename__ = "subject_translations"
     subject_id: Mapped[uuid.UUID] = mapped_column(
@@ -42,7 +39,6 @@ class SubjectTranslation(Base):
     lang: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String)
     subject: Mapped[Subject] = relationship(back_populates="translations")
-
 
 class Topic(Base):
     __tablename__ = "topics"
@@ -55,14 +51,12 @@ class Topic(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     translations: Mapped[list["TopicTranslation"]] = relationship(lazy="selectin")
 
-
 class TopicTranslation(Base):
     __tablename__ = "topic_translations"
     topic_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True)
     lang: Mapped[str] = mapped_column(String, primary_key=True)
     title: Mapped[str] = mapped_column(Text)
-
 
 class Question(Base):
     __tablename__ = "questions"
@@ -87,7 +81,6 @@ class Question(Base):
         lazy="selectin")
     options: Mapped[list["Option"]] = relationship(lazy="selectin")
 
-
 class QuestionTranslation(Base):
     __tablename__ = "question_translations"
     question_id: Mapped[uuid.UUID] = mapped_column(
@@ -95,7 +88,6 @@ class QuestionTranslation(Base):
     lang: Mapped[str] = mapped_column(String, primary_key=True)
     stem: Mapped[str] = mapped_column(Text)
     explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
-
 
 class Option(Base):
     __tablename__ = "options"
@@ -109,14 +101,12 @@ class Option(Base):
     # NO is_correct column — by design.
     translations: Mapped[list["OptionTranslation"]] = relationship(lazy="selectin")
 
-
 class OptionTranslation(Base):
     __tablename__ = "option_translations"
     option_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("options.id", ondelete="CASCADE"), primary_key=True)
     lang: Mapped[str] = mapped_column(String, primary_key=True)
     text: Mapped[str] = mapped_column(Text)
-
 
 class Submission(Base):
     __tablename__ = "submissions"
@@ -131,7 +121,6 @@ class Submission(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-
 # --------------------------------------------------------------------------- #
 #  Phase 2 — auth, gamification, parent link                                  #
 #  (tables already exist in sql/001_init.sql; mapped here as each lands)       #
@@ -141,37 +130,21 @@ class User(Base):
     id: Mapped[uuid.UUID] = _uuid_pk()
     role: Mapped[str] = mapped_column(String, default="student")  # student|parent|admin
     phone: Mapped[str | None] = mapped_column(String, unique=True, nullable=True)
-    # 012: Telegram orqali kirish. Telefonsiz akkauntlar uchun phone NULL qoladi.
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True,
                                                     nullable=True)
     display_name: Mapped[str | None] = mapped_column(String, nullable=True)
-    # 022: parol bilan kirish uchun foydalanuvchi nomi. NULL = bu hisob faqat
     # Telegram/taklif kodi orqali kiradi. Noyoblik `lower(username)` bo'yicha
-    # QISMIY indeks bilan ta'minlanadi (022), shuning uchun bu yerda
-    # `unique=True` YO'Q — u NULL'lar ustida ham indeks yaratib, qismiy
-    # indeksni takrorlagan bo'lardi.
     username: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    # 021: avatar = bosh harf + palitra indeksi (0..11). Rasm yuklash yo'q —
-    # obyekt saqlash, moderatsiya va CDN kerak bo'lardi. NULL bo'lsa klient
-    # ism hash'idan barqaror rang tanlaydi.
     avatar_color: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     region_code: Mapped[str | None] = mapped_column(String, nullable=True)
     grade: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     locale: Mapped[str | None] = mapped_column(String, nullable=True, default="uz-Latn")
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
-    # 024: "do'stlaringizni taklif qiling" havolasidan kelganda, taklif
-    # qilgan foydalanuvchining NOMI shu yerga yoziladi (snapshot, FK emas —
-    # sabab: 024_referral.sql). Mukofotsiz — faqat statistika uchun.
     referred_by: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    # 028: Telegram orqali qaytarish xabarlari. NULL = foydalanuvchi hali
-    # tanlamagan, bu YOQILGAN deb hisoblanadi (`IS DISTINCT FROM false`).
-    # Standart `true` emas: migratsiya paytida mavjud hisoblarni jim ravishda
-    # bir tomonga surib qo'ymaslik uchun.
     tg_notifications: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
-
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
@@ -185,14 +158,12 @@ class RefreshToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-
 class Guardianship(Base):
     __tablename__ = "guardianship"
     parent_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     student_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-
 
 class UserProgress(Base):
     __tablename__ = "user_progress"
@@ -204,7 +175,6 @@ class UserProgress(Base):
     last_active: Mapped[date | None] = mapped_column(Date, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
-
 
 class CoinTransaction(Base):
     __tablename__ = "coin_transactions"
@@ -218,7 +188,6 @@ class CoinTransaction(Base):
     ref_id: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
-
 
 class Challenge(Base):
     __tablename__ = "challenges"
@@ -242,7 +211,6 @@ class Challenge(Base):
                                                  server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-
 class ChallengeResult(Base):
     __tablename__ = "challenge_results"
     challenge_id: Mapped[uuid.UUID] = mapped_column(
@@ -255,7 +223,6 @@ class ChallengeResult(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-
 class Feedback(Base):
     __tablename__ = "feedback"
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -267,7 +234,6 @@ class Feedback(Base):
     status: Mapped[str] = mapped_column(String, default="new")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
-
 
 # --------------------------------------------------------------------------- #
 #  009 — daftar (notes) + yangiliklar (announcements)                          #
@@ -288,7 +254,6 @@ class Note(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-
 class Announcement(Base):
     __tablename__ = "announcements"
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -304,7 +269,6 @@ class Announcement(Base):
     translations: Mapped[list["AnnouncementTranslation"]] = relationship(
         lazy="selectin")
 
-
 class AnnouncementTranslation(Base):
     __tablename__ = "announcement_translations"
     announcement_id: Mapped[uuid.UUID] = mapped_column(
@@ -313,10 +277,6 @@ class AnnouncementTranslation(Base):
     title: Mapped[str] = mapped_column(Text)
     body: Mapped[str] = mapped_column(Text)
 
-
-# --------------------------------------------------------------------------- #
-#  011 — taklif kodlari (telefonsiz kirish)                                    #
-# --------------------------------------------------------------------------- #
 class InviteCode(Base):
     __tablename__ = "invite_codes"
     code: Mapped[str] = mapped_column(String, primary_key=True)
@@ -330,7 +290,6 @@ class InviteCode(Base):
         DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
-
 
 class InviteRedemption(Base):
     __tablename__ = "invite_redemptions"

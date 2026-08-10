@@ -6,21 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:topagon/core/prefs.dart';
 import 'package:topagon/main.dart';
 
-/// DESKTOP kengligida ilova ko'tariladimi.
 ///
-/// NEGA ALOHIDA TEST. `widget_test.dart` standart test o'lchamida (800x600)
 /// ishlaydi — u yerda pastki `NavigationBar` chiziladi va `NavigationRail`
-/// yo'li UMUMAN sinalmaydi. Natijada rail'ga `Expanded` qo'yilgan
-/// o'zgarish barcha testlardan va `flutter analyze` dan o'tib, prodda OQ
-/// EKRAN berdi:
 ///
 ///     BoxConstraints.debugAssertIsValid → RenderFlex._computeSizes
 ///     → RenderIntrinsicHeight.performLayout
 ///
-/// Sabab: rail `IntrinsicHeight` ichida (kalta ekranda toshmasligi uchun),
-/// intrinsic o'lchov esa flex bolani hisoblay olmaydi.
 ///
-/// Bu test ikkala kenglikni ham qamrab oladi, ya'ni shu turdagi xato
 /// boshqa jim o'tolmaydi.
 void main() {
   Future<void> pumpAt(WidgetTester tester, Size size) async {
@@ -38,24 +30,18 @@ void main() {
         child: const TopagonApp(),
       ),
     );
-    // Freymlar ketma-ketligi `widget_test.dart` dagi bilan bir xil va
-    // xuddi shu sababdan: mock javobi 220 ms kechikadi, `flutter_animate`
-    // esa har `Animate` uchun taymer qo'yadi va ular grid LAYOUT paytida
-    // tug'iladi — ya'ni birinchi freymdan keyin. Ularni bo'shatmasa test
-    // "A Timer is still pending" bilan yiqiladi.
-    // `pumpAndSettle` ISHLAMAYDI: ilovada uzluksiz animatsiyalar bor.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 800));
   }
 
-  testWidgets('rail kengligida (1440) layout xatosiz quriladi', (tester) async {
+  testWidgets('builds without layout errors at rail width (1440)', (tester) async {
     await pumpAt(tester, const Size(1440, 900));
     expect(tester.takeException(), isNull);
     expect(find.byType(NavigationRail), findsOneWidget);
   });
 
-  testWidgets('yoyilgan rail kengligida (1920) layout xatosiz quriladi',
+  testWidgets('builds without layout errors at extended rail width (1920)',
       (tester) async {
     await pumpAt(tester, const Size(1920, 1080));
     expect(tester.takeException(), isNull);
@@ -63,17 +49,14 @@ void main() {
   });
 
   // 27 dyuymli monitor. `WindowSize.extraLarge` markaziy ustunni 1440 px ga
-  // kengaytiradi va uni ikki yondan chegara chizig'iga o'raydi — ya'ni bu
   // kenglikda 1440/1920 dan BOSHQA vidjet daraxti quriladi. Qamrovsiz
-  // qoldirilsa, aynan shu yerda `LayoutBuilder` + `DecoratedBox` juftligi
-  // jim buzilib, faqat katta monitorli foydalanuvchida ko'rinardi.
-  testWidgets('keng monitorda (2560) layout xatosiz quriladi', (tester) async {
+  testWidgets('builds without layout errors on a wide monitor (2560)', (tester) async {
     await pumpAt(tester, const Size(2560, 1440));
     expect(tester.takeException(), isNull);
     expect(find.byType(NavigationRail), findsOneWidget);
   });
 
-  testWidgets('telefon kengligida (390) pastki navigatsiya chiqadi',
+  testWidgets('shows bottom navigation at phone width (390)',
       (tester) async {
     await pumpAt(tester, const Size(390, 844));
     expect(tester.takeException(), isNull);

@@ -7,23 +7,9 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/spacing.dart';
 
-/// Mehmon uchun ogohlantirish: natija saqlanmayapti.
-///
-/// NEGA KERAK: `api/v1/content.py` da XP, tanga va streak faqat
-/// `if not is_guest:` shoxida beriladi — mehmon uchun ATAYLAB hech narsa
-/// yozilmaydi (mehmon umumiy akkaunt, aks holda bitta hisobda hamma
-/// foydalanuvchining XP'si aralashib ketardi).
-///
-/// Lekin ilova buni hech qachon aytmasdi. Foydalanuvchi 10 ta savol yechib,
-/// XP ham, tanga ham o'zgarmaganini ko'rib, ilovani buzuq deb o'ylardi.
-/// Bu — bug emas, MULOQOT muammosi, va u konversiyaga to'g'ridan-to'g'ri
-/// ta'sir qiladi: aynan shu daqiqada ro'yxatdan o'tishga undash kerak.
-///
-/// Kirgan foydalanuvchida hech narsa ko'rsatilmaydi (`SizedBox.shrink`).
 class GuestNotice extends ConsumerWidget {
   const GuestNotice({super.key, this.compact = false});
 
-  /// Quiz ichida ko'rsatilganda — bitta qator, tugmasiz.
   final bool compact;
 
   @override

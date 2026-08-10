@@ -40,8 +40,6 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             _section(l.accountSection, p),
             _AccountCard(),
-            // Faqat kirgan foydalanuvchiga: mehmonda ulashadigan hisob
-            // yo'q, havola bo'lsa ham hech kimga bog'lanmaydi.
             if (auth.isAuthenticated) ...[
               const SizedBox(height: 10),
               _InviteFriendsCard(),
@@ -69,17 +67,12 @@ class SettingsScreen extends ConsumerWidget {
               onSelectionChanged: (s) =>
                   ref.read(localeCodeProvider.notifier).state = s.first,
             ),
-            // Ruscha tanlanganda darhol tushuntiramiz — foydalanuvchi
-            // savollar o'zbekcha qolganini keyin emas, SHU YERDA biladi.
             if (lang == 'ru') ...[
               const SizedBox(height: 10),
               Text(L10n.of(context).ruContentBody,
                   style: TextStyle(fontSize: 13, height: 1.4, color: p.muted)),
             ],
             const SizedBox(height: 22),
-            // Bo'lim sarlavhasi ATAYLAB yo'q. Ilgari bu yerda «Ovoz
-            // effektlari» ikki marta turardi: bo'lim sarlavhasi sifatida va
-            // darhol ostidagi qator nomi sifatida. Bitta almashtirgich uchun
             // alohida sarlavha ortiqcha.
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -88,9 +81,6 @@ class SettingsScreen extends ConsumerWidget {
               onChanged: (v) =>
                   ref.read(soundEnabledProvider.notifier).state = v,
             ),
-            // Telegram xabarlari — faqat Telegram bilan bog'langan hisobda.
-            // Boshqalarda tugma hech narsa qilmaydi, ya'ni uni ko'rsatish
-            // yolg'on va'da bo'lardi.
             if (auth.isAuthenticated) const _TelegramNotifySwitch(),
             const SizedBox(height: 22),
             _section(l.supportSection, p),
@@ -111,13 +101,8 @@ class SettingsScreen extends ConsumerWidget {
 
 /// Telegram xabarlari kaliti.
 ///
-/// Server bellashuv chaqiruvi, natija, muddat va uziladigan seriya haqida
-/// botdan xabar yuboradi (`app/services/notify.py`). Bu tugma — o'sha
 /// huquqning narxi: to'xtata olmaydigan odam botni bloklaydi, o'shanda esa
-/// Telegram orqali KIRISH yo'li ham yopiladi.
 ///
-/// `null` = foydalanuvchi hali tanlamagan; server buni "yoqilgan" deb
-/// hisoblaydi, shuning uchun kalit ham yoqilgan ko'rinadi.
 class _TelegramNotifySwitch extends ConsumerStatefulWidget {
   const _TelegramNotifySwitch();
 
@@ -158,9 +143,6 @@ class _TelegramNotifySwitchState extends ConsumerState<_TelegramNotifySwitch> {
   }
 }
 
-/// "Do'stlaringizni taklif qiling" — `_AccountCard` bilan bir xil qutida,
-/// lekin alohida karta: ikkalasini bitta katta blokka birlashtirish
-/// tugmani "hisob sozlamalari" bilan aralashtirib yuboradi.
 class _InviteFriendsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -264,8 +246,6 @@ class _AccountCard extends ConsumerWidget {
                 Text(name,
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w700)),
-                // Telefon yo'q bo'lsa (Telegram/parol bilan kirgan hisob)
-                // ilgari «O'quvchi · » bo'lib, oxirida osilgan nuqta
                 // qolardi.
                 Text(
                     user.phone == null || user.phone!.isEmpty

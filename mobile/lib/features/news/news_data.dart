@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_client.dart';
 
-/// A server-driven announcement. Adding one is a DB insert, not an app release.
 class Announcement {
   final String id;
   final String title;

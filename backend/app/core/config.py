@@ -1,11 +1,9 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # OpenAPI sarlavhasida va /health javobida ko'rinadi.
     app_name: str = "Topag'on"
     environment: str = "dev"
 
@@ -43,13 +41,8 @@ class Settings(BaseSettings):
     otp_debug_return: bool = True
 
     # --- SMS gateway --------------------------------------------------------
-    # 'console' (dev, faqat logga yozadi) | 'eskiz' (real SMS)
-    # | 'disabled' (telefon+OTP kirish butunlay yopiq — Eskiz tayyor bo'lmaganda
     #   taklif kodi va/yoki Telegram orqali kiriladi).
     sms_provider: str = "console"
-    # DIQQAT: Eskiz shabloni MODERATSIYADAN o'tgan matn bilan AYNAN mos
-    # bo'lishi shart. Bu satrni o'zgartirsang, Eskiz kabinetida shablonni ham
-    # yangilab, qayta tasdiqlatish kerak — aks holda SMS yetkazilmaydi.
     otp_message_template: str = "Topag'on tasdiqlash kodi: {code}"
     eskiz_base_url: str = "https://notify.eskiz.uz/api"
     eskiz_email: str = ""
@@ -77,33 +70,17 @@ class Settings(BaseSettings):
     # Guest user (pre-auth practice) — excluded from leaderboards.
     guest_user_id: str = "00000000-0000-0000-0000-000000000001"
 
-    # --- Alternativ kirish yo'llari (Eskiz tayyor bo'lmaganda) --------------
-    # Taklif kodi: telefonsiz akkaunt. Yopiq beta uchun.
     invite_login_enabled: bool = True
     invite_ip_hourly_cap: int = 10         # bir IP'dan soatiga kod urinishi
 
-    # 2026-08-07: nom+parol bilan RO'YXATDAN O'TISH (login emas!) taklif
-    # kodi talab qiladi. SABAB — bu yo'l hech qanday tashqi tekshiruvga
-    # bog'liq emas (SMS ham, Telegram ham yo'q), ya'ni cheklovi faqat IP
-    # bo'yicha soatiga 40 ta so'rov edi: skript proksi bilan istalgancha
-    # soxta hisob ocha oladi, Telegram yo'lidagi kabi "haqiqiy odam"
-    # barrieri yo'q. Yopiq beta davrida bu yoqilgan turadi: faqat 30
-    # sinovchiga berilgan kod bilan ro'yxatdan o'tish mumkin. Ommaviy
-    # ishga tushirilgandan keyin `false` qilinadi. Parol bilan KIRISH
-    # (login, mavjud hisob) bunga bog'liq emas — u doim ochiq.
     require_invite_for_password_register: bool = True
-    # Telegram: bot /start <nonce> qabul qiladi, ilova nonce'ni so'rab turadi.
     telegram_login_enabled: bool = False
-    telegram_bot_token: str = ""           # @BotFather bergan token
-    telegram_bot_username: str = ""        # '@' siz, deep link uchun
-    telegram_webhook_secret: str = ""      # webhook'ni faqat Telegram chaqirsin
+    telegram_bot_token: str = ""
+    telegram_bot_username: str = ""
+    telegram_webhook_secret: str = ""
     telegram_login_ttl_seconds: int = 600  # nonce yashash muddati
     telegram_api_base: str = "https://api.telegram.org"
-    # Murojaatlar shu chatga yuboriladi (shaxsiy chat yoki guruh ID si).
-    # 0 bo'lsa yuborilmaydi — faqat bazaga yoziladi.
-    # ID ni bilish: botga xabar yozing, keyin
     #   curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
-    # javobidagi `message.chat.id` ni oling. Guruh ID si manfiy bo'ladi.
     telegram_admin_chat_id: int = 0
 
     # --- Parent linking -----------------------------------------------------
@@ -168,7 +145,6 @@ class Settings(BaseSettings):
                     "every user can mint coins_per_ad × ads_per_day_cap coins "
                     "per day with one HTTP call.")
         return problems
-
 
 @lru_cache
 def get_settings() -> Settings:

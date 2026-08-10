@@ -27,12 +27,10 @@ router = APIRouter(prefix="/v1/announcements", tags=["announcements"])
 
 _FALLBACK = "uz"
 
-
 def _pick(translations, lang: str):
     by_lang = {t.lang: t for t in translations}
     return by_lang.get(lang) or by_lang.get(_FALLBACK) or (
         translations[0] if translations else None)
-
 
 @router.get("")
 async def list_announcements(
@@ -53,7 +51,6 @@ async def list_announcements(
         .limit(limit)
     )
     if grade is not None:
-        # grade IS NULL = hamma sinflar uchun umumiy xabar.
         stmt = stmt.where(or_(Announcement.grade.is_(None),
                               Announcement.grade == grade))
 
@@ -63,7 +60,7 @@ async def list_announcements(
     for a in rows:
         tr = _pick(a.translations, lang)
         if tr is None:
-            continue          # tarjimasiz xabar = to'liq bo'lmagan qoralama
+            continue
         items.append({
             "id": str(a.id),
             "kind": a.kind,

@@ -9,14 +9,6 @@ import '../../theme/app_colors.dart';
 import '../../core/breakpoints.dart';
 import '../referral/invite_friends.dart';
 
-/// Taklif kodi bilan kirish — telefon raqamisiz.
-///
-/// Nega bor: SMS shlyuzi tayyor bo'lmaganda ham yopiq beta ishlashi kerak.
-/// O'quvchi kodni Telegram orqali oladi, shu yerga kiritadi va darhol ichkarida
-/// bo'ladi. Kod bir martalik ham, guruhga umumiy ham bo'lishi mumkin.
-///
-/// Kod chiziqcha bilan (K7M4-X9QP) yoki kichik harflarda yozilsa ham ishlaydi —
-/// tozalash repozitoriyda ham, serverda ham bor.
 class InviteScreen extends ConsumerStatefulWidget {
   const InviteScreen({super.key});
 
@@ -109,8 +101,6 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
               textCapitalization: TextCapitalization.characters,
               inputFormatters: [
                 LengthLimitingTextInputFormatter(20),
-                // Katta harfga o'zi o'giradi. Kursor joyi saqlanadi — copyWith
-                // bilan matnni almashtirsak, kursor oxiriga sakrab ketardi.
                 TextInputFormatter.withFunction((_, next) => TextEditingValue(
                       text: next.text.toUpperCase(),
                       selection: next.selection,

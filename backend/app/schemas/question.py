@@ -18,7 +18,6 @@ from enum import Enum
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
-
 class QuestionType(str, Enum):
     mcq = "mcq"
     multi_select = "multi_select"
@@ -27,7 +26,6 @@ class QuestionType(str, Enum):
     matching = "matching"
     ordering = "ordering"
     open_text = "open_text"
-
 
 # --------------------------------------------------------------------------- #
 #  PUBLIC projection — safe to serialize to any client                         #
@@ -39,7 +37,6 @@ class PublicOption(BaseModel):
     text: str | None = None          # resolved for the requested language
     media_url: str | None = None
     # NOTE: intentionally no `is_correct`. The model cannot carry a key.
-
 
 class PublicQuestion(BaseModel):
     id: str
@@ -55,16 +52,11 @@ class PublicQuestion(BaseModel):
     options: list[PublicOption] = Field(default_factory=list)
     # NOTE: no explanation, no grading_spec, no correct flag — ever.
 
-
-# --------------------------------------------------------------------------- #
-#  GRADING projection — SERVER ONLY, never a response model                    #
-# --------------------------------------------------------------------------- #
 class GradingQuestion(BaseModel):
     id: str
     type: QuestionType
     max_score: int = 1
     grading_spec: dict[str, Any]     # *** answer key lives here, server-side ***
-
 
 # --------------------------------------------------------------------------- #
 #  Submission + result                                                         #
@@ -83,7 +75,6 @@ class SubmissionIn(BaseModel):
     payload: dict[str, Any]
     response_ms: int | None = None
 
-
 class GradeResult(BaseModel):
     question_id: str
     is_correct: bool
@@ -93,11 +84,7 @@ class GradeResult(BaseModel):
     # see the right answer and the explanation. Never present on PublicQuestion.
     correct_option_ids: list[str] = Field(default_factory=list)
     explanation: str | None = None
-    # Mukofot hisoboti — klient "+10 XP" chipini shu maydonlardan chizadi.
-    # `awarded=False` bo'lsa sabab `reward_reason` da: mehmon, takroriy javob,
-    # yoki noto'g'ri javob. Ilgari klient bu farqni bilmasdi va foydalanuvchi
-    # "XP o'smadi" deb o'ylardi — aslida savol oldin yechilgan bo'lardi.
     xp_awarded: int = 0
     coins_awarded: int = 0
-    coins_delta: int = 0          # jarima bilan birga: manfiy ham bo'lishi mumkin
+    coins_delta: int = 0
     reward_reason: str | None = None   # guest | repeat | wrong | ok

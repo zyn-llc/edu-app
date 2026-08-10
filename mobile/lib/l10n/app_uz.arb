@@ -418,6 +418,7 @@
   "pwRegisterTitle": "Ro‘yxatdan o‘tish",
   "pwLoginLead": "Foydalanuvchi nomingiz va parolingizni kiriting.",
   "pwRegisterLead": "Nom va parol tanlang. Telegram kerak emas.",
+  "pwJoinLead": "Sizni bellashuvga chaqirishdi ⚔️ Nom va parol tanlang — taklif kodi kerak emas.",
   "pwUsernameLabel": "Foydalanuvchi nomi",
   "pwPasswordLabel": "Parol",
   "pwPasswordHint": "Kamida 6 belgi",

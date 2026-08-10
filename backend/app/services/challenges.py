@@ -41,7 +41,6 @@ _settings = get_settings()
 
 _ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no ambiguous 0/O/1/I
 
-
 class ChallengeError(Exception):
     def __init__(self, status: int, title: str, detail: str | None = None):
         self.status = status
@@ -49,14 +48,11 @@ class ChallengeError(Exception):
         self.detail = detail
         super().__init__(title)
 
-
 def _gen_code() -> str:
     return "".join(secrets.choice(_ALPHABET) for _ in range(6))
 
-
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
 
 # --------------------------------------------------------------------------- #
 #  Create / join / cancel                                                     #
@@ -77,7 +73,6 @@ async def create(
         raise ChallengeError(400, "Bad stake",
                              f"0–{_settings.challenge_max_stake} coins")
 
-    # Freeze the question set now (server-picked, identical for both players).
     stmt = select(Question.id).where(
         Question.subject_id == subject_id, Question.status == "active")
     if grade is not None:
@@ -113,7 +108,6 @@ async def create(
     await db.flush()
     return ch
 
-
 async def join(db: AsyncSession, opponent_id: uuid.UUID, code: str) -> Challenge:
     ch = (await db.execute(
         select(Challenge)
@@ -138,7 +132,6 @@ async def join(db: AsyncSession, opponent_id: uuid.UUID, code: str) -> Challenge
     ch.status = "active"
     return ch
 
-
 async def cancel(db: AsyncSession, user_id: uuid.UUID, challenge_id: uuid.UUID) -> Challenge:
     ch = await _get(db, challenge_id, lock=True)
     if ch.creator_id != user_id:
@@ -150,7 +143,6 @@ async def cancel(db: AsyncSession, user_id: uuid.UUID, challenge_id: uuid.UUID) 
         await coins.credit(db, ch.creator_id, ch.stake, "challenge_refund",
                            ref_type="challenge", ref_id=str(ch.id))
     return ch
-
 
 # --------------------------------------------------------------------------- #
 #  Play                                                                       #
@@ -239,7 +231,6 @@ async def submit_result(
         "settled": settled,
     }
 
-
 async def _settle(db: AsyncSession, ch: Challenge) -> dict:
     """Both results in: winner takes the pot; draw refunds both. Conserves coins
     exactly (pot = 2*stake in every branch)."""
@@ -263,7 +254,6 @@ async def _settle(db: AsyncSession, ch: Challenge) -> dict:
                                ref_type="challenge", ref_id=str(ch.id))
     return {"winner_id": str(ch.winner_id) if ch.winner_id else None, "pot": pot}
 
-
 # --------------------------------------------------------------------------- #
 #  Read + expiry                                                              #
 # --------------------------------------------------------------------------- #
@@ -280,7 +270,6 @@ async def _get(db: AsyncSession, challenge_id: uuid.UUID, *, lock: bool = False)
     if ch is None:
         raise ChallengeError(404, "Challenge not found")
     return ch
-
 
 async def _lazy_expire(db: AsyncSession, ch: Challenge) -> None:
     """Expiry is applied on read (no cron needed yet). Every escrowed stake is
@@ -304,7 +293,6 @@ async def _lazy_expire(db: AsyncSession, ch: Challenge) -> None:
             await coins.credit(db, ch.opponent_id, ch.stake, "challenge_refund",
                                ref_type="challenge", ref_id=str(ch.id))
 
-
 async def list_mine(db: AsyncSession, user_id: uuid.UUID, limit: int = 30) -> list[Challenge]:
     rows = (await db.execute(
         select(Challenge).where(
@@ -315,13 +303,9 @@ async def list_mine(db: AsyncSession, user_id: uuid.UUID, limit: int = 30) -> li
         await _lazy_expire(db, ch)
     return rows
 
-
 async def get_for_participant(
     db: AsyncSession, user_id: uuid.UUID, challenge_id: uuid.UUID
 ) -> Challenge:
-    # `lock=True` — bu yo'l ham `_lazy_expire` chaqiradi va u YOZADI. Bitta
-    # satr uchun qulf arzon, va u parallel so'rovlarni behuda rollback
-    # qilishdan qutqaradi (to'g'rilikning o'zi 026 indeksida).
     ch = await _get(db, challenge_id, lock=True)
     await _lazy_expire(db, ch)
     if user_id not in (ch.creator_id, ch.opponent_id):

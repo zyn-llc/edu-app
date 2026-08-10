@@ -20,18 +20,11 @@ class OtpRequest {
       );
 }
 
-/// Telegram kirish sessiyasi — server bergan bir martalik havola.
 class TelegramLogin {
   final String nonce;
   final String deepLink;
   final int expiresInSeconds;
 
-  /// Bot tasdiqlash tugmasida ko'rsatadigan kod. Foydalanuvchi uni EKRANDAGI
-  /// kod bilan solishtiradi — usiz birov yuborgan havolani bosgan odam
-  /// bilmasdan o'z hisobiga kirishni tasdiqlab yuborardi.
-  ///
-  /// Eski server bu maydonni bermaydi; o'shanda bo'sh qoladi va ekran
-  /// kodni umuman ko'rsatmaydi (eski, tasdiqsiz oqim ishlaydi).
   final String confirmCode;
 
   TelegramLogin(this.nonce, this.deepLink, this.expiresInSeconds,
@@ -45,27 +38,13 @@ class TelegramLogin {
       );
 }
 
-/// Serverda qaysi kirish yo'llari yoqilgan (`GET /v1/auth/methods`).
-///
-/// Prodda `SMS_PROVIDER=disabled` — telefon yo'li 503 beradi. Klient buni
-/// oldindan bilmasa, kirish ekrani ishlamaydigan usulni birinchi qilib
-/// ko'rsatadi. Server javob bermasa (eski versiya, tarmoq) — konservativ
-/// standart: hamma yo'l ochiq deb hisoblanadi, chunki ilgari shunday edi.
 class AuthMethods {
-  /// Parol yo'li. Serverda u hech qanday tashqi xizmatga bog'liq emas,
-  /// shuning uchun standart `true`.
   final bool password;
   final bool phone;
   final bool telegram;
   final bool invite;
   final String? telegramBotUsername;
 
-  /// Parol bilan YANGI hisob ochish (ro'yxatdan o'tish, login EMAS) taklif
-  /// kodi so'raydimi. 2026-08-07: botlarga qarshi — batafsil izoh
-  /// backend `password_auth.py` da. Standart `true`: eski server bu
-  /// maydonni bilmasa, xavfsiz tomonga (kod so'rash) og'amiz — aks holda
-  /// yangi serverda yoqilgan cheklovni klient bilmay, kodsiz yuborib,
-  /// foydalanuvchi tushunarsiz 400 xatosini ko'rardi.
   final bool passwordRegisterRequiresInvite;
 
   const AuthMethods({
@@ -78,9 +57,6 @@ class AuthMethods {
   });
 
   factory AuthMethods.fromJson(Map<String, dynamic> j) => AuthMethods(
-        // Eski server bu maydonni bilmaydi. `false` emas, `true` deb
-        // hisoblanmaydi ham: agar maydon yo'q bo'lsa endpoint ham yo'q, ya'ni
-        // tugmani ko'rsatish 404 ga olib boradi.
         password: j['password'] as bool? ?? false,
         phone: j['phone'] as bool? ?? true,
         telegram: j['telegram'] as bool? ?? true,
@@ -130,8 +106,6 @@ class AuthRepository {
     return TokenPair.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Taklif kodi bilan kirish (telefonsiz). Kodni tozalash serverda ham
-  /// bo'ladi, lekin bu yerda ham qilamiz — foydalanuvchi chiziqcha bilan
   /// yozsa so'rov behuda ketmasin.
   Future<TokenPair> redeemInvite(
     String code, {
@@ -151,19 +125,15 @@ class AuthRepository {
     return TokenPair.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Foydalanuvchi nomi + parol bilan yangi hisob.
   ///
-  /// `inviteCode` — yopiq beta davrida MAJBURIY
-  /// (`AuthMethods.passwordRegisterRequiresInvite`). Server buni
-  /// `invite_code` kabi qabul qiladi va `invites.py` bilan bir xil
   /// jadvaldan (`invite_codes`) sarflaydi — botlarga qarshi yagona
-  /// haqiqiy to'siq, batafsili `password_auth.py` da.
   Future<TokenPair> register(
     String username,
     String password, {
     String? displayName,
     int? grade,
     String? inviteCode,
+    String? joinCode,
     String? referredBy,
   }) async {
     final res = await _raw.post('/v1/auth/register', data: {
@@ -174,21 +144,20 @@ class AuthRepository {
       if (grade != null) 'grade': grade,
       if (inviteCode != null && inviteCode.trim().isNotEmpty)
         'invite_code': inviteCode.trim(),
+      if (joinCode != null && joinCode.trim().isNotEmpty)
+        'join_code': joinCode.trim(),
       if (referredBy != null && referredBy.isNotEmpty)
         'referred_by': referredBy,
     });
     return TokenPair.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Foydalanuvchi nomi + parol bilan kirish.
   Future<TokenPair> login(String username, String password) async {
     final res = await _raw.post('/v1/auth/login',
         data: {'username': username.trim(), 'password': password});
     return TokenPair.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Nom bo'shmi. Xato bo'lsa `null` — klient "bilmayman" deb ko'rsatadi va
-  /// yakuniy qarorni server formani qabul qilganda beradi.
   Future<bool?> usernameFree(String username) async {
     try {
       final res = await _raw.get('/v1/auth/username-free',
@@ -199,17 +168,6 @@ class AuthRepository {
     }
   }
 
-  /// Kirgan hisobga parol qo'shish/almashtirish. Telegram bilan kirgan
-  /// o'quvchi shundan keyin Telegram'siz ham kira oladi.
-  /// Parol o'rnatadi va YANGI token juftligini qaytaradi.
-  ///
-  /// Server parol almashtirilganda barcha eski refresh tokenlarni bekor
-  /// qiladi ("boshqa qurilmalardan chiqar"), shuning uchun chaqiruvchi yangi
-  /// juftlikni saqlashi SHART — aks holda foydalanuvchi access token muddati
-  /// tugagach (15 daqiqa) o'zini chiqarib yuborgan bo'ladi.
-  ///
-  /// Eski server bu maydonlarni qaytarmaydi; o'shanda juftlik `null` bo'ladi
-  /// va hech narsa saqlanmaydi (eski sessiya baribir bekor qilinmagan).
   Future<TokenPair?> setPassword(String password, {String? username}) async {
     final res = await _authed.post('/v1/auth/password', data: {
       'password': password,
@@ -229,7 +187,6 @@ class AuthRepository {
     return TelegramLogin.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Foydalanuvchi botda «Start» bosdimi? null = hali yo'q.
   /// Havola muddati tugasa DioException (410) ko'tariladi.
   Future<TokenPair?> telegramPoll(String nonce) async {
     final res =
@@ -357,15 +314,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Save profile edits, then refresh the cached user so the UI updates.
   ///
-  /// 2026-08-07: agar refresh muvaffaqiyatsiz bo'lsa (masalan, refresh
   /// token boshqa tabda allaqachon aylantirilgan — u BIR MARTALIK), Dio
-  /// interceptor tokenlarni tozalab qo'yadi, lekin `AuthState.user` eski
-  /// holicha "kirgan" bo'lib qolaveradi. Natija: ekran o'zini kirgandek
-  /// tutadi, lekin har bir keyingi so'rov xuddi shu xatoni beraveradi —
-  /// foydalanuvchi "Invalid token" degan tushunarsiz xabarni qayta-qayta
-  /// ko'radi. `refreshMe()` da bu holat allaqachon hisobga olingan edi,
-  /// bu yerda yo'q edi — endi bir xil naqsh: tokenlar yo'qolgan bo'lsa
-  /// holatni "chiqilgan"ga qaytaramiz, xatoni esa ekran ko'rsatishi uchun
   /// qayta uloqtiramiz.
   Future<void> updateProfile({
     String? displayName,
@@ -388,9 +337,6 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  /// Telegram xabarlarini yoqish/o'chirish. Alohida metod, chunki chaqiruv
-  /// joyi (sozlamalardagi kalit) profil formasi emas va u faqat shu bitta
-  /// maydonni yuborishi kerak.
   Future<void> updateTelegramNotifications(bool enabled) =>
       updateProfile(tgNotifications: enabled);
 }
@@ -398,8 +344,6 @@ class AuthController extends StateNotifier<AuthState> {
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) => AuthController(ref));
 
-/// Yoqilgan kirish usullari. Sessiyaga bir marta so'raladi; server javob
-/// bermasa — hammasi ochiq deb hisoblanadi (eski xatti-harakat).
 final authMethodsProvider = FutureProvider<AuthMethods>((ref) async {
   try {
     return await ref.read(authRepositoryProvider).methods();

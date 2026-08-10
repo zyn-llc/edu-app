@@ -151,7 +151,6 @@ class ChallengeRepository {
     ];
   }
 
-  /// Batch submit: the whole answer sheet in one call. During a bet the server
   /// gives no per-question feedback (anti answer-leak); corrections come back
   /// only in this response.
   Future<ChallengeSubmitResult> submit(

@@ -137,10 +137,6 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                   : Text(l.authSendCode),
             ),
   
-            // Muqobil kirish yo'llari. SMS shlyuzi moderatsiyada turganda bular
-            // yagona ishlaydigan yo'l bo'lib qoladi, shuning uchun yashirin emas,
-            // aynan telefon tugmasi ostida turadi.
-            // Ota-ona uchun ko'rsatilmaydi: taklif kodi va Telegram o'quvchi
             // akkauntini yaratadi.
             if (!isParent) ...[
               const SizedBox(height: 26),
@@ -173,8 +169,6 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
     );
   }
 
-  /// Muqobil kirish ekranini ochadi; muvaffaqiyatli bo'lsa bu ekran ham
-  /// yopiladi va chaqiruvchi joyga `true` qaytadi (telefon oqimi bilan bir xil).
   Future<void> _pushLogin(Widget screen) async {
     final ok = await Navigator.push<bool>(
         context, MaterialPageRoute(builder: (_) => screen));

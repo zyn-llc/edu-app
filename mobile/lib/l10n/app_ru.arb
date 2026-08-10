@@ -354,6 +354,7 @@
   "pwRegisterTitle": "Регистрация",
   "pwLoginLead": "Введите имя пользователя и пароль.",
   "pwRegisterLead": "Выберите имя и пароль. Telegram не нужен.",
+  "pwJoinLead": "Вас вызвали на поединок ⚔️ Выберите имя и пароль — код приглашения не нужен.",
   "pwUsernameLabel": "Имя пользователя",
   "pwPasswordLabel": "Пароль",
   "pwPasswordHint": "Минимум 6 символов",

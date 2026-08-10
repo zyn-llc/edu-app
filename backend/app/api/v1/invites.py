@@ -42,22 +42,17 @@ _log = logging.getLogger("bilim.invite")
 
 _NON_ALNUM = re.compile(r"[^A-Z0-9]")
 
-
 def normalize_code(raw: str) -> str:
     """'k7m4-x9qp' / 'K7M4 X9QP' -> 'K7M4X9QP'. Foydalanuvchi chiziqcha,
     bo'sh joy yoki kichik harf yozsa ham ishlashi kerak."""
     return _NON_ALNUM.sub("", (raw or "").upper())
-
 
 class InviteIn(BaseModel):
     code: str = Field(min_length=4, max_length=32)
     display_name: str | None = Field(default=None, max_length=40)
     grade: int | None = Field(default=None, ge=1, le=11)
     region_code: str | None = None
-    # "Do'stlaringizni taklif qiling" havolasidan (`?ref=<username>`)
-    # kelgan bo'lsa. Ixtiyoriy, mukofotsiz — faqat statistika.
     referred_by: str | None = Field(default=None, max_length=20)
-
 
 @router.post("/invite", response_model=TokenPair)
 async def redeem_invite(
@@ -71,7 +66,7 @@ async def redeem_invite(
     ip = client_ip(request)
     allowed, _ = await ratelimit_hit(
         "invite_redeem", ip, _settings.invite_ip_hourly_cap, 3600,
-        fail_closed=True)   # kod taxmin qilishga qarshi yagona to'siq
+        fail_closed=True)
     if not allowed:
         raise AppError(429, "Too many attempts",
                        "juda ko'p urinish, bir soatdan keyin qayta urinib ko'ring")
@@ -83,7 +78,6 @@ async def redeem_invite(
     if body.region_code is not None and body.region_code not in REGION_CODES:
         raise AppError(400, "Invalid region", "unknown region_code")
 
-    # Atomik band qilish: shart UPDATE ichida, ya'ni "tekshir keyin yoz" oynasi yo'q.
     row = (await db.execute(text("""
         UPDATE invite_codes
            SET used_count = used_count + 1
@@ -95,13 +89,10 @@ async def redeem_invite(
     """), {"code": code})).mappings().first()
 
     if row is None:
-        # Sabab (yo'q / tugagan / muddati o'tgan) ataylab ajratilmaydi:
-        # ajratilsa, mavjud kodlarni tanlab topish oson bo'lib qoladi.
         await db.rollback()
         raise AppError(401, "Invalid code",
                        "kod noto'g'ri, ishlatilib bo'lingan yoki muddati o'tgan")
 
-    # Yaroqsiz belgilar (emoji, CJK) tashlanadi — ism reytingda ko'rinadi.
     name = names.safe_name(body.display_name) or None
     referred_by = await auth_service.resolve_referrer(db, body.referred_by)
     user = User(

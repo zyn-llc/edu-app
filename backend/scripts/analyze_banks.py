@@ -37,9 +37,6 @@ import re
 import sys
 from collections import Counter, defaultdict
 
-# Backend'ning HAQIQIY funksiyalari — tahlil real baholash bilan bir xil
-# bo'lishi uchun. Nusxa ko'chirilgan mantiq bu yerda yaramaydi: u vaqt o'tib
-# asliyatdan ajralib ketadi va hisobot yolg'on chiqadi.
 try:
     from app.services.normalizer import normalize
     from app.services.grading import _parse_student_number
@@ -49,7 +46,6 @@ except ImportError:
           "  $env:PYTHONPATH = \".\"\n"
           "  python scripts/analyze_banks.py <clean_data yo'li>", file=sys.stderr)
     raise SystemExit(2)
-
 
 def load_core(path: str):
     with open(path, encoding="utf-8") as f:
@@ -61,7 +57,6 @@ def load_core(path: str):
         return []
     return data if isinstance(data, list) else []
 
-
 def numeric_forms(forms: list[str]) -> list[float]:
     """Bitta songa yechiladigan variantlar."""
     out = []
@@ -72,11 +67,7 @@ def numeric_forms(forms: list[str]) -> list[float]:
             pass
     return out
 
-
-# O'quvchi boshqacha yozishi mumkin bo'lgan belgilar. Bittasi bo'lsa ham
-# `open_keyword` da aynan moslik talab qilinadi va xato baholash ehtimoli bor.
 _RISKY_CHARS = re.compile(r"[ ,;=()\[\]{}/]")
-
 
 def classify(q: dict) -> tuple[str, list[str], str]:
     """(guruh, accepted_forms, sabab) qaytaradi."""
@@ -105,7 +96,6 @@ def classify(q: dict) -> tuple[str, list[str], str]:
     if any(len(f) > 40 for f in norm):
         return "xavfli_kalit", forms, "javob juda uzun (>40 belgi)"
     return "xavfsiz_kalit", forms, "qisqa, bitta tokenli matn"
-
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -212,7 +202,6 @@ def main() -> int:
     print("  Bu skript hech narsani o'zgartirmadi — faqat o'qidi.")
     print(line)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

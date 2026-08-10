@@ -1,202 +1,130 @@
 # Topag'on
 
-**O'zbekiston maktab o'quvchilari (5–11-sinf) uchun bilim musobaqasi.**
-Fan bo'yicha mashq, server tomonda baholash, reyting va do'st bilan bellashuv.
-
-> *A quiz and competition platform for Uzbek school students. FastAPI +
-> PostgreSQL/PostGIS + Redis backend, Flutter (Web + Android) client, ~17 000
-> curated Uzbek-language questions tagged by grade and topic. All grading is
-> server-side; the client never receives an answer key it hasn't earned.*
+A quiz and competition platform for Uzbek school students, grades 5–11.
+Practice by subject, server-side grading, leaderboards, and head-to-head
+challenges against a friend.
 
 | | |
 |---|---|
-| **Ilova** | https://app.topagon.uz |
+| **App** | https://app.topagon.uz |
 | **API** | https://api.topagon.uz |
-| **Sahifa** | https://topagon.uz |
+| **Site** | https://topagon.uz |
 | **Bot** | [@topagonuzbot](https://t.me/topagonuzbot) |
 
 ```
 Backend   FastAPI · async SQLAlchemy 2.0 · PostgreSQL 16 + PostGIS · Redis 7
-Klient    Flutter (Material 3, Riverpod, Dio) — Web + Android
-Deploy    Docker Compose · nginx · Let's Encrypt · Ubuntu 24.04 VPS
-Hajm      7 700 qator backend · 16 000 qator Dart · 42 endpoint · 104 test
-Kontent   ~17 000 aktiv savol · 7 fan · sinf va mavzu bo'yicha teglangan
-Til       uz-Latn (asosiy) + ru — 387 kalit, ikkalasi ham to'liq
+Client    Flutter (Material 3, Riverpod, Dio) — Web + Android
+Deploy    Docker Compose · nginx · Let's Encrypt · Ubuntu 24.04
+Content   ~17 000 active questions · 7 subjects · tagged by grade and topic
+Locale    uz-Latn (primary) + ru
 ```
 
----
+## Design decisions
 
-## Arxitekturaning uchta qarori
+**Answer keys never leave the server.** `questions.grading_spec` (JSONB) is the
+only source of truth; the `options` table has no `is_correct` column. The model
+sent to the client (`PublicQuestion`) and the one used to grade
+(`GradingQuestion`) are separate types with a single crossing point in
+`services/projection.py`, so a leak is blocked by the type system rather than by
+remembering to be careful. The key is released in one place, only after a
+correct answer.
 
-Loyihada eng ko'p vaqt ketgan uchta qaror — qolgani shulardan kelib chiqadi.
-
-### 1. Javob kaliti serverdan chiqmaydi
-
-`questions.grading_spec` (JSONB) — yagona haqiqat manbai. `options` jadvalida
-`is_correct` ustuni **umuman yo'q**.
-
-Klientga ketadigan model (`PublicQuestion`) va serverdagi model
-(`GradingQuestion`) ikki xil tip, va ular orasida yagona o'tish nuqtasi bor —
-`services/projection.py`. Ya'ni kalit sizib chiqishi "esdan chiqarmaslik"
-bilan emas, **tip tizimi bilan** to'siladi: ommaviy modelda kalitni saqlaydigan
-maydon yo'q.
-
-Kalit faqat bitta joyda, faqat **to'g'ri javobdan keyin** beriladi —
-`api/v1/content.py` dagi bitta `if result.is_correct:`. Bu shart olib
-tashlansa, "bir marta xato qil → javobni o'qi → qayta yubor" farmi ochiladi:
-XP, noncoin va reyting cheksiz yig'iladi. Shuning uchun u
-`tests/test_submissions.py` bilan qulflangan.
-
-### 2. Valyuta — balans emas, DAFTAR
-
-`coin_transactions` — append-only jurnal. Balans hech qayerda saqlanmaydi, u
-`SUM(amount)`. Har bir yozuvning sababi (`reason`) cheklangan ro'yxatdan, va
-u ro'yxatda **pulga aylantiradigan sabab yo'q** — aynan shu narsa buni o'yin
-valyutasi darajasida ushlab turadi.
-
-"Bir marta bo'ladigan" har bir mukofot **qismiy noyob indeks** bilan
-qo'riqlanadi, Python sharti bilan emas:
+**Currency is a ledger, not a balance.** `coin_transactions` is append-only and
+the balance is `SUM(amount)`. Every one-off reward is guarded by a partial
+unique index, which holds regardless of how the code is called:
 
 ```sql
 CREATE UNIQUE INDEX uq_coin_quiz_reward
     ON coin_transactions (user_id, ref_id) WHERE reason = 'quiz_reward';
-CREATE UNIQUE INDEX uq_coin_challenge_settle
-    ON coin_transactions (user_id, reason, ref_id)
-    WHERE reason IN ('challenge_refund', 'challenge_win');
 ```
 
-Sabab: indeks kod qanday chaqirilishidan qat'i nazar ishlaydi. Lock unutilishi
-mumkin, tranzaksiya izolyatsiyasi kutilmagan bo'lishi mumkin — indeks esa
-yo'q. XP ham shu insert muvaffaqiyatiga bog'langan, ya'ni savolni qayta yechish
-XP bermaydi.
+A lock can be forgotten and transaction isolation can surprise you; the index
+cannot. XP is tied to the same insert, so re-answering a question earns nothing.
 
-### 3. Reyting Postgres'da emas, Redis'da
+**Leaderboards live in Redis, not Postgres.** `lb:total`, `lb:subject:*` and
+`lb:region:*` are sorted sets, read with `ZREVRANGE` / `ZREVRANK` in O(log N).
+Postgres is queried only for the names on the page being shown.
 
-`lb:total`, `lb:subject:*`, `lb:region:*` — sorted set. O'qish `ZREVRANGE` /
-`ZREVRANK`, ya'ni O(log N). Postgres faqat ko'rsatilayotgan sahifadagi ismlarni
-olish uchun so'raladi.
-
----
-
-## Ishga tushirish
-
-### Backend (lokal)
+## Running it
 
 ```bash
 cd backend
 cp .env.example .env
 docker compose up -d --build
+./scripts/migrate.sh
 curl http://127.0.0.1:8000/health
 ```
 
-Migratsiyalar tartib bilan va bir martadan qo'llanadi (`schema_migrations`
-jadvalida qayd yuritiladi):
+Tests need no database — they check logic, not SQL:
 
 ```bash
-./scripts/migrate.sh --status
-./scripts/migrate.sh
+cd backend && PYTHONPATH=. python -m pytest tests -q
 ```
 
-### Testlar (baza kerak emas)
-
-```bash
-cd backend
-pip install -r requirements.txt
-PYTHONPATH=. python -m pytest tests -q
-```
-
-Testlar ataylab DB'siz: ular mantiqni tekshiradi, SQL'ni emas. DB'ga
-bog'liq bo'lgani — `scripts/preflight.py` va `app/ingest/audit_grading.py`.
-
-### Klient
+Client:
 
 ```bash
 cd mobile
 flutter pub get && flutter gen-l10n
-flutter run -d chrome --dart-define=MOCK=true     # serversiz demo
+flutter run -d chrome --dart-define=MOCK=true
 ```
 
-`MOCK=true` — tarmoqqa umuman chiqmaydigan rejim: `lib/api/mock_backend.dart`
-40+ endpointni ichkarida taqlid qiladi. Demo va UI testlari uchun. Mock **real
-server bilan bir xil qoidalarga bo'ysunadi** — masalan noto'g'ri javobda kalit
-qaytarmaydi; aks holda mockda ishlaydigan ekran prodda boshqacha ko'rinardi.
+`MOCK=true` runs fully offline: `lib/api/mock_backend.dart` emulates the
+endpoints in-process and follows the same rules as the real server, including
+never returning a key for a wrong answer. Without that, a screen that worked
+against the mock could behave differently in production.
 
-```bash
-flutter analyze && flutter test --dart-define=MOCK=true
-```
-
----
-
-## Papkalar
+## Layout
 
 ```
 backend/
-  app/
-    api/v1/          42 endpoint — handler'lar yupqa, mantiq services/ da
-    api/deps.py      autentifikatsiya/avtorizatsiya bog'liqliklari
-    core/            config, xavfsizlik, rate limit, anti-scraping, Redis
-    models/          ORM
-    schemas/         public / grading proyeksiya ajratmasi
-    services/        grading, coins, challenges, ranking, progress, telegram
-    ingest/          savol banklarini JSON'dan bazaga yuklash
-  sql/               001..026 — forward-only migratsiyalar
-  tests/             104 test — DB kerak emas
-  deploy/            nginx konfiguratsiyalari (api / ilova / sahifa)
-  scripts/           migrate, backup, preflight, telegram_setup, make_invites
-mobile/
-  lib/
-    api/             Dio klient + mock backend
-    auth/            token saqlash, auth kontrolleri
-    features/        ekranlar (quiz, challenges, leaderboard, parent, ...)
-    theme/ widgets/  dizayn tizimi
-    l10n/            uz + ru (.arb — manba, .dart generatsiya qilinadi)
-landing/             topagon.uz reklama sahifasi (statik)
-docs/                arxitektura, testlash, deploy, kontent auditi
+  app/api/v1/      42 endpoints — handlers stay thin, logic lives in services/
+  app/core/        config, security, rate limiting, anti-scraping, Redis
+  app/models/      ORM
+  app/schemas/     public / grading projection split
+  app/services/    grading, coins, challenges, ranking, progress, telegram
+  app/ingest/      question bank importers
+  sql/             forward-only migrations, 001..030
+  tests/           175 tests, no database required
+mobile/lib/
+  api/             Dio client + mock backend
+  auth/            token storage, auth controller
+  features/        screens (quiz, challenges, leaderboard, parent, ...)
+  theme/ widgets/  design system
+  l10n/            uz + ru
+landing/           static site for topagon.uz
 ```
 
----
+## Security
 
-## Xavfsizlik
+Before the server accepts traffic, `config.validate_runtime()` checks ten
+conditions and refuses to start if any fails: a weak `JWT_SECRET`, OTP codes
+echoed in responses, the default database password, `CORS_ORIGINS=*`, the SMS
+gateway left in `console` mode, a missing Telegram webhook secret, and an ad
+reward that trusts the client.
 
-Prodda ishga tushishdan oldin `config.validate_runtime()` **10 ta shartni**
-tekshiradi va bittasi bajarilmasa server **umuman ko'tarilmaydi**: zaif
-`JWT_SECRET`, OTP kodining javobda qaytishi, standart DB paroli, `CORS_ORIGINS=*`,
-SMS shlyuzining `console` rejimi, Telegram webhook sirining yo'qligi, va
-klientga ishonadigan reklama mukofoti.
+* **Auth** — HS256 JWT (15 min) plus a rotating refresh token (30 days, stored
+  only as a SHA-256 hash). Passwords use argon2.
+* **Telegram login is two-step.** Pressing Start does not link an account; the
+  bot asks for a code shown in the app. Without that step the flow was
+  one-click account takeover.
+* **Rate limiting** fails open on learning routes and closed on auth routes: a
+  Redis outage should not stop a student mid-practice, but it must not open the
+  door to unlimited password guessing either.
+* **Anti-scraping** — the question bank is the product's main asset. A burst
+  limit plus a HyperLogLog breadth check (unique questions per hour) separates a
+  real student, who returns to a narrow set, from a scraper, which never repeats.
+* **Authorization** — the parent dashboard is bound to a guardianship record
+  rather than a role, and that record is only created from a code the child
+  hands over.
 
-Boshqa qatlamlar:
+## Docs
 
-* **Autentifikatsiya** — HS256 JWT (15 daq) + rotatsiya qilinadigan, faqat
-  SHA-256 hash ko'rinishida saqlanadigan refresh token (30 kun). Parol —
-  argon2.
-* **Telegram kirish ikki bosqichli** — bot «Start» da hisobni bog'lamaydi,
-  ilova ekranidagi kod bilan tasdiq so'raydi. Usiz oqim bir bosishda hisob
-  o'g'irlash edi (`services/telegram.py` izohiga qara).
-* **Rate limit** — o'quv yo'llarida ochiq, auth yo'llarida **yopiq** ishlaydi:
-  Redis uzilishi o'quvchini mashq o'rtasida to'xtatmasligi kerak, lekin u
-  parolni cheksiz taxmin qilishga yo'l ochmasligi ham kerak.
-* **Anti-scraping** — savol banki mahsulotning asosiy aktivi. Burst chegarasi
-  (30/daq) va HyperLogLog bilan hisoblanadigan "kenglik" nazorati (soatiga 900
-  ta noyob savol): haqiqiy o'quvchi tor to'plamga qaytadi, skraper esa hech
-  qachon takrorlamaydi.
-* **Avtorizatsiya** — ota-ona paneli rolga emas, **guardianship yozuviga**
-  bog'langan, u esa faqat bolaning o'zi bergan kod orqali yaratiladi.
-
----
-
-## Hujjatlar
-
-| Fayl | Nima haqida |
+| File | About |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | konvensiyalar va qatlamlar |
-| [docs/TESTING.md](docs/TESTING.md) | test strategiyasi |
-| [docs/openapi.yaml](docs/openapi.yaml) | API kontrakti |
-| [backend/BOSHLASH.md](backend/BOSHLASH.md) | noldan deploy, 1–13 qadam |
-| [backend/deploy/DEPLOY.md](backend/deploy/DEPLOY.md) | VPS sozlamalari |
-| [CHANGELOG.md](CHANGELOG.md) | nima o'zgardi va nega |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | layers and conventions |
+| [docs/openapi.yaml](docs/openapi.yaml) | API contract |
 
----
+## License
 
-## Litsenziya
-
-Hozircha yopiq manba. Kod President Tech Award ko'rigi uchun ochilgan.
+Source-available for review purposes.

@@ -19,7 +19,6 @@ from app.models import (
     Question, Subject, Submission, Topic, TopicTranslation,
 )
 
-
 async def topic_mastery(
     db: AsyncSession, user_id: uuid.UUID, lang: str = "uz-Latn", limit: int = 50
 ) -> list[dict]:
@@ -49,7 +48,7 @@ async def topic_mastery(
     topic_ids = [r.topic_id for r in rows]
     name_rows = (await db.execute(
         select(TopicTranslation.topic_id, TopicTranslation.lang,
-               TopicTranslation.title)      # ustun `title` (sql/001), `name` EMAS
+               TopicTranslation.title)
         .where(TopicTranslation.topic_id.in_(topic_ids))
     )).all()
     names: dict[uuid.UUID, dict[str, str]] = {}
@@ -70,7 +69,6 @@ async def topic_mastery(
             "accuracy": (correct / answered) if answered else 0.0,
         })
     return out
-
 
 async def activity_by_day(
     db: AsyncSession, user_id: uuid.UUID, days: int = 14
@@ -93,7 +91,6 @@ async def activity_by_day(
         {"day": str(r.day), "answered": int(r.answered), "correct": int(r.correct)}
         for r in rows
     ]
-
 
 async def recent_quizzes(
     db: AsyncSession, user_id: uuid.UUID, limit: int = 15
@@ -122,7 +119,6 @@ async def recent_quizzes(
         }
         for r in rows
     ]
-
 
 async def full_analysis(
     db: AsyncSession, user_id: uuid.UUID, lang: str = "uz-Latn",

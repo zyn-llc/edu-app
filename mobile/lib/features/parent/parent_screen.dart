@@ -16,21 +16,6 @@ import '../auth/login_sheet.dart';
 import 'child_detail_screen.dart';
 import 'parent_data.dart';
 
-/// Ota-ona ekrani.
-///
-/// TARIX (2026-08-06). Ilgari bu ekran `user.role` bo'yicha uchga bo'linardi:
-/// mehmon → kirish, `role == parent` → farzandlar ro'yxati, aks holda → kod
-/// yaratish. Amalda bu ishlamadi:
-///
-///  * rol ro'yxatdan o'tishda bir marta beriladi va keyin o'zgarmaydi;
-///  * telefon orqali kirish yopiq (`SMS_PROVIDER=disabled`), ya'ni ota-ona
-///    alohida `role=parent` hisob ocha olmasdi;
-///  * bitta telefonda sinab ko'rayotgan oilada bitta hisob bo'ladi.
-///
-/// Natijada ota-ona to'g'ri kodni kiritsa ham server 403 qaytarardi va buni
-/// "kod ishlamayapti, panel ko'rinmadi" deb tushunardi. Endi rol umuman
-/// qaralmaydi: ekranda ikkala yo'l ham doim ochiq, ruxsatni esa serverdagi
-/// guardianship yozuvi hal qiladi (`api/v1/parent.py` dagi AUTHZ NOTE).
 class ParentScreen extends ConsumerWidget {
   const ParentScreen({super.key});
 
@@ -55,8 +40,6 @@ class ParentScreen extends ConsumerWidget {
   }
 }
 
-/// Kirilmagan: nima uchun kerakligini tushuntirib, umumiy kirish varag'ini
-/// ochamiz. Alohida "ota-ona sifatida kirish" yo'li YO'Q — hisob bitta.
 class _ParentLogin extends ConsumerWidget {
   const _ParentLogin();
 
@@ -73,8 +56,6 @@ class _ParentLogin extends ConsumerWidget {
   }
 }
 
-/// Kirgan foydalanuvchi. Farzand ulangan bo'lsa — ro'yxat yuqorida; ikkala
-/// yo'l (kod kiritish / kod berish) doim pastda turadi.
 class _ParentHome extends ConsumerWidget {
   const _ParentHome();
 
@@ -125,8 +106,6 @@ class _ParentHome extends ConsumerWidget {
                 ),
               const Gap.sm(),
             ],
-            // Ikkala yo'l ham doim ko'rinadi: bir foydalanuvchi ham ota-ona,
-            // ham o'quvchi bo'lishi mumkin (masalan, ukasini kuzatuvchi aka).
             _ParentSideCard(hasChildren: children.isNotEmpty),
             const Gap.ms(),
             const _StudentSideCard(),
@@ -199,8 +178,6 @@ class _ParentSideCard extends ConsumerWidget {
       ref.invalidate(childrenProvider);
       messenger.showSnackBar(SnackBar(content: Text(l.parentLinked)));
     } on DioException catch (e) {
-      // 400 = o'z kodini kiritdi. Ilgari bu ham "kod noto'g'ri" deb
-      // ko'rsatilardi va foydalanuvchi nima xato qilganini tushunmasdi.
       final msg = switch (e.response?.statusCode) {
         404 => l.parentLinkError,
         400 => l.parentSelfLink,
@@ -229,10 +206,6 @@ class _ParentSideCard extends ConsumerWidget {
     );
   }
 }
-
-// --------------------------------------------------------------------- //
-//  «Men o'quvchiman» — kod yaratish, nusxalash, ulashish                 //
-// --------------------------------------------------------------------- //
 
 class _StudentSideCard extends ConsumerStatefulWidget {
   const _StudentSideCard();
@@ -273,9 +246,6 @@ class _StudentSideCardState extends ConsumerState<_StudentSideCard> {
   Future<void> _share() async {
     final l = L10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    // `share_plus` qo'shilmagan (web'da qo'shimcha sozlash talab qiladi).
-    // Buferga tayyor matn tushadi — foydalanuvchi uni Telegramga yopishtiradi.
-    // Bir qadam ko'proq, lekin hamma platformada bir xil ishlaydi.
     await Clipboard.setData(ClipboardData(text: l.parentShareText(_code!.code)));
     if (mounted) {
       messenger.showSnackBar(SnackBar(content: Text(l.parentShareCopied)));
@@ -305,8 +275,6 @@ class _StudentSideCardState extends ConsumerState<_StudentSideCard> {
               ),
               child: Column(
                 children: [
-                  // Web'da foydalanuvchi avval aynan matnni tanlab nusxalashga
-                  // urinadi — `SelectableText` shuni ham beradi.
                   SelectableText(
                     _code!.code,
                     textAlign: TextAlign.center,
@@ -375,10 +343,6 @@ class _StudentSideCardState extends ConsumerState<_StudentSideCard> {
     );
   }
 }
-
-// --------------------------------------------------------------------- //
-//  Umumiy qismlar                                                        //
-// --------------------------------------------------------------------- //
 
 class _SectionCard extends StatelessWidget {
   final IconData icon;
@@ -467,12 +431,7 @@ class _ChildCard extends StatelessWidget {
           ),
           const Gap.ms(),
 
-          // OTA-ONA UCHUN MA'NOLI QATOR.
           //
-          // Ilgari bu yerda XP, daraja, seriya va umr bo'yi aniqlik turardi —
-          // ya'ni bolaning o'z ekranidagi raqamlar. Ota-ona uchun ularning
-          // ma'nosi yo'q: u "XP 1840" dan hech narsa tushunmaydi.
-          // Endi uchta savol javob topadi: qachon shug'ullandi, qanchalik
           // muntazam, qanday ketyapti.
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -542,7 +501,6 @@ class _Stat extends StatelessWidget {
   }
 }
 
-/// Ulash kodini kiritishda harflarni katta qiladi.
 class UpperCaseFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

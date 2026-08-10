@@ -50,8 +50,6 @@ class Question {
   final List<QChoice> options;
   Question(this.id, this.type, this.stem, this.options);
 
-  /// LaTeX shu YERDA o'giriladi — bitta joyda, chunki savol matni quiz,
-  /// bellashuv va natija ekranlarida qayta ishlatiladi. Har ekranda alohida
   /// chaqirilsa, biri unutilib qolishi aniq.
   factory Question.fromJson(Map<String, dynamic> j) => Question(
         j['id'],
@@ -71,11 +69,6 @@ class GradeResult {
   final List<String> correctOptionIds;
   final String? explanation;
 
-  /// Server bergan mukofot hisoboti. `rewardReason`:
-  /// `ok` — birinchi to'g'ri javob, XP berildi;
-  /// `repeat` — savol oldin yechilgan, XP berilmaydi (farming himoyasi);
-  /// `wrong` — noto'g'ri; `guest` — kirilmagan, natija saqlanmaydi;
-  /// `null` — eski server yoki mukofot yozuvi muvaffaqiyatsiz.
   final int xpAwarded;
   final int coinsAwarded;
   final int coinsDelta;
@@ -109,10 +102,6 @@ class QuizRepository {
   final Ref ref;
   QuizRepository(this.ref);
 
-  /// Fan katalogi. [grade] berilsa BO'LIMLAR shu sinf bo'yicha filtrlanadi.
-  ///
-  /// Sinf ro'yxati (`grades`) doim to'liq qaytadi — u tanlash ro'yxatining
-  /// o'zi.
   Future<Catalog> fetchCatalog(String subjectId, {int? grade}) async {
     final res = await ref.read(dioProvider).get(
       '/v1/subjects/$subjectId/catalog',
@@ -144,7 +133,6 @@ class QuizRepository {
   }
 
   /// Generic form — typed answers send {'value': ...} (numeric) or
-  /// {'text': ...} (open_keyword); the server normalizes and grades.
   Future<GradeResult> submitPayload(
       String questionId, Map<String, dynamic> payload, int responseMs) async {
     final res = await ref.read(dioProvider).post('/v1/submissions', data: {
@@ -158,7 +146,6 @@ class QuizRepository {
 
 final quizRepositoryProvider = Provider<QuizRepository>((ref) => QuizRepository(ref));
 
-/// Katalog so'rovi kaliti. Sinf o'zgarganda bo'limlar qaytadan so'raladi.
 typedef CatalogArgs = ({String subjectId, int? grade});
 
 final catalogProvider =

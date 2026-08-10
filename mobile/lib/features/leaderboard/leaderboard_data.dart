@@ -11,8 +11,6 @@ class LbEntry {
   final int score;
   final bool isMe;
 
-  /// Avatar palitrasi indeksi (0..11). `null` — foydalanuvchi tanlamagan,
-  /// klient ism hash'idan barqaror rang oladi.
   final int? avatarColor;
 
   LbEntry(this.rank, this.userId, this.displayName, this.regionCode, this.score,

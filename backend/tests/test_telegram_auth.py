@@ -17,15 +17,9 @@ from types import SimpleNamespace
 
 import pytest
 
-# `app.services.telegram` modul darajasida `httpx` ni import qiladi (Bot API
-# chaqiruvlari uchun). U `requirements.txt` da bor, ya'ni Docker'da va CI'da
-# mavjud; ba'zi lokal venv'larda esa yo'q — `test_sms.py` ham shu sababli
-# yig'ilmaydi. Testni o'chirib qo'ygandan ko'ra o'tkazib yuborgan yaxshi.
-#   Lokalda ishga tushirish uchun:  pip install httpx
 pytest.importorskip("httpx", reason="httpx o'rnatilmagan (pip install httpx)")
 
 from app.services import telegram as tg      # noqa: E402
-
 
 class FakeRedis:
     def __init__(self, data=None):
@@ -43,11 +37,9 @@ class FakeRedis:
     async def ttl(self, k):
         return 300
 
-
 class FakeDB:
     async def commit(self):
         pass
-
 
 @pytest.fixture
 def bot(monkeypatch):
@@ -73,14 +65,12 @@ def bot(monkeypatch):
     return SimpleNamespace(sent=sent, answered=answered, created=created,
                            user_id=user_id)
 
-
 def _start_update(nonce, telegram_id=555):
     return {"message": {
         "text": f"/start {nonce}",
         "chat": {"id": 900},
         "from": {"id": telegram_id, "first_name": "Zizu"},
     }}
-
 
 def _callback(action, nonce, telegram_id=555):
     return {"callback_query": {
@@ -90,30 +80,24 @@ def _callback(action, nonce, telegram_id=555):
         "message": {"chat": {"id": 900}},
     }}
 
-
 def _run(redis, update, monkeypatch):
     monkeypatch.setattr(tg, "get_redis", lambda: redis)
     asyncio.run(tg.handle_update(FakeDB(), update))
 
-
-# --------------------------------------------------------------------------- #
 def test_start_does_not_bind_the_account(bot, monkeypatch):
     nonce, code = "n1", "A7K2"
     redis = FakeRedis({tg.nonce_key(nonce): tg.pending_value(code)})
 
     _run(redis, _start_update(nonce), monkeypatch)
 
-    # Hisob YARATILMAGAN va kalit hamon kutishda — bu testning butun mazmuni.
     assert bot.created == []
     assert redis.data[tg.nonce_key(nonce)] == tg.pending_value(code)
 
-    # Foydalanuvchiga kod ko'rsatilgan va ikkita tugma berilgan.
     chat_id, text, markup = bot.sent[-1]
     assert chat_id == 900 and code in text
     buttons = markup["inline_keyboard"][0]
     assert [b["callback_data"] for b in buttons] == [f"tgok:{nonce}",
                                                      f"tgno:{nonce}"]
-
 
 def test_confirm_binds_the_account(bot, monkeypatch):
     nonce = "n2"
@@ -125,7 +109,6 @@ def test_confirm_binds_the_account(bot, monkeypatch):
     assert redis.data[tg.nonce_key(nonce)] == str(bot.user_id)
     assert tg.pending_code(redis.data[tg.nonce_key(nonce)]) is None
 
-
 def test_cancel_leaves_the_nonce_pending(bot, monkeypatch):
     nonce = "n3"
     redis = FakeRedis({tg.nonce_key(nonce): tg.pending_value("CC44")})
@@ -135,14 +118,12 @@ def test_cancel_leaves_the_nonce_pending(bot, monkeypatch):
     assert bot.created == []
     assert tg.pending_code(redis.data[tg.nonce_key(nonce)]) == "CC44"
 
-
 def test_confirm_on_expired_nonce_creates_nothing(bot, monkeypatch):
-    redis = FakeRedis()                       # kalit umuman yo'q
+    redis = FakeRedis()
     _run(redis, _callback("tgok", "gone"), monkeypatch)
 
     assert bot.created == []
     assert redis.data == {}
-
 
 def test_confirm_twice_does_not_rebind(bot, monkeypatch):
     """Ikkinchi bosish allaqachon tasdiqlangan nonce'ni qayta yozmasin."""
@@ -155,14 +136,12 @@ def test_confirm_twice_does_not_rebind(bot, monkeypatch):
     assert bot.created == []
     assert redis.data[tg.nonce_key(nonce)] == already
 
-
 def test_start_without_nonce_is_a_plain_hint(bot, monkeypatch):
     redis = FakeRedis()
     _run(redis, {"message": {"text": "/start", "chat": {"id": 900},
                              "from": {"id": 555}}}, monkeypatch)
     assert bot.created == []
     assert "topagon.uz" in bot.sent[-1][1]
-
 
 def test_pending_code_roundtrip():
     assert tg.pending_code(tg.pending_value("XY12")) == "XY12"

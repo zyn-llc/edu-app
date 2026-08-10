@@ -5,33 +5,16 @@ import 'app_colors.dart';
 import 'spacing.dart';
 
 /// Yorug' va qorong'i temalar. Apelsin rangi ikkalasida ham yagona `primary`.
-/// Shrift oilasi — Manrope (o'zbek lotin + kirill + rus harflarini qoplaydi).
 ///
-/// ## Tipografiya nima uchun shu yerda
 ///
-/// Ilgari bu yerda `GoogleFonts.manropeTextTheme(base.textTheme)` turardi,
-/// ya'ni Material'ning STANDART o'lchamlari. Natijada ekranlar har joyda
-/// `TextStyle(fontSize: 17)` deb qo'lda yozar, va sahifadagi hamma yozuv
-/// deyarli bir xil og'irlikda ko'rinardi — vizual ustuvorlik yo'q edi.
 ///
-/// Endi shkala bitta joyda:
 ///
 /// | Slot             | O'lcham | Og'irlik | Qayerda                    |
 /// |------------------|---------|----------|----------------------------|
-/// | displaySmall     | 32      | w800     | sahifa sarlavhasi          |
 /// | headlineMedium   | 26      | w700     | katta blok sarlavhasi      |
-/// | headlineSmall    | 22      | w700     | bo'lim sarlavhasi          |
 /// | titleLarge       | 18      | w700     | karta sarlavhasi           |
-/// | titleMedium      | 16      | w600     | ro'yxat elementi           |
-/// | bodyLarge        | 15      | w400     | asosiy matn, savol         |
-/// | bodyMedium       | 14      | w400     | ikkilamchi matn            |
-/// | labelLarge       | 14      | w600     | tugma                      |
-/// | labelMedium      | 13      | w500     | izoh, caption              |
 /// | labelSmall       | 12      | w600     | belgi (badge), sana        |
 ///
-/// Katta o'lchamlarda `letterSpacing` manfiy: yirik matn keng tergilganda
-/// "shablon" taassurotini beradi, zichroq terilgani qo'lda ishlangandek
-/// ko'rinadi.
 class AppTheme {
   AppTheme._();
 
@@ -67,15 +50,9 @@ class AppTheme {
           letterSpacing: -0.1, color: ink),
       titleSmall: t.titleSmall?.copyWith(
           fontSize: 14, fontWeight: FontWeight.w600, height: 1.4, color: ink),
-      // Asosiy o'quv matni. `height: 1.5` — uzun savol matnini o'qishni
       // sezilarli osonlashtiradi.
       bodyLarge: t.bodyLarge?.copyWith(
           fontSize: 15, fontWeight: FontWeight.w400, height: 1.5, color: ink),
-      // DIQQAT: `bodyMedium` — Material'da uslubsiz `Text()` uchun STANDART.
-      // Ilgari bu yerda `muted` turardi va natijada uslub berilmagan har bir
-      // matn kulrang chiqardi: quiz variantlari («70», «65», «80») o'chirilgan
-      // ko'rinardi va sinovchilar ularni bosib bo'lmaydi deb o'yladi.
-      // Ikkilamchi matn uchun `bodySmall` ishlatiladi, standart esa `ink`.
       bodyMedium: t.bodyMedium?.copyWith(
           fontSize: 14, fontWeight: FontWeight.w400, height: 1.45, color: ink),
       bodySmall: t.bodySmall?.copyWith(
@@ -117,8 +94,6 @@ class AppTheme {
       textTheme: textTheme,
       extensions: [palette],
 
-      // Soyalar ataylab juda yengil. Material 3 da elevation asosan rang
-      // bilan beriladi; og'ir soya "2014-yilgi Android" taassurotini qoldiradi.
       cardTheme: CardThemeData(
         color: scheme.surface,
         elevation: 0,
@@ -149,7 +124,6 @@ class AppTheme {
           disabledForegroundColor: palette.faint,
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           // 48 dp — Material'ning minimal teginish maydoni. Undan kichigi
-          // barmoq bilan bosishda xatoga olib keladi.
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(
               horizontal: Spacing.lg, vertical: Spacing.ms),
@@ -227,10 +201,6 @@ class AppTheme {
                 : palette.muted)),
       ),
 
-      // Yon panel. Faol va nofaol element orasidagi farq ATAYLAB katta:
-      // ilgari ikkalasi ham w500 edi va faqat rang bilan ajralardi — kichik
-      // ekranda yoki yorug'da qaysi bo'lim ochiqligini payqash qiyin edi.
-      // Endi faol w600 + apelsin, nofaol w400 + muted.
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: scheme.surface,
         indicatorColor: palette.primaryTint,
@@ -242,9 +212,6 @@ class AppTheme {
         unselectedIconTheme: IconThemeData(color: palette.muted, size: 24),
       ),
 
-      // FAB: apelsin porlash `GlowFab` da (widgets/glow_fab.dart), chunki
-      // `FloatingActionButtonThemeData` faqat `elevation` beradi — u neytral
-      // kulrang soya, rangli glow emas.
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
@@ -303,8 +270,6 @@ class AppTheme {
       dividerTheme: DividerThemeData(
           color: palette.hairline, thickness: 1, space: 1),
 
-      // Sichqoncha bilan ishlaganda kartalar "bosiladigan" ekanini bildiradi.
-      // Web va desktop uchun muhim: hover'siz interfeys statik ko'rinadi.
       hoverColor: palette.primaryTint.withValues(alpha: 0.5),
       splashFactory: InkSparkle.splashFactory,
     );

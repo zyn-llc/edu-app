@@ -33,14 +33,12 @@ from app.services import ranking
 router = APIRouter(prefix="/v1", tags=["ranking"])
 _settings = get_settings()
 
-
 async def _names(db: AsyncSession, ids: list[str]) -> dict[str, User]:
     if not ids:
         return {}
     uuids = [uuid.UUID(i) for i in ids]
     rows = (await db.execute(select(User).where(User.id.in_(uuids)))).scalars().all()
     return {str(u.id): u for u in rows}
-
 
 @router.get("/leaderboard", response_model=LeaderboardOut)
 async def leaderboard(
@@ -88,7 +86,6 @@ async def leaderboard(
     return LeaderboardOut(scope=scope, key=key, entries=entries,
                           me=me_entry, total_ranked=total)
 
-
 @router.get("/me")
 async def me_overview(
     user: User = Depends(get_current_user),
@@ -98,19 +95,11 @@ async def me_overview(
     st = await ranking.standing(get_redis(), "total", None, str(user.id))
     coin_balance = await coin_service.balance(db, user.id)
     return {
-        # `auth._user_out` orqali — inline nusxa YO'Q.
-        #
-        # Ilgari bu yerda qo'lda yig'ilgan `UserOut(...)` turardi va unda
-        # `username` YO'Q edi. Klient profilni aynan shu endpointdan o'qiydi,
-        # ya'ni parol bilan ro'yxatdan o'tgan har bir foydalanuvchi profilda
-        # "parol o'rnatilmagan" ni ko'rardi va tugmani bosganda 409
-        # `username_locked` olardi. Bitta obyekt — bitta serializatsiya.
         "user": _user_out(user).model_dump(),
         "progress": ProgressOut(**prog).model_dump(),
         "rank": (st[0] if st else None),
         "coins": coin_balance,
     }
-
 
 @router.get("/me/analysis")
 async def my_analysis(
@@ -121,11 +110,9 @@ async def my_analysis(
     lang = (accept_language or "uz-Latn").split(",")[0].strip()
     return await analysis_service.full_analysis(db, user.id, lang)
 
-
 # /me/coins moved to app/api/v1/coins.py (richer payload: economy numbers +
 # rewarded-ad state). Keeping one canonical route avoids the duplicate-route
 # shadowing that broke the challenge tab's coin bar.
-
 
 @router.get("/regions")
 async def regions():

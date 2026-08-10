@@ -25,12 +25,8 @@ import re
 import sys
 from pathlib import Path
 
-# Skript `scripts/` ichida yotadi, `app` paketi esa bir daraja yuqorida.
-# Python `sys.path[0]` ga skriptning O'Z papkasini qo'yadi, shuning uchun
 # `python scripts/preflight.py` da `import app` topilmaydi
 # (ModuleNotFoundError: No module named 'app'). Loyiha ildizini qo'lda
-# qo'shamiz — shunda `PYTHONPATH` ni eslash shart emas, konteynerda ham,
-# hostda ham ishlaydi.
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -42,7 +38,6 @@ FAIL = " XATO  "
 _fatal = 0
 _warn = 0
 
-
 def say(level: str, text: str, detail: str = "") -> None:
     global _fatal, _warn
     if level is FAIL:
@@ -51,10 +46,8 @@ def say(level: str, text: str, detail: str = "") -> None:
         _warn += 1
     print(f"[{level}] {text}" + (f"\n         {detail}" if detail else ""))
 
-
 def head(title: str) -> None:
     print(f"\n--- {title} " + "-" * max(0, 58 - len(title)))
-
 
 def resolve_url(url: str) -> str:
     """DSN'ni ishlayotgan muhitga moslaydi.
@@ -67,7 +60,6 @@ def resolve_url(url: str) -> str:
     """
     from app.ingest.dsn import resolve_url as _resolve
     return _resolve(url)
-
 
 # --------------------------------------------------------------------------- #
 #  1. Konfiguratsiya                                                          #
@@ -87,7 +79,6 @@ def check_config():
         say(OK, "prod guard'lari qanoatlantirildi" if s.is_prod
                 else "dev rejimi — prod guard'lari tekshirilmadi")
 
-    # Sirlar: faqat mavjudligi va uzunligi.
     for name, val in (("JWT_SECRET", s.jwt_secret),
                       ("ADMIN_API_KEY", s.admin_api_key),
                       ("TELEGRAM_BOT_TOKEN", s.telegram_bot_token),
@@ -102,7 +93,6 @@ def check_config():
         say(WARN, "TRUST_PROXY_HEADERS=false, lekin nginx orqasidasan",
             "hamma so'rov bitta IP'dan ko'rinadi — IP bo'yicha cheklovlar ishlamaydi")
 
-    # Kirish yo'llaridan kamida bittasi ochiq bo'lishi kerak.
     ways = []
     if s.sms_provider not in ("disabled",):
         ways.append(f"SMS ({s.sms_provider})")
@@ -116,7 +106,6 @@ def check_config():
         say(FAIL, "hech qanday kirish yo'li yoq — foydalanuvchi tizimga kira olmaydi")
 
     return s
-
 
 # --------------------------------------------------------------------------- #
 #  2. Redis                                                                   #
@@ -142,10 +131,6 @@ async def check_redis():
         say(FAIL, "Redis ULANMADI — konteyner ishlayaptimi?",
             f"docker compose up -d redis   ({type(e).__name__})")
 
-
-# --------------------------------------------------------------------------- #
-#  3. Baza + kontent                                                          #
-# --------------------------------------------------------------------------- #
 async def check_db(settings):
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -157,11 +142,6 @@ async def check_db(settings):
 
     try:
         async with Session() as db:
-            # DIQQAT: `async with Session()` HALI ulanmaydi — SQLAlchemy
-            # ulanishni birinchi so'rovgacha kechiktiradi. Shu sababli bu
-            # yerda darhol `SELECT 1` qilamiz, aks holda "ulandi" deb yolg'on
-            # OK chiqarib, keyin "schema_migrations yo'q" deb noto'g'ri
-            # tashxis qo'yamiz (aslida sabab — Docker o'chiq).
             await db.execute(text("SELECT 1"))
             say(OK, "ulandi")
 
@@ -188,7 +168,6 @@ async def check_db(settings):
                     say(FAIL, "migratsiyalar tekshirilmadi",
                         f"{type(e).__name__}: {str(e)[:160]}")
 
-            # --- savollar ---
             rows = (await db.execute(text(
                 "SELECT status, count(*) FROM questions GROUP BY status"))).all()
             counts = {s: c for s, c in rows}
@@ -203,9 +182,6 @@ async def check_db(settings):
                 say(OK, f"{active} ta aktiv savol")
 
             # --- `media` tuzog'i ---
-            # Bu ustunda SQL NULL emas, jsonb 'null' yotadi. `media IS NOT NULL`
-            # yozgan har qanday UPDATE butun bankka tegadi. Shuni ko'rsatib
-            # qo'yamiz — kelajakdagi o'zim uchun ogohlantirish.
             kinds = (await db.execute(text(
                 "SELECT jsonb_typeof(media), count(*) FROM questions "
                 "GROUP BY 1 ORDER BY 2 DESC"))).all()
@@ -216,7 +192,6 @@ async def check_db(settings):
                 say(WARN, f"{nulls} qatorda jsonb 'null' turibdi",
                     "`media IS NOT NULL` ULARGA HAM ROST. To'g'ri shart: media ? 'ref'")
 
-            # --- javob kaliti ---
             no_spec = (await db.execute(text(
                 "SELECT count(*) FROM questions "
                 "WHERE status='active' AND (grading_spec IS NULL "
@@ -227,14 +202,6 @@ async def check_db(settings):
             else:
                 say(OK, "hamma aktiv savolda grading_spec bor")
 
-            # --- variantsiz savollar ---
-            # Jadval nomi `options` (models/__init__.py), `question_options`
-            # EMAS — eski nom bilan yozilgani uchun bu tekshiruv prodda
-            # UndefinedTableError bilan yiqilardi.
-            #
-            # Tur nomi ham noto'g'ri edi: bazada `mcq`, `numeric`,
-            # `open_keyword` bor; `single_choice`/`multi_choice` hech qachon
-            # mos kelmagan, ya'ni tekshiruv aslida hech narsani tekshirmagan.
             no_opts = (await db.execute(text(
                 "SELECT count(*) FROM questions q WHERE q.status='active' "
                 "AND q.type = 'mcq' "
@@ -255,7 +222,6 @@ async def check_db(settings):
                 say(FAIL, "mehmon akkaunti yo'q",
                     "002_seed.sql qo'llanmagan — login'siz mashq 500 beradi")
 
-            # --- fanlar ---
             subj = (await db.execute(text(
                 "SELECT s.code, count(q.id) FILTER (WHERE q.status='active') "
                 "FROM subjects s LEFT JOIN questions q ON q.subject_id = s.id "
@@ -276,10 +242,6 @@ async def check_db(settings):
     finally:
         await engine.dispose()
 
-
-# --------------------------------------------------------------------------- #
-#  4. Kod invarianti: javob kaliti sizib chiqmaydimi                          #
-# --------------------------------------------------------------------------- #
 def check_leak_invariant():
     head("INVARIANT: JAVOB KALITI FAQAT SERVERDA")
     try:
@@ -293,7 +255,6 @@ def check_leak_invariant():
         else:
             say(OK, "PublicQuestion'da javob kaliti yo'q")
 
-        # Variant sxemasida ham bo'lmasin.
         from app.schemas.question import PublicOption
         oleak = set(PublicOption.model_fields) & {"is_correct", "correct", "weight"}
         if oleak:
@@ -304,8 +265,6 @@ def check_leak_invariant():
     except Exception as e:
         say(WARN, "invariant tekshirilmadi", f"{type(e).__name__}: {e}")
 
-
-# --------------------------------------------------------------------------- #
 async def main() -> int:
     print("=" * 66)
     print("  Topag'on — PREFLIGHT")
@@ -326,7 +285,6 @@ async def main() -> int:
     print("  Deploy'ga tayyor.")
     print("=" * 66)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(asyncio.run(main()))

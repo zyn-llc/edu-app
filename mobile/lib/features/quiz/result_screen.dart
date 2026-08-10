@@ -11,9 +11,6 @@ class ResultScreen extends StatelessWidget {
   final int score;
   final int total;
 
-  /// Shu mashqda serverdan HAQIQATAN olingan XP/tanga. Faqat birinchi marta
-  /// to'g'ri yechilgan savollar hisoblanadi, shuning uchun bu son to'g'ri
-  /// javoblar sonidan kichik bo'lishi mumkin — bu xato emas.
   final int xpEarned;
   final int coinsEarned;
 
@@ -51,9 +48,7 @@ class ResultScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: Text(l.resultTitle),
       ),
-      // `Center` + `Column(min)` o'rniga scroll: mehmon paneli qo'shilgach
       // kichik telefonlarda (yoki katta shriftda) kontent sig'masdan
-      // RenderFlex overflow berardi.
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(Spacing.lg),
         child: Center(
@@ -78,8 +73,6 @@ class ResultScreen extends StatelessWidget {
                   _RewardRow(xp: xpEarned, coins: coinsEarned),
                 ],
                 const Gap.lg(),
-                // Konversiya uchun eng to'g'ri daqiqa: o'quvchi hozirgina
-                // natija ko'rdi va uni saqlab qolishga qiziqishi eng yuqori.
                 const GuestNotice(),
                 const Gap.lg(),
                 SizedBox(
@@ -111,11 +104,6 @@ class _RewardRow extends StatelessWidget {
       spacing: Spacing.sm,
       runSpacing: Spacing.xs,
       alignment: WrapAlignment.center,
-      // Mahalliy `_chip` o'chirildi: XP va noncoin belgilari ilova bo'ylab
-      // BITTA joydan (`widgets/currency.dart`) kelishi kerak. Ilgari bu
-      // ekranda yashil chaqmoq va sariq tanga, quiz ekranida boshqa rang,
-      // dashboardda uchinchi xil ikonka turardi — uchtasi bir narsa ekani
-      // faqat matndan bilinardi.
       children: [
         RewardChip.xp(l.rewardXp(xp)),
         if (coins > 0) RewardChip.coin(l.rewardCoins(coins)),

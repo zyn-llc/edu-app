@@ -52,7 +52,6 @@ class _ChallengePlayScreenState extends ConsumerState<ChallengePlayScreen> {
   bool _isTyped(Question q) =>
       q.type == 'numeric' || q.type == 'open_keyword';
 
-  // Batafsil izoh: quiz_screen._insertSymbol.
   void _insertSymbol(String value) {
     final text = _typed.text;
     final sel = _typed.selection;
@@ -113,8 +112,6 @@ class _ChallengePlayScreenState extends ConsumerState<ChallengePlayScreen> {
     final l = L10n.of(context);
 
     if (_error != null) {
-      // `Text('$_error')` xom `DioException` ni ekranga chiqarardi —
-      // quiz_screen bilan bir xil muammo, shuning uchun bir xil yechim.
       return Scaffold(
         appBar: AppBar(title: Text(l.navChallenges)),
         body: EmptyState(
@@ -179,8 +176,6 @@ class _ChallengePlayScreenState extends ConsumerState<ChallengePlayScreen> {
             MathText(q.stem, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             // `RadioListTile.groupValue`/`onChanged` Flutter 3.32 da eskirgan.
-            // Yangi API: tanlov holati `RadioGroup` ajdodida turadi, tile'da
-            // faqat `value` qoladi.
             Expanded(
               child: RadioGroup<String>(
                 groupValue: _selected,
@@ -197,8 +192,6 @@ class _ChallengePlayScreenState extends ConsumerState<ChallengePlayScreen> {
                     if (_isTyped(q)) ...[
                       TextField(
                         controller: _typed,
-                        // Raqamli panelda `/` yo'q — kasr javobni yozib
-                        // bo'lmasdi. Batafsil izoh: quiz_screen._typedField.
                         keyboardType: TextInputType.text,
                         autocorrect: false,
                         enableSuggestions: false,
@@ -281,7 +274,6 @@ class _ResultDialog extends StatelessWidget {
     } else {
       // The submitter is always a participant; if there IS a winner and the
       // status just flipped to done, my_score vs their_score decides — but the
-      // server already told us the pot. Compare via score in the list refresh;
       // here show pot movement generically.
       title = l.challengeSettledTitle;
       body = l.challengeSettledBody('${res.yourScore}', '${res.maxScore}',

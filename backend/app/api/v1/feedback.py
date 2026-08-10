@@ -29,12 +29,10 @@ _settings = get_settings()
 _MAX_LEN = 2000
 _PER_IP_PER_DAY = 10
 
-
 class FeedbackIn(BaseModel):
     message: str = Field(min_length=3, max_length=_MAX_LEN)
     contact: str | None = Field(None, max_length=128)
     app_version: str | None = Field(None, max_length=32)
-
 
 @router.post("/feedback", status_code=201)
 async def submit_feedback(
@@ -44,9 +42,7 @@ async def submit_feedback(
     user: User | None = Depends(get_current_user_optional),
 ):
     redis = get_redis()
-    # `client_ip` — proksi sarlavhalari bo'yicha yagona qaror nuqtasi. Bu yerda
     # uning qo'lda yozilgan nusxasi turardi: `TRUST_PROXY_HEADERS` mantig'i
-    # ikki joyda ikki marta yozilgan bo'lsa, biri albatta eskiradi.
     ip = client_ip(request)
     key = f"fb:{ip}"
     n = await redis.incr(key)
@@ -63,15 +59,6 @@ async def submit_feedback(
     ))
     await db.commit()
 
-    # Administratorga darhol xabar.
-    #
-    # NEGA KERAK: ilgari murojaat faqat `feedback` jadvaliga tushardi va uni
-    # ko'rish uchun kimdir `GET /v1/admin/feedback` ni so'rashi yoki psql
-    # ochishi kerak edi. Amalda hech kim buni qilmaydi — natijada sinovchi
-    # yozgan xabar javobsiz qoladi va u ilova tashlab ketilgan deb o'ylaydi.
-    #
-    # Yuborish MUVAFFAQIYATSIZ bo'lsa ham 201 qaytaramiz: xabar bazada
-    # saqlangan, foydalanuvchining aybi yo'q.
     await telegram.notify_admin(
         "Ilovadan murojaat\n"
         f"Foydalanuvchi: {user.display_name or user.id if user else 'mehmon'}\n"
@@ -80,7 +67,6 @@ async def submit_feedback(
         f"{body.message.strip()[:1500]}"
     )
     return {"ok": True}
-
 
 @router.get("/admin/feedback", dependencies=[Depends(require_admin)])
 async def list_feedback(
@@ -101,7 +87,6 @@ async def list_feedback(
         "status": f.status,
         "created_at": f.created_at.isoformat(),
     } for f in rows]}
-
 
 @router.post("/admin/feedback/{feedback_id}/seen",
              dependencies=[Depends(require_admin)])

@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Foydalanuvchi avatari: ism bosh harfi + rang.
 ///
-/// NEGA RASM EMAS. Fayl yuklash uchun obyekt saqlash (S3/MinIO), o'lcham
-/// o'zgartirish, moderatsiya va CDN kerak — birortasi ham hozir yo'q, ilova
 /// esa 8-avgustda topshiriladi. Bolalar ilovasida moderatsiyasiz rasm
-/// yuklash alohida xavf: bitta nomaqbul avatar butun sinov dasturini
-/// to'xtatishi mumkin. Bosh harf + rang esa foydalanuvchini reytingda va
-/// ota-ona panelida ajratib turish uchun yetarli va xarajati bitta ustun
 /// (`users.avatar_color`).
 ///
-/// Rang tanlanmagan bo'lsa (`colorIndex == null`) — ism hash'idan barqaror
-/// indeks olinadi: bir xil ism doim bir xil rangda ko'rinadi, ya'ni bo'sh
 /// kulrang doiralar qatori chiqmaydi.
 class AvatarPalette {
   const AvatarPalette._();
 
-  /// 12 ta rang. Hammasi to'q — ustidagi oq matn ikkala temada ham
-  /// o'qiladi (kontrast ≥ 4.5:1).
   static const colors = <Color>[
     Color(0xFF3B6FE0), // ko'k
     Color(0xFF2FA36B), // yashil
@@ -35,8 +25,6 @@ class AvatarPalette {
 
   static int get length => colors.length;
 
-  /// Ism uchun barqaror indeks. Tasodifiy emas — foydalanuvchi ilovani qayta
-  /// ochganda rangi o'zgarib ketmasligi kerak.
   static int indexForName(String? name) {
     final s = (name ?? '').trim();
     if (s.isEmpty) return 0;
@@ -55,8 +43,6 @@ class AvatarPalette {
   }
 }
 
-/// Ismning ko'rsatiladigan bosh harflari: bir so'z bo'lsa 1 ta, ikki so'z
-/// bo'lsa 2 ta ("Diyorbek Karimov" → "DK").
 String avatarInitials(String? name) {
   final parts = (name ?? '')
       .trim()
@@ -81,7 +67,6 @@ class UserAvatar extends StatelessWidget {
   final int? colorIndex;
   final double size;
 
-  /// Podiumda/joriy foydalanuvchi qatorida ajratib ko'rsatish uchun.
   final bool showBorder;
 
   @override
@@ -102,7 +87,6 @@ class UserAvatar extends StatelessWidget {
       child: Text(
         avatarInitials(name),
         style: TextStyle(
-          // 0.42 — 40 px doirada 17 px harf: to'la, lekin chetga tegmaydi.
           fontSize: size * 0.42,
           fontWeight: FontWeight.w700,
           color: Colors.white,

@@ -9,34 +9,15 @@ import '../theme/spacing.dart';
 
 /// Rus tili tanlanganda chiqadigan ogohlantirish.
 ///
-/// ## Muammo
 ///
-/// Interfeys ruschaga tarjima qilingan, lekin SAVOLLAR bazasida ruscha
-/// tarjima umuman yo'q — `question_translations` da faqat `uz` yozuvlari bor.
-/// Server mos tarjimani topmaganda o'zbekchasini qaytaradi (fallback).
 ///
-/// Natijada rus tilini tanlagan foydalanuvchi ruscha menyu va o'zbekcha
-/// savollarni ko'radi. Bu eng yomon variant: u ilova buzuq deb o'ylaydi va
-/// nima bo'layotganini tushunmaydi.
 ///
 /// ## Qaror
 ///
-/// Yashirin fallback o'rniga OCHIQ xabar va uzr. Foydalanuvchi holatni biladi
-/// va bir bosishda o'zbek tiliga qaytishi mumkin.
 ///
-/// ## Qachon yo'qoladi
 ///
-/// O'zi. Server `/v1/subjects` da `translated_count` qaytaradi — so'ralgan
-/// tildagi savollar soni. Birinchi ruscha savol bazaga tushgan kuni bu raqam
-/// noldan katta bo'ladi va ogohlantirish ko'rinmay qoladi. Vidjetni qo'lda
-/// o'chirish kerak emas; aynan shuning uchun shart klientda emas, serverda.
 ///
-/// ## Qayerda ko'rsatiladi
 ///
-/// Bosh sahifa, fanlar ro'yxati va mashq tanlash ekrani — ya'ni o'quvchi
-/// birinchi o'zbekcha savolni ko'rishidan OLDINGI uchta joy. Bir joyda
-/// ko'rsatish yetarli emas edi: fanlar ro'yxatiga to'g'ridan-to'g'ri
-/// o'tilganda hech qanday izoh chiqmasdi.
 class RuContentNotice extends ConsumerWidget {
   const RuContentNotice({super.key});
 
@@ -77,7 +58,6 @@ class RuContentNotice extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: FilledButton(
               onPressed: () {
-                // Faqat `localeCodeProvider` ni o'zgartiramiz — `main.dart`
                 // dagi `ref.listen` uni `SharedPreferences` ga yozadi va
                 // `MaterialApp` locale'ni almashtiradi.
                 ref.read(localeCodeProvider.notifier).state = 'uz-Latn';

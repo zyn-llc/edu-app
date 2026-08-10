@@ -31,9 +31,7 @@ from app.models import Note, User
 
 router = APIRouter(prefix="/v1/notes", tags=["notes"])
 
-# Bitta akkaunt uchun yozuvlar chegarasi — daftarni spam kanaliga aylantirmaslik uchun.
 MAX_NOTES_PER_USER = 500
-
 
 class NoteIn(BaseModel):
     body: str = Field(min_length=1, max_length=8000)
@@ -41,11 +39,9 @@ class NoteIn(BaseModel):
     question_id: uuid.UUID | None = None
     subject_id: uuid.UUID | None = None
 
-
 class NotePatch(BaseModel):
     body: str | None = Field(default=None, min_length=1, max_length=8000)
     title: str | None = Field(default=None, max_length=200)
-
 
 def _out(n: Note) -> dict:
     return {
@@ -58,16 +54,13 @@ def _out(n: Note) -> dict:
         "updated_at": n.updated_at.isoformat() if n.updated_at else None,
     }
 
-
 async def _get_own(db: AsyncSession, user: User, note_id: uuid.UUID) -> Note:
     note = (await db.execute(
         select(Note).where(Note.id == note_id, Note.user_id == user.id)
     )).scalar_one_or_none()
     if note is None:
-        # Begona yozuv ham "topilmadi" — mavjudligini oshkor qilmaymiz.
         raise AppError(404, "Note not found")
     return note
-
 
 @router.get("")
 async def list_notes(
@@ -86,7 +79,6 @@ async def list_notes(
     stmt = stmt.order_by(Note.updated_at.desc()).limit(limit).offset(offset)
     rows = (await db.execute(stmt)).scalars().all()
     return {"items": [_out(n) for n in rows]}
-
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_note(
@@ -113,11 +105,9 @@ async def create_note(
         await db.commit()
     except Exception:
         await db.rollback()
-        # Yagona real sabab: question_id/subject_id mavjud emas (FK).
         raise AppError(400, "Invalid note", "question_id or subject_id not found")
     await db.refresh(note)
     return _out(note)
-
 
 @router.patch("/{note_id}")
 async def update_note(
@@ -137,7 +127,6 @@ async def update_note(
     await db.commit()
     await db.refresh(note)
     return _out(note)
-
 
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(

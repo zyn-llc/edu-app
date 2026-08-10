@@ -11,23 +11,13 @@ import 'mock_backend.dart';
 ///   prod:     flutter build web --release --dart-define=API_BASE_URL=https://api.topagon.uz
 const _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
-/// Standart qiymat platformaga bog'liq:
 ///   - Android emulyatori host mashinaga `10.0.2.2` orqali chiqadi;
-///   - web esa brauzerda ishlaydi, u yerda `10.0.2.2` mavjud emas — `127.0.0.1`.
 ///
-/// DIQQAT: Windows'da `localhost` IPv6 `::1` ga hal bo'ladi, Docker esa IPv4'da
-/// tinglaydi. Shu sababli ataylab `localhost` emas, `127.0.0.1`.
 final apiBaseUrl = _resolveApiBaseUrl();
 
 String _resolveApiBaseUrl() {
   if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;
-  // RELEASE build'da standart qiymatga TUSHIB QOLISH — jim halokat.
   // `flutter build web --release` ni `--dart-define=API_BASE_URL` siz
-  // ishga tushirish `127.0.0.1:8000` ga qaraydigan bundle beradi: u
-  // ishlab chiquvchining mashinasida BEXATO ishlaydi va foydalanuvchida
-  // hech qachon ochilmaydi. `deploy.sh` define'ni beradi, lekin qo'lda
-  // qilingan build bermaydi — shuning uchun build emas, ishga tushirish
-  // paytida yiqilamiz, va sababi aniq aytiladi.
   if (kReleaseMode && !kMockMode) {
     throw StateError(
       'API_BASE_URL berilmagan. Release build shunday chiqarilishi kerak:\n'
@@ -39,7 +29,6 @@ String _resolveApiBaseUrl() {
   return kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
 }
 
-/// Fan muqovalari va savol rasmlari uchun CDN ildizi.
 const imageBaseUrl = String.fromEnvironment('IMAGE_BASE_URL',
     defaultValue: 'https://cdn.topagon.uz');
 
@@ -62,7 +51,6 @@ final rawDioProvider = Provider<Dio>((ref) {
     handler.next(options);
   }));
   // Zanjirning OXIRIDA: undan oldingi interceptorlar sarlavhalarni qo'yib
-  // bo'lgan bo'ladi, mock esa ularni real server kabi o'qiydi.
   if (kMockMode) dio.interceptors.add(MockInterceptor());
   return dio;
 });
@@ -114,7 +102,6 @@ final dioProvider = Provider<Dio>((ref) {
       if (access != null) {
         options.headers['Authorization'] = 'Bearer $access';
       } else {
-        // Guest practice: lets pre-login answers persist server-side.
         options.headers['X-Debug-User-Id'] = _guestUserId;
       }
       handler.next(options);

@@ -28,21 +28,17 @@ from app.schemas.question import (
 )
 from app.services.normalizer import normalize
 
-
 class GradingError(Exception):
     """Malformed submission or grading_spec."""
 
-
 # Registry: type -> grader(question, payload) -> bool(correct)
 _GRADERS: dict[QuestionType, Callable[[GradingQuestion, dict], bool]] = {}
-
 
 def _register(qtype: QuestionType):
     def deco(fn):
         _GRADERS[qtype] = fn
         return fn
     return deco
-
 
 # --------------------------------------------------------------------------- #
 #  Implemented today                                                          #
@@ -55,31 +51,11 @@ def _grade_mcq(q: GradingQuestion, payload: dict) -> bool:
     submitted = payload.get("option_ids", [])
     return len(submitted) == 1 and submitted[0] in correct
 
-
 @_register(QuestionType.multi_select)
 def _grade_multi_select(q: GradingQuestion, payload: dict) -> bool:
     correct = set(q.grading_spec.get("correct_option_ids", []))
     submitted = set(payload.get("option_ids", []))
     return submitted == correct and len(correct) > 0
-
-
-# --------------------------------------------------------------------------- #
-#  Sonli javob: matematik ifodani baholash                                     #
-#                                                                              #
-#  Ilova javob maydoni ostida beshta tugma ko'rsatadi: a/b, √, π, x², ( ).
-#  Ulardan faqat BIRINCHISI ishlardi — qolganlari grader tushunmaydigan belgi
-#  qo'yardi, `float("π/2")` ValueError berardi va javob NOTO'G'RI deb
-#  baholanardi. Ya'ni javobni bilgan o'quvchi ilova o'zi taklif qilgan
-#  tugmani bosgani uchun jazolanardi.
-#
-#  NEGA `eval` EMAS. U foydalanuvchi yuborgan satrni bajaradi va serverni
-#  ochib qo'yadi. Bu yerda satr `ast` bilan daraxtga aylantiriladi va daraxt
-#  OQ RO'YXAT bo'yicha tekshiriladi: faqat son, `pi`, `sqrt`, to'rt amal,
-#  daraja va unar minus. Nom, chaqiruv, indeks, atribut — rad etiladi.
-#
-#  CHEGARALAR: `9**9**9` serverni osib qo'yadi, shuning uchun daraja
-#  ko'rsatkichi, satr uzunligi va daraxt hajmi cheklangan.
-# --------------------------------------------------------------------------- #
 
 _ALLOWED_NODES = (
     ast.Expression, ast.BinOp, ast.UnaryOp, ast.Constant, ast.Name, ast.Call,
@@ -88,22 +64,18 @@ _ALLOWED_NODES = (
 _ALLOWED_NAMES = {"pi": math.pi}
 _ALLOWED_CALLS = {"sqrt": math.sqrt}
 
-# O'quvchi javobida 2^100 dan katta son uchramaydi; hujumchi uchun esa daraja
 # — serverni osishning eng arzon yo'li.
 _MAX_EXPONENT = 100
 _MAX_NODES = 60
 _MAX_LEN = 120
 
-# `√` dan keyin qavssiz keladigan atom: son yoki `pi`.
 _SQRT_ATOM_RE = re.compile(r"√\s*(\d+(?:\.\d+)?|pi\b)")
 
-# Yashirin ko'paytirish: o'quvchi "2π" deb yozadi, "2*π" deb emas.
 _IMPLICIT_MULT = [
     re.compile(r"(\d)(pi\b|sqrt\b|\()"),
     re.compile(r"(pi\b)(\d|pi\b|sqrt\b|\()"),
     re.compile(r"(\))(\d|pi\b|sqrt\b|\()"),
 ]
-
 
 def _eval_node(node, depth: int = 0) -> float:
     if depth > 20:
@@ -156,32 +128,22 @@ def _eval_node(node, depth: int = 0) -> float:
         return float(left ** right)
     raise ValueError("unsupported operator")
 
-
 def _eval_math_expression(s: str) -> float:
     """`π/2`, `√2`, `2^3`, `(1+2)/3` -> float. Boshqa hammasi ValueError."""
     if len(s) > _MAX_LEN:
         raise ValueError("expression too long")
     expr = (s.replace("π", "pi")
              .replace("^", "**").replace("·", "*").replace("×", "*"))
-    # `√` o'zidan keyingi BITTA atomga tegishli: `√2` -> `sqrt(2)`,
     # `√2+3` -> `sqrt(2)+3` (matematik odat). Qavs qo'yilmasa `√2` shunchaki
-    # `sqrt2` degan noma'lum nomga aylanib, javob rad etilardi — holbuki
-    # tugmani bosgan o'quvchi aynan shu shaklda yozadi.
     expr = _SQRT_ATOM_RE.sub(r"sqrt(\1)", expr)
-    # Qolgani `√(...)` — bu yerda qavs allaqachon bor.
     expr = expr.replace("√", "sqrt")
     for pattern in _IMPLICIT_MULT:
-        # Bir necha yurish: "2pi3" kabi zanjirda bitta almashtirish yetmaydi.
         for _ in range(3):
             new = pattern.sub(r"\1*\2", expr)
             if new == expr:
                 break
             expr = new
-    # HAMMA nosozlik ValueError bo'lib chiqishi SHART.
     #
-    # `_grade_numeric` aynan ValueError ni ushlaydi va uni «noto'g'ri javob»
-    # ga aylantiradi. `ast.parse` esa bo'sh satrda SyntaxError beradi —
-    # u ushlanmay o'tib ketsa, o'quvchining bo'sh javobi 500 xatoga
     # aylanadi. `tests/test_grading.py` dagi "garbage is wrong, not 500"
     # aynan shuni ushladi.
     try:
@@ -197,7 +159,6 @@ def _eval_math_expression(s: str) -> float:
     if not math.isfinite(value):
         raise ValueError("not finite")
     return value
-
 
 def _parse_student_number(raw) -> float:
     """Parse a student's numeric answer the way they actually type it.
@@ -234,9 +195,7 @@ def _parse_student_number(raw) -> float:
             return float(num) / d
         return float(s)
     except ValueError:
-        # Eski yo'l tushunmadi \u2014 ehtimol bu ifoda: "\u03c0/2", "\u221a2", "2^3".
         return _eval_math_expression(s)
-
 
 @_register(QuestionType.numeric)
 def _grade_numeric(q: GradingQuestion, payload: dict) -> bool:
@@ -252,7 +211,6 @@ def _grade_numeric(q: GradingQuestion, payload: dict) -> bool:
         return False        # unparseable student input = wrong, never a 500
     return abs(given - target) <= tol
 
-
 @_register(QuestionType.open_keyword)
 def _grade_keyword(q: GradingQuestion, payload: dict) -> bool:
     accepted = [normalize(a) for a in q.grading_spec.get("accepted", [])]
@@ -262,13 +220,11 @@ def _grade_keyword(q: GradingQuestion, payload: dict) -> bool:
     # 'any' (default): student answer matches at least one accepted form.
     return given in accepted
 
-
 @_register(QuestionType.matching)
 def _grade_matching(q: GradingQuestion, payload: dict) -> bool:
     correct = {tuple(p) for p in q.grading_spec.get("pairs", [])}
     submitted = {tuple(p) for p in payload.get("pairs", [])}
     return submitted == correct and len(correct) > 0
-
 
 @_register(QuestionType.ordering)
 def _grade_ordering(q: GradingQuestion, payload: dict) -> bool:
@@ -276,13 +232,11 @@ def _grade_ordering(q: GradingQuestion, payload: dict) -> bool:
     submitted = list(payload.get("order", []))
     return submitted == correct and len(correct) > 0
 
-
 # NOTE: `open_text` has NO grader and is not registered here. It needs an LLM
 # rubric call, which does not exist yet. A registered function that only raises
 # would make this registry look complete when it is not — `grade()` below
 # already reports an unregistered type clearly, and `ingest/audit_grading.py`
 # refuses to publish such questions in the first place.
-
 
 # --------------------------------------------------------------------------- #
 #  Public entrypoint                                                          #

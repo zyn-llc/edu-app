@@ -41,38 +41,25 @@ router = APIRouter(tags=["auth"])
 _settings = get_settings()
 _log = logging.getLogger("bilim.telegram")
 
-
 def _require_enabled() -> None:
     if not _settings.telegram_login_enabled:
         raise AppError(404, "Not Found")
-
 
 class StartOut(BaseModel):
     nonce: str
     deep_link: str
     expires_in_seconds: int
-    #: Ilova buni EKRANDA ko'rsatishi shart. Bot xuddi shu kodni tasdiqlash
-    #: tugmasida chizadi — foydalanuvchi ikkalasini solishtiradi. Usiz oqim
-    #: bir bosishda hisob o'g'irlashga aylanadi (services/telegram.py izohi).
     confirm_code: str
-
 
 class PollIn(BaseModel):
     nonce: str = Field(min_length=8, max_length=128)
-
 
 @router.post("/v1/auth/telegram/start", response_model=StartOut)
 async def telegram_start(request: Request):
     _require_enabled()
     ip = client_ip(request)
-    # 20 → 120 (soatiga, bitta IP uchun).
     #
-    # NEGA: O'zbekistonda maktab Wi-Fi'si va uyali internet NAT ortida —
-    # o'nlab foydalanuvchi serverga BITTA IP bilan ko'rinadi. 30 ta sinovchi
-    # bir dars davomida ro'yxatdan o'tsa, 20 chegarasi 21-chi odamdan
-    # boshlab 429 beradi va u buni "ilova ishlamayapti" deb tushunadi.
     #
-    # 120 hali ham abuse'ga qarshi: nonce yaratish arzon, lekin har bir
     # nonce alohida Redis kaliti va 10 daqiqada o'chadi.
     allowed, _ = await ratelimit_hit("tg_start", ip, 120, 3600,
                                      fail_closed=True)
@@ -86,29 +73,12 @@ async def telegram_start(request: Request):
     return StartOut(nonce=nonce, deep_link=tg.deep_link(nonce),
                     expires_in_seconds=ttl, confirm_code=code)
 
-
 @router.post("/v1/auth/telegram/poll")
 async def telegram_poll(
     body: PollIn,
     db: AsyncSession = Depends(get_db),
 ):
-    # `request` endi kerak emas: chegara IP'dan emas, nonce'dan olinadi.
     _require_enabled()
-    # Chegara IP bo'yicha EMAS, NONCE bo'yicha.
-    #
-    # MUAMMO (topilgan 2026-08-06): ilova har 2 soniyada so'raydi, nonce esa
-    # 10 daqiqa yashaydi → bitta kirish urinishi 300 tagacha so'rov. Eski
-    # chegara IP uchun 500 edi, ya'ni BITTA IP ortida ikkitadan ko'p odam
-    # bo'lsa (maktab Wi-Fi'si, uyali NAT) uchinchisi 429 olardi va Telegram
-    # orqali kira olmasdi. 30 sinovchili beta uchun bu to'sqinlik.
-    #
-    # Nonce bo'yicha cheklash to'g'riroq: u `secrets.token_urlsafe(24)` —
-    # taxmin qilib bo'lmaydi, ya'ni birov boshqasining nonce'sini "yeb"
-    # qo'ya olmaydi. Nonce yaratishning o'zi esa `tg_start` da IP bo'yicha
-    # cheklangan — abuse yo'li o'sha yerda yopiq.
-    #
-    # 400 = 2 soniyalik so'rov bilan ~13 daqiqa; nonce TTL 10 daqiqa,
-    # demak normal oqim hech qachon chegaraga yetmaydi.
     allowed, _ = await ratelimit_hit("tg_poll", body.nonce, 400, 3600)
     if not allowed:
         raise AppError(429, "Too many attempts")
@@ -120,9 +90,6 @@ async def telegram_poll(
     if value is None:
         raise AppError(410, "Expired", "havola muddati tugagan, qaytadan boshlang")
     if tg.pending_code(value) is not None:
-        # Hali tasdiqlanmagan: foydalanuvchi botga bormagan, yoki borgan-u
-        # tasdiqlash tugmasini bosmagan. Klient uchun ikkalasi ham bir xil —
-        # u kutishda davom etadi va ekranda tasdiq kodini ko'rsatib turadi.
         return {"status": "pending"}
 
     try:
@@ -138,7 +105,6 @@ async def telegram_poll(
         await redis.delete(key)
         raise AppError(410, "Expired")
 
-    # Bir martalik: token berilgach nonce yo'q qilinadi.
     await redis.delete(key)
     pair = await auth_service.issue_token_pair(db, user)
     await db.commit()
@@ -149,7 +115,6 @@ async def telegram_poll(
         "expires_in": pair.expires_in,
     }
 
-
 @router.post("/v1/telegram/webhook", include_in_schema=False)
 async def telegram_webhook(
     request: Request,
@@ -158,8 +123,6 @@ async def telegram_webhook(
 ):
     if not _settings.telegram_login_enabled:
         raise AppError(404, "Not Found")
-    # `compare_digest` — sekret bilan oddiy `!=` javob vaqti orqali uning
-    # boshlanishini oshkor qiladi.
     if (not _settings.telegram_webhook_secret
             or not hmac.compare_digest(x_telegram_bot_api_secret_token or "",
                                        _settings.telegram_webhook_secret)):
@@ -173,12 +136,8 @@ async def telegram_webhook(
     try:
         await tg.handle_update(db, update)
     except Exception:
-        # 200 qaytarish shart — aks holda Telegram shu update'ni qayta yuboraveradi.
         await db.rollback()
         _log.exception("telegram update failed")
     return {"ok": True}
 
-
-# Yuqoridagi TokenPair importi javob sxemasi sifatida ishlatilmaydi (poll ikki
-# xil shakl qaytaradi), lekin auth_service qaytaradigan tipni ko'rsatib turadi.
 __all__ = ["router", "TokenPair"]

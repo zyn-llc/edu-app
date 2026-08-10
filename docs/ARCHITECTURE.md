@@ -1,161 +1,95 @@
-# ARCHITECTURE.md — Education Competition Platform
+# Architecture
 
-> This is the contract. Every developer and every AI coding agent reads this file
-> **first**, before touching any module. If an instruction here conflicts with a
-> code suggestion, this file wins. To change a rule here, change it deliberately —
-> don't drift.
+## What this is
 
----
+A quiz and competition platform for Uzbek school students (grades 5–11), built
+mobile-first with Flutter on the client and FastAPI on the server.
 
-## 1. What we are building
+Subject codes are stable slugs and are never renamed:
 
-A mobile-first (iOS + Android, Flutter) educational quiz + competition platform for
-Uzbekistan, designed to scale to millions of users.
-
-Launch subjects (codes are stable slugs, never change them):
-
-| code | name (uz-Latn) |
-|------|----------------|
+| code | name |
+|------|------|
 | `geografiya` | Geografiya |
 | `jahon_tarixi` | Jahon tarixi |
 | `ozbekiston_tarixi` | O'zbekiston tarixi |
 | `matematika` | Matematika |
-| `geometriya` | Geometriya |
 | `fizika` | Fizika |
 | `kimyo` | Kimyo |
 | `ona_tili` | Ona tili |
 | `biologiya` | Biologiya |
 | `huquq` | Huquq |
 
-Question types: **`mcq` ships now.** `multi_select`, `numeric`, `open_keyword`,
-`matching`, `ordering` are already supported by the grader. `open_text` (AI-graded)
-is the only deferred type. Adding a type is a data change, never a migration.
+The grader handles `mcq`, `multi_select`, `numeric`, `open_keyword`, `matching`
+and `ordering`. Adding a question type is a data change, not a migration.
 
----
+## The rule everything else follows
 
-## 2. The one rule that organizes everything
+**The client renders, the server decides.** Question order, scoring, ranking and
+streak state all live server-side. A student with a rooted phone and a packet
+inspector should find nothing worth cheating with.
 
-**The client renders. The server decides.**
+This is enforced structurally rather than by discipline:
 
-Question order, timing, scoring, ranking, badge state, and payment state all live
-server-side. The client is a dumb renderer. A student with a rooted phone and a
-packet inspector must see nothing worth cheating with.
+- Answer keys live only in `questions.grading_spec` (JSONB, server-side).
+- The `options` table has no `is_correct` column, so correctness cannot ride
+  along on a row that gets rendered.
+- `PublicQuestion` and `PublicOption` have no field capable of holding a key.
+  `GradingQuestion` carries the key and is never used as a response model.
+  `tests/test_projection.py` fails the build if a key field is added to the
+  public model.
 
-Concretely, this rule is enforced **structurally**, not by discipline:
+The single crossing point between the two worlds is `services/projection.py`.
+The key is released in exactly one place, after a correct answer, in
+`api/v1/content.py`. Remove that condition and the "answer wrong, read the key,
+resubmit" farm opens up, so it is pinned by `tests/test_submissions.py`.
 
-- Answer keys live **only** in `questions.grading_spec` (JSONB, server-only).
-- The `options` table has **no `is_correct` column** — correctness physically
-  cannot ride along on a renderable row.
-- `PublicQuestion` / `PublicOption` (Pydantic) have **no field that can hold a
-  key**. `GradingQuestion` carries the key and is **never** used as a response
-  model. `tests/test_projection.py` fails the build if anyone adds a key field to
-  the public model.
-
-If you are ever tempted to "just send the answer to the client to make the UI
-easier" — stop. That is the product's whole security model.
-
----
-
-## 3. Stack & topology
+## Topology
 
 ```
-Flutter (iOS/Android)  ──HTTPS/JSON──▶  FastAPI (stateless workers)
-        │                                   │
-        └──────WebSocket (event window)─────┤   ← live competitions only
+Flutter (Web/Android)  ──HTTPS/JSON──▶  FastAPI (stateless workers)
                                             │
                             ┌───────────────┼───────────────┐
-                        PostgreSQL        Redis        Cloudflare R2
-                     (source of truth)  (leaderboards,  (media: images,
-                                         OTP rate-limit,  audio later)
-                                         pub/sub backplane)
+                        PostgreSQL        Redis         object storage
+                     (source of truth)  (leaderboards,   (media, later)
+                                         rate limiting)
 ```
 
-- **Hosting (launch):** one Hetzner VPS, Docker Compose (FastAPI + Postgres +
-  Redis), Cloudflare in front (free CDN / DDoS / WAF). No Kubernetes until real
-  scale demands it.
-- **Scale path (documented, not built yet):** FastAPI is stateless → run N
-  replicas behind a load balancer. Redis pub/sub is the WebSocket backplane so
-  any worker can broadcast. Postgres → read replicas + PgBouncer, then partition
-  `submissions` by month. Leaderboards never touch Postgres on read (Redis sorted
-  sets). This is why "10M users" is a config change, not a rewrite.
+One VPS running Docker Compose (FastAPI + Postgres + Redis), nginx in front.
+No orchestration until real load justifies it.
 
----
+The scale path is deliberate rather than built: FastAPI is stateless, so it runs
+behind a load balancer as N replicas; Redis pub/sub is ready as the WebSocket
+backplane; Postgres gains read replicas and PgBouncer, then `submissions` is
+partitioned by month. Leaderboard reads never touch Postgres.
 
-## 4. Project layout (backend)
+## Backend layout
 
 ```
 backend/
   app/
     core/        config, database (async SQLAlchemy), redis, security, errors
-    models/      SQLAlchemy ORM (DB rows)
-    schemas/     Pydantic — PUBLIC vs GRADING projections, request/response DTOs
-    services/    business logic: grading, ranking, normalizer, analytics, ...
-    api/v1/      thin HTTP/WS handlers — NO business logic here
-    ingest/      data importers (geography_adapter, ...)
-  sql/           001_init.sql (canonical schema)
+    models/      SQLAlchemy ORM
+    schemas/     Pydantic - public vs grading projections, request/response DTOs
+    services/    grading, ranking, coins, challenges, progress, telegram
+    api/v1/      thin HTTP handlers, no business logic
+    ingest/      question bank importers
+  sql/           forward-only migrations, 001..030
   tests/
 ```
 
-Layering rule: `api → services → models`. Handlers are thin. Business logic lives
-in `services/` and is unit-testable without HTTP or (where possible) without DB.
+Layering is `api → services → models`. Handlers stay thin; logic lives in
+`services/` and is unit-testable without HTTP and, where possible, without a
+database.
 
----
+## Conventions
 
-## 5. Conventions
-
-- **Language:** Python 3.12, FastAPI, **async** SQLAlchemy 2.0, Pydantic v2.
-- **IDs:** UUID v4 everywhere (no auto-increment ints exposed).
-- **Multilingual:** never store user-facing text on the core row. Use
-  `*_translations` tables keyed by `lang` (`uz-Latn`, `uz-Cyrl`, `ru`, `en`).
-  Requests carry `Accept-Language` (or `?lang=`); the projection resolves one
-  language into `stem` / `text`.
-- **Errors:** RFC 7807 problem+json. One error shape, app-wide (`core/errors.py`).
-- **Auth:** phone + OTP. JWT access (15 min) + rotating refresh (hashed, revocable
-  in `refresh_tokens`). Role enum `student|parent|admin` in one `users` table.
-- **Pagination:** cursor-based (never `OFFSET` at scale).
-- **Money & anti-cheat code:** human-reviewed line by line. AI may draft it; a
-  human owns it.
-- **Time:** all timestamps UTC (`timestamptz`). The server clock is authoritative
-  for competition timing.
-
----
-
-## 6. Module map & build phases
-
-You (Zizu) own architecture + every trust boundary. Agents implement modules
-against this doc + `openapi.yaml`. A separate fresh-context review pass audits
-auth / payments / anti-cheat.
-
-| Phase | Module | Status |
-|------|--------|--------|
-| **1** | DB schema, projection split, GradingService (type-dispatch), normalizer | ✅ built + tested |
-| 1 | Subjects catalog, public questions, submit/grade endpoints | scaffolding |
-| 1 | Geography ingest adapter (your two-layer JSON → DB) | scaffolding |
-| **2** | Auth (phone+OTP, JWT, rotating refresh) | ✅ built + tested |
-| **2** | Ranking (Redis sorted sets) + leaderboard endpoints | ✅ built + tested |
-| **2** | Gamification (XP/level/streak), `/v1/me` | ✅ built + tested |
-| **2** | Parent accounts (consent link-code, read-only dashboards) | ✅ built + tested |
-| 2 | Async friend challenges | next |
-| 2 | Analytics / weak-topic ML (your ML edge, no LLM) | next |
-| 3 | Live competition (WebSocket, scheduled windows) + anti-cheat | later |
-| 3 | Payments (Payme/Click webhooks, idempotent ledger) | later |
-| 4 | open_text AI grading, LLM explanations, sponsorships/monetization wiring | later |
-| — | Flutter app (type-dispatch renderer, metadata-driven nav, Material 3 + Rive) | parallel track |
-
-Each future type (`matching`, `numeric`, image-based) is **additive**: the grader
-branch already exists; the Flutter renderer adds one `case`. No core rewrite.
-
----
-
-## 7. How agents are run (so output is coherent, not 10 piles of MVP)
-
-1. **Contract first.** This file + `openapi.yaml` are the source of truth.
-2. **One agent per module**, each isolated by the OpenAPI contract — modules don't
-   share mutable state. They coordinate with the document, not with each other.
-3. **Every implementation prompt starts with:** *"Read ARCHITECTURE.md and
-   openapi.yaml. Implement only module X against that contract. Do not change the
-   contract; if something's missing, list it and stop."*
-4. **Separate review pass in fresh context** (ideally a different model) on auth,
-   payments, anti-cheat: *"Assume the author was careless. List concrete security
-   holes and contract violations."*
-5. **Human owns** the architecture, the trust boundaries, and the final word.
+- Python 3.12, FastAPI, async SQLAlchemy 2.0, Pydantic v2.
+- UUID v4 for all ids; no auto-increment integers are exposed.
+- User-facing text never sits on the core row. It lives in `*_translations`
+  tables keyed by `lang` (`uz-Latn`, `uz-Cyrl`, `ru`). Requests carry
+  `Accept-Language` or `?lang=`, and the projection resolves one language.
+- Errors follow RFC 7807 problem+json, one shape app-wide (`core/errors.py`).
+- Auth is phone + OTP, or username + password. JWT access tokens live 15
+  minutes; refresh tokens rotate and are stored hashed in `refresh_tokens`.
+- Pagination is cursor-based.
+- All timestamps are UTC `timestamptz`. The server clock is authoritative.

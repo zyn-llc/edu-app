@@ -15,10 +15,10 @@
    qilinganda faqat shu fayl o'zgaradi, HTML esa zaxira nusxa bo'lib qoladi.
 
    RAQAMLAR HAQIDA. Hech bir raqam o'ylab topilmagan. Manbalar:
-     * `bank.*`  — D:\data_subjects\clean_data/<papka>/core.json fayllaridagi
+     * `bank.*`  — tayyorlangan banklardagi <papka>/core.json fayllaridagi
                    yozuvlar soni (2026-08-06 holatiga).
      * `active`  — Postgres `questions` jadvalidagi status='active' yozuvlar
-                   (CLAUDE.md §3). Bu ilovada HOZIR ochiq savollar soni.
+                   Bu ilovada HOZIR ochiq savollar soni.
    Ikkalasi ham sahifada aytiladi va bir-biriga zid emas: bank kattaroq,
    chunki uning bir qismi hali ko'rib chiqilmoqda.
    ========================================================================= */

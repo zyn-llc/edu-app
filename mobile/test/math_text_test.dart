@@ -2,20 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:topagon/core/math_text.dart';
 
-/// `renderMathText` — savol matni o'quvchiga qanday ko'rinishini hal qiladi.
-///
-/// NEGA BU TEST KECH YOZILDI. Funksiyada 280 qator mantiq bor edi va bitta
-/// ham test yo'q edi. Natijada `\displaystyle` bazadagi 48 ta savolda XOM
-/// holda chiqib turdi — o'quvchi "Hisoblang: \displaystyle ∫₀² x³ dx" ni
-/// ko'rdi. Xato `flutter analyze` dan ham, boshqa testlardan ham o'tdi,
-/// chunki uni ushlaydigan narsa yo'q edi.
-///
-/// Shu sababli bu yerda ikki xil tekshiruv bor:
-///   1. Bazada HAQIQATAN uchraydigan buyruqlar (chastota bilan o'lchangan);
-///   2. Umumiy qoida: noma'lum buyruq matnda qolib ketmasin.
 void main() {
-  group('joylashuv buyruqlari matnda qolmaydi', () {
-    test(r'\displaystyle olib tashlanadi', () {
+  group('layout commands are stripped', () {
+    test(r'\displaystyle is stripped', () {
       final out = renderMathText(r'Hisoblang: \displaystyle \int_0^2 x^3 dx.');
       expect(out, isNot(contains(r'\displaystyle')));
       expect(out, isNot(contains('displaystyle')));
@@ -23,7 +12,7 @@ void main() {
       expect(out, contains('x³'));
     });
 
-    test(r'\limits va \textstyle ham', () {
+    test(r'\limits and \textstyle too', () {
       expect(renderMathText(r'\sum\limits_{i=1}^{n} i'),
           isNot(contains('limits')));
       expect(renderMathText(r'\textstyle \frac{1}{2}'),
@@ -31,7 +20,7 @@ void main() {
     });
   });
 
-  group('bezak buyruqlari mazmunni saqlaydi', () {
+  group('decorative commands keep their content', () {
     test(r'\overline{AB} -> AB', () {
       expect(renderMathText(r'\overline{AB} kesma'), 'AB kesma');
     });
@@ -42,33 +31,26 @@ void main() {
     });
   });
 
-  group('noma\'lum buyruqlar uchun himoya to\'ri', () {
-    test('uzun noma\'lum buyruq butunlay tashlanadi', () {
-      // Nomini ko'rsatish ("qandaydirBuyruq") ko'rsatmaslikdan yomonroq.
+  group('safety net for unknown commands', () {
+    test('a long unknown command is dropped entirely', () {
       final out = renderMathText(r'\qandaydirBuyruq{} x + 1');
       expect(out, isNot(contains('qandaydir')));
       expect(out, contains('x + 1'));
     });
 
-    test('bir-ikki harfli adashgan teskari chiziq harfni SAQLAYDI', () {
-      // Bazada `\x`, `\xy` kabi 60 ga yaqin joy bor — bu LaTeX buyrug'i
-      // emas, manbadan kelgan chiziq. Tashlansa o'zgaruvchi yo'qoladi.
+    test('a stray backslash before one or two letters keeps them', () {
       expect(renderMathText(r'2\x + 3'), contains('2x'));
       expect(renderMathText(r'\xy = 5'), contains('xy'));
     });
 
-    test('bosh harfli yunon harfi YO\'QOLMAYDI', () {
-      // Himoya to'ri qo'shilganda eng katta xavf shu edi: `\Delta`
-      // jadvalda bo'lmasa, jimgina o'chib ketardi.
+    test('a capitalised Greek letter survives', () {
       expect(renderMathText(r'\Delta x'), contains('Δ'));
       expect(renderMathText(r'\Omega'), contains('Ω'));
       expect(renderMathText(r'\alpha + \beta'), contains('α'));
     });
   });
 
-  group('bazadan olingan haqiqiy savol matnlari', () {
-    // Prod bazasidan ko'chirilgan. O'ylab topilgan misol emas: xato aynan
-    // shu qatorlarda ko'rindi va o'quvchi ularni shu holda o'qidi.
+  group('real question text from the database', () {
     const realStems = [
       r'(99-1-27) Hisoblang: $\displaystyle\int_0^2 x^3\,dx$.',
       r'Hisoblang: $\displaystyle\int_0^2 2x\,dx$.',
@@ -79,14 +61,14 @@ void main() {
       r'Tenglamani yeching: $\lg(2-5x)=1$.',
     ];
 
-    test('birortasida teskari chiziq qolmaydi', () {
+    test('no backslash is left in any of them', () {
       for (final s in realStems) {
         final out = renderMathText(s);
         expect(out, isNot(contains(r'\')), reason: 'kirish: $s');
       }
     });
 
-    test('manba iqtiboti olinadi, integral belgisi qoladi', () {
+    test('the source citation goes, the integral sign stays', () {
       final out = renderMathText(realStems[0]);
       expect(out, isNot(contains('99-1-27')));
       expect(out, startsWith('Hisoblang'));
@@ -95,26 +77,26 @@ void main() {
     });
   });
 
-  group('mavjud xatti-harakat buzilmagan', () {
-    test('kasr sentinel bilan belgilanadi va yassilanadi', () {
+  group('existing behaviour is unchanged', () {
+    test('a fraction is marked with a sentinel and flattened', () {
       expect(flattenFractions(renderMathText(r'$\frac{1}{5}$')), '1/5');
     });
 
-    test('ildiz', () {
+    test('roots', () {
       expect(renderMathText(r'\sqrt{16}'), '√(16)');
     });
 
-    test('LaTeX yo\'q bo\'lsa matn o\'zgarmaydi', () {
+    test('text without LaTeX is left alone', () {
       const plain = 'Toshkent shahri qaysi yilda tashkil topgan?';
       expect(renderMathText(plain), plain);
     });
 
-    test('funksiya nomi va daraja', () {
+    test('function names and powers', () {
       expect(renderMathText(r'\sin^2 x'), contains('sin'));
       expect(renderMathText(r'x^2'), 'x²');
     });
 
-    test('bo\'sh va null xavfsiz', () {
+    test('empty and null are safe', () {
       expect(renderMathText(null), '');
       expect(renderMathText(''), '');
     });

@@ -1,8 +1,6 @@
 """
 Ko'rinadigan ism (`display_name`) uchun tozalash va tekshirish.
 
-## Nega alohida modul
-
 `display_name` **boshqa foydalanuvchilarga ko'rinadi**: reytingda, bellashuv
 kartochkasida, ota-ona ekranida. Ya'ni bu shunchaki profil maydoni emas —
 bu boshqa odamning ekraniga tushadigan matn.
@@ -26,8 +24,6 @@ Ataylab RAD ETILADI:
 | Nol kenglikdagi belgilar (`U+200B`, `U+200E`…) | Ko'rinmas — ikkita "bir xil" ism yaratish yo'li |
 | Boshqaruv belgilari | Terminal va log'ni buzadi |
 
-## Nega server tomonda
-
 Klientdagi `FilteringTextInputFormatter` faqat qulaylik. Telegram'dan
 kelgan `first_name` esa **umuman klientdan o'tmaydi** — u bot API'dan
 to'g'ridan-to'g'ri keladi. Shuning uchun yagona ishonchli joy — shu modul.
@@ -40,23 +36,19 @@ import unicodedata
 MIN_LEN = 1
 MAX_LEN = 40
 
-# Ruxsat etilgan belgilar. Kirill ataylab kiritilgan: `ru` interfeysi bor.
 _ALLOWED = re.compile(
     r"^[A-Za-z0-9Ѐ-ӿ"      # lotin, raqam, kirill
     r"ʻʼ‘’'"     # o'zbek tutuq belgisi shakllari
     r" .\-]+$"
 )
 
-# Ko'rinmas va boshqaruv belgilari — matn ichidan olib tashlanadi.
 _INVISIBLE = re.compile(r"[​-‏‪-‮⁠-⁯﻿]")
 
 # Ketma-ket bo'shliqlar bittaga tushiriladi.
 _SPACES = re.compile(r"\s+")
 
-
 class NameError_(ValueError):
     """Ism qoidaga mos emas."""
-
 
 def clean_name(raw: str | None) -> str:
     """Tozalaydi: NFKC normalizatsiya, ko'rinmas belgilar olib tashlanadi,
@@ -72,11 +64,9 @@ def clean_name(raw: str | None) -> str:
     s = _SPACES.sub(" ", s).strip()
     return s
 
-
 def is_valid_name(raw: str | None) -> bool:
     s = clean_name(raw)
     return bool(MIN_LEN <= len(s) <= MAX_LEN and _ALLOWED.match(s))
-
 
 def validate_name(raw: str | None) -> str:
     """Tozalangan ismni qaytaradi yoki `NameError_` ko'taradi."""
@@ -88,7 +78,6 @@ def validate_name(raw: str | None) -> str:
             "ismda faqat harflar, raqamlar, bo'shliq va - . ' belgilari "
             "bo'lishi mumkin")
     return s
-
 
 def safe_name(raw: str | None, fallback: str = "") -> str:
     """Tashqi manbadan (Telegram) kelgan ism uchun.

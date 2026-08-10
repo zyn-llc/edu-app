@@ -21,14 +21,12 @@ import app.models as models
 
 _APP_DIR = pathlib.Path(__file__).resolve().parent.parent / "app"
 
-
 def _mapped_classes() -> dict[str, type]:
     return {
         name: obj
         for name, obj in vars(models).items()
         if isinstance(obj, type) and hasattr(obj, "__tablename__")
     }
-
 
 def test_no_phantom_model_attributes():
     classes = _mapped_classes()
@@ -44,8 +42,6 @@ def test_no_phantom_model_attributes():
             cls = node.value.id
             if cls not in known or node.attr.startswith("_"):
                 continue
-            # Ustun emas, lekin sinfda bor (masalan `Model.__table__`,
-            # klass metodi) — bular to'g'ri.
             if node.attr in known[cls] or hasattr(classes[cls], node.attr):
                 continue
             bad.append(f"{path.relative_to(_APP_DIR.parent)}:{node.lineno} "

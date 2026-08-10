@@ -12,14 +12,12 @@ from types import SimpleNamespace
 
 from app.services import analysis
 
-
 class _Rows:
     def __init__(self, rows):
         self._rows = rows
 
     def all(self):
         return self._rows
-
 
 class FakeDB:
     """Yields queued result sets in call order."""
@@ -30,14 +28,11 @@ class FakeDB:
     async def execute(self, *_a, **_kw):
         return _Rows(self._queue.pop(0))
 
-
 def _mastery(db, lang="uz-Latn"):
     return asyncio.run(analysis.topic_mastery(db, uuid.uuid4(), lang))
 
-
 def test_empty_history_returns_empty_list():
     assert _mastery(FakeDB([])) == []
-
 
 def test_resolves_topic_title_in_requested_language():
     tid = uuid.uuid4()
@@ -54,17 +49,13 @@ def test_resolves_topic_title_in_requested_language():
     out_ru = _mastery(FakeDB(rows, names), lang="ru")
     assert out_ru[0]["name"] == "Атмосфера"
 
-
 def test_falls_back_to_any_translation_then_to_code():
     tid = uuid.uuid4()
     rows = [SimpleNamespace(topic_id=tid, code="geo_relef",
                             answered=3, correct=0)]
 
-    # So'ralgan til yo'q -> mavjud birinchisi.
     assert _mastery(FakeDB(rows, [(tid, "ru", "Рельеф")]))[0]["name"] == "Рельеф"
-    # Umuman tarjima yo'q -> kod. Bo'sh sarlavhadan ko'ra kod yaxshiroq.
     assert _mastery(FakeDB(rows, []))[0]["name"] == "geo_relef"
-
 
 def test_zero_answered_does_not_divide_by_zero():
     tid = uuid.uuid4()

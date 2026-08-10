@@ -24,7 +24,6 @@ from app.schemas.auth import TokenPair
 
 _settings = get_settings()
 
-
 async def resolve_referrer(db: AsyncSession, raw: str | None,
                            new_username: str | None = None) -> str | None:
     """`?ref=<username>` orqali kelgan taklif havolasi — kim taklif qilgan.
@@ -44,12 +43,11 @@ async def resolve_referrer(db: AsyncSession, raw: str | None,
     if not name or len(name) > 20:
         return None
     if new_username and name.lower() == new_username.lower():
-        return None  # o'zini o'zi taklif qilish — ma'nosiz, lekin zararsiz
+        return None
     row = (await db.execute(
         select(User.username).where(func.lower(User.username) == name.lower())
     )).scalar_one_or_none()
     return row
-
 
 async def get_or_create_user(
     db: AsyncSession,
@@ -60,8 +58,6 @@ async def get_or_create_user(
     region_code: str | None = None,
     grade: int | None = None,
 ) -> User:
-    # Barcha kirish yo'llari shu funksiyadan o'tadi, shuning uchun ism
-    # filtri ham shu yerda. `safe_name` xato ko'tarmaydi: yaroqsiz ism
     # kirishni bloklamaydi, shunchaki olinmaydi.
     display_name = names.safe_name(display_name) or None
 
@@ -93,7 +89,6 @@ async def get_or_create_user(
             user.grade = grade
     return user
 
-
 async def issue_token_pair(db: AsyncSession, user: User) -> TokenPair:
     access = security.create_access_token(user.id, user.role)
     raw_refresh = security.new_refresh_token()
@@ -109,10 +104,8 @@ async def issue_token_pair(db: AsyncSession, user: User) -> TokenPair:
         expires_in=_settings.jwt_access_ttl_seconds,
     )
 
-
 class AuthError(Exception):
     pass
-
 
 async def rotate_refresh_token(db: AsyncSession, raw_refresh: str) -> TokenPair:
     token_hash = security.hash_token(raw_refresh)
@@ -133,7 +126,6 @@ async def rotate_refresh_token(db: AsyncSession, raw_refresh: str) -> TokenPair:
     row.revoked_at = now                       # one-time use
     pair = await issue_token_pair(db, user)
     return pair
-
 
 async def revoke_refresh_token(db: AsyncSession, raw_refresh: str) -> None:
     """Logout: best-effort revoke. A token that isn't found is already gone."""

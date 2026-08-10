@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Material 3 "window size class" — ekran kengligiga qarab layout tanlash.
 ///
-/// Nega enum, `MediaQuery.width > 600` emas: kenglik tekshiruvi kodda o'nlab
-/// joyda takrorlansa, chegaralarni bir joydan o'zgartirib bo'lmaydi. Bu yerda
-/// chegara BITTA marta yozilgan.
 ///
 /// Chegaralar M3 spetsifikatsiyasidan (dp):
 ///   compact     < 600   telefon, portret
@@ -27,32 +23,19 @@ enum WindowSize {
     return WindowSize.extraLarge;
   }
 
-  /// Telefon rejimi: pastda `NavigationBar`, bitta ustun.
   bool get isCompact => this == WindowSize.compact;
 
-  /// `compact` dan katta hamma narsa: chapda `NavigationRail`.
   ///
   /// M3 tavsiyasi — rail aynan `medium` dan boshlanadi. Telefon landshaftda
-  /// ekran balandligi 400 dp atrofida bo'ladi va pastki bar kontentning
-  /// deyarli choragini yeydi; rail esa vertikal joyni bo'shatadi.
   bool get useRail => this != WindowSize.compact;
 
-  /// Rail yorliqlar bilan yoyilganmi. Faqat haqiqatan keng ekranda —
-  /// aks holda rail kontentdan joy o'g'irlaydi.
   bool get useExtendedRail =>
       this == WindowSize.large || this == WindowSize.extraLarge;
 
-  /// Rail rejimida markaziy ustunning eng katta kengligi (px).
   ///
-  /// Qulay o'qish uzunligi matn uchun ~720 px, lekin bosh ekran matn emas —
   /// u kartochkalar gridi. 1100 px 27 dyuymli monitorda (2560 px) ikki yonida
-  /// 700 px dan bo'sh fon qoldirardi va ilova ekranning uchdan biriga
-  /// siqilgandek ko'rinardi. Savol matni ekranlari o'zlarining ichki
-  /// `ContentWidth` i bilan baribir 720–760 px da qoladi, ya'ni bu yerdagi
-  /// kengaytirish uzun satr muammosini qaytarmaydi.
   double get contentMaxWidth => this == WindowSize.extraLarge ? 1440 : 1100;
 
-  /// Fan kartochkalari gridi uchun ustunlar soni.
   int get gridColumns => switch (this) {
         WindowSize.compact => 2,
         WindowSize.medium => 3,
@@ -63,8 +46,6 @@ enum WindowSize {
 }
 
 extension WindowSizeX on BuildContext {
-  /// Joriy oyna sinfi. `MediaQuery.sizeOf` ishlatiladi — `MediaQuery.of` emas:
-  /// birinchisi faqat o'lcham o'zgarganda qayta quradi, ikkinchisi klaviatura
   /// ochilganda ham (`viewInsets`) butun daraxtni qayta quradi.
   WindowSize get windowSize => WindowSize.fromWidth(MediaQuery.sizeOf(this).width);
 
@@ -72,13 +53,6 @@ extension WindowSizeX on BuildContext {
   bool get useRail => windowSize.useRail;
 }
 
-/// Kontentni o'qish uchun qulay kenglikda markazlashtiradi.
-///
-/// Nega kerak: 1920 px monitorda savol matni butun ekran bo'ylab cho'zilsa,
-/// ko'z bir qatordan ikkinchisiga o'ta olmaydi (tipografiyada qulay uzunlik
-/// ~60–75 belgi). Shu sababli ichki ekranlar shu vidjetga o'raladi.
-///
-/// Telefonda hech narsa qilmaydi — `maxWidth` ekran kengligidan katta.
 class ContentWidth extends StatelessWidget {
   const ContentWidth({
     super.key,
@@ -89,8 +63,6 @@ class ContentWidth extends StatelessWidget {
 
   final Widget child;
 
-  /// 720 — matn ustunlari uchun. Grid/dashboard kabi keng kontent uchun
-  /// chaqiruv joyida kattaroq qiymat bering (masalan 1100).
   final double maxWidth;
 
   final EdgeInsetsGeometry padding;

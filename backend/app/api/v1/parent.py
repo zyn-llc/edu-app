@@ -51,14 +51,11 @@ _settings = get_settings()
 
 _ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no ambiguous 0/O/1/I
 
-
 def _gen_link_code() -> str:
     return "".join(secrets.choice(_ALPHABET) for _ in range(6))
 
-
 def _link_key(code: str) -> str:
     return f"link:{code.upper()}"
-
 
 @router.post("/link-code", response_model=LinkCodeOut)
 async def create_link_code(student: User = Depends(get_current_user)):
@@ -68,7 +65,6 @@ async def create_link_code(student: User = Depends(get_current_user)):
     )
     return LinkCodeOut(code=code, expires_in_seconds=_settings.link_code_ttl_seconds)
 
-
 @router.post("/link")
 async def link_child(
     body: LinkIn,
@@ -76,9 +72,6 @@ async def link_child(
     parent: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Kod 6 belgi (32 harfli alifbo) — taxmin qilish amalda imkonsiz, LEKIN
-    # bu butun kodda cheklovsiz qolgan yagona kod-kiritish yo'li edi, va
-    # muvaffaqiyatli taxmin bolaning butun progressi va tahlilini ochadi.
     allowed, _ = await ratelimit_hit("parent_link", client_ip(request),
                                      20, 3600, fail_closed=True)
     if not allowed:
@@ -91,9 +84,6 @@ async def link_child(
         raise AppError(404, "Invalid or expired code")
 
     if student_id == str(parent.id):
-        # Kodni O'CHIRISHDAN OLDIN tekshiramiz: ilgari o'zini o'ziga ulashga
-        # urinish yaroqli kodni behuda yoqib yuborardi va o'quvchi yangisini
-        # yaratishga majbur bo'lardi.
         raise AppError(400, "Cannot link to yourself")
 
     await redis.delete(_link_key(body.code))  # single-use
@@ -110,7 +100,6 @@ async def link_child(
         await db.commit()
     return {"status": "ok", "student_id": student_id}
 
-
 def signals_for_summary(signals: dict) -> dict:
     """`parent_signals` chiqishidan `ChildSummary` kutadigan maydonlarni
     ajratadi. `correct_7d` sxemada yo'q (aniqlik allaqachon hisoblangan),
@@ -121,7 +110,6 @@ def signals_for_summary(signals: dict) -> dict:
         "active_days_7d": signals["active_days_7d"],
         "last_practiced_at": signals["last_practiced_at"],
     }
-
 
 async def _linked_student(
     db: AsyncSession, parent: User, student_id: uuid.UUID
@@ -140,7 +128,6 @@ async def _linked_student(
     if student is None:
         raise AppError(404, "Student not found")
     return student
-
 
 @router.get("/children", response_model=ChildrenOut)
 async def list_children(
@@ -168,7 +155,6 @@ async def list_children(
         ))
     return ChildrenOut(children=children)
 
-
 @router.get("/children/{student_id}", response_model=ChildSummary)
 async def child_detail(
     student_id: uuid.UUID,
@@ -185,7 +171,6 @@ async def child_detail(
         progress=ProgressOut(**prog),
         **signals_for_summary(signals),
     )
-
 
 @router.get("/children/{student_id}/analysis")
 async def child_analysis(

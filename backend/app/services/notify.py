@@ -43,22 +43,12 @@ from app.services import telegram as tg
 
 _log = logging.getLogger("topagon.notify")
 
-#: Kuniga bitta foydalanuvchiga maksimal xabar. 2 — chunki bir kunda ikkitadan
-#: ko'p sabab bo'lishi kamdan-kam, va uchinchisi allaqachon bezovta qilish.
 MAX_PER_DAY = 2
 
-#: Seriya shu kundan qisqa bo'lsa xabar yuborilmaydi.
 STREAK_MIN = 3
 
 _APP_URL = "https://app.topagon.uz"
 
-
-# --------------------------------------------------------------------------- #
-#  Kimga nima yuborish kerak — hammasi SQL'da, chunki bu sof to'plam masalasi  #
-# --------------------------------------------------------------------------- #
-
-#: Chorlangan, lekin hali o'ynamagan raqib. `status='active'` = ikkalasi ham
-#: garov qo'ygan, ya'ni chaqiruv haqiqiy.
 _INVITES_SQL = """
 SELECT c.id::text AS ref_id, u.telegram_id, u.display_name,
        cr.display_name AS from_name
@@ -86,7 +76,6 @@ WHERE c.status IN ('open', 'active')
                    WHERE r.challenge_id = c.id AND r.user_id = u.id)
 """
 
-#: Yakunlangan, lekin foydalanuvchi hali xabar olmagan bellashuvlar.
 _RESULTS_SQL = """
 SELECT c.id::text AS ref_id, u.telegram_id, u.display_name,
        (c.winner_id = u.id) AS i_won, (c.winner_id IS NULL) AS is_draw
@@ -98,9 +87,6 @@ WHERE c.status = 'done'
   AND u.tg_notifications IS DISTINCT FROM false
 """
 
-#: Kecha faol bo'lgan, bugun hali javob bermagan, seriyasi uzilish arafasidagilar.
-#: `last_active` MAHALLIY kun (services/progress.py), shuning uchun taqqoslash
-#: ham mahalliy kun bilan.
 _STREAK_SQL = """
 SELECT u.id::text AS uid, u.telegram_id, u.display_name, p.streak_days
 FROM user_progress p
@@ -111,23 +97,13 @@ WHERE p.streak_days >= :min_streak
   AND u.tg_notifications IS DISTINCT FROM false
 """
 
-
 def _name(row) -> str:
     return (row.display_name or "").strip() or "do'stim"
 
-
-# --------------------------------------------------------------------------- #
-#  Xabar matnlari                                                              #
-#                                                                              #
-#  Har biri alohida funksiya (lambda emas): matnlar ko'p qatorli, ismlar        #
-#  qochirilishi kerak, va aynan shu matnlar mahsulotning ovozi — ular kod       #
-#  ichida ko'rinib turishi kerak.                                              #
-# --------------------------------------------------------------------------- #
 def _msg_invite(r) -> str:
     who = (r.from_name or "").strip() or "Do'stingiz"
     return (f"{_name(r)}, {who} sizni bellashuvga chorladi ⚔️\n\n"
             f"Javob bermasangiz 24 soatdan keyin bekor bo'ladi.\n{_APP_URL}")
-
 
 def _msg_result(r) -> str:
     if r.i_won:
@@ -137,18 +113,14 @@ def _msg_result(r) -> str:
                 f"Garov qaytarildi.\n{_APP_URL}")
     return f"{_name(r)}, bellashuv yakunlandi. Natijani ko'ring:\n{_APP_URL}"
 
-
 def _msg_expiring(r) -> str:
     return (f"{_name(r)}, bellashuvingizga 6 soatdan kam vaqt qoldi ⏳\n"
             f"O'ynamasangiz garov qaytariladi.\n{_APP_URL}")
-
 
 def _msg_streak(r) -> str:
     return (f"{_name(r)}, {r.streak_days} kunlik seriyangiz bugun uziladi 🔥\n"
             f"Bitta savol yetadi.\n{_APP_URL}")
 
-
-# --------------------------------------------------------------------------- #
 async def _already_sent_today(db: AsyncSession, telegram_ids: list[int]) -> set[str]:
     """Bugun allaqachon MAX_PER_DAY ta xabar olgan foydalanuvchilar."""
     if not telegram_ids:
@@ -163,7 +135,6 @@ async def _already_sent_today(db: AsyncSession, telegram_ids: list[int]) -> set[
         HAVING count(*) >= :cap
     """), {"ids": telegram_ids, "cap": MAX_PER_DAY})).scalars().all()
     return set(rows)
-
 
 async def _claim(db: AsyncSession, telegram_id: int, kind: str, ref_id: str) -> bool:
     """Xabarni "band qilish". `False` — allaqachon yuborilgan.
@@ -181,16 +152,12 @@ async def _claim(db: AsyncSession, telegram_id: int, kind: str, ref_id: str) -> 
     """), {"kind": kind, "ref": ref_id, "tg": telegram_id})).first()
     return row is not None
 
-
 async def run_once(db: AsyncSession) -> dict[str, int]:
     """Barcha turdagi xabarlarni bir marta yuboradi. Yuborilganlar sonini
     qaytaradi — cron log'ida shu ko'rinadi."""
     sent: dict[str, int] = {}
     yesterday = local_today() - timedelta(days=1)
 
-    # Tartib MUHIM: kunlik chegara (MAX_PER_DAY) tugaganda oxirgilari
-    # tushib qoladi, shuning uchun eng qimmatlisi — chaqiruv va natija —
-    # birinchi turadi.
     plans = [
         ("challenge_invite", _INVITES_SQL, {}, _msg_invite),
         ("challenge_result", _RESULTS_SQL, {}, _msg_result),
@@ -210,8 +177,6 @@ async def run_once(db: AsyncSession) -> dict[str, int]:
             tg_id = int(r.telegram_id)
             if str(tg_id) in capped:
                 continue
-            # `streak_at_risk` da ref — SANA: seriya har kuni yangi xabar
-            # (lekin kuniga bittadan ko'p emas). Qolganlarida — bellashuv id si.
             ref = (local_today().isoformat() if kind == "streak_at_risk"
                    else r.ref_id)
             if not await _claim(db, tg_id, kind, ref):
@@ -227,7 +192,6 @@ async def run_once(db: AsyncSession) -> dict[str, int]:
     await db.commit()
     return sent
 
-
 async def main() -> None:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -235,7 +199,6 @@ async def main() -> None:
         result = await run_once(db)
     total = sum(result.values())
     _log.info("notify: %s ta xabar yuborildi %s", total, result or "{}")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

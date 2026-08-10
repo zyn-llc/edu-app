@@ -44,17 +44,11 @@ from app.models import User, UserProgress
 _log = logging.getLogger("bilim.telegram")
 _settings = get_settings()
 
-#: `tg:login:<nonce>` qiymatining kutish holati: `pending:<KOD>`.
-#: Tasdiqlangandan keyin qiymat sof `user_id` bo'ladi — `telegram_auth.poll`
-#: aynan shu farqqa qarab token beradi.
 PENDING = "pending"
 _PENDING_PREFIX = PENDING + ":"
 
-#: Tasdiq kodi alifbosi — chalkash 0/O va 1/I yo'q, chunki foydalanuvchi uni
-#: ekrandagi kod bilan KO'Z BILAN solishtiradi.
 _CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-# Bot javoblari. Brend nomi "Bilim" edi — ilova allaqachon "Topag'on".
 _START_HINT = (
     "Salom! Men Topag'on botiman.\n\n"
     "Ilovaga kirish uchun topagon.uz ni oching va «Telegram orqali kirish» "
@@ -66,7 +60,6 @@ _SUPPORT_HINT = (
     "Xabaringiz qabul qilindi va jamoaga yuborildi. Rahmat!\n\n"
     "Ilovaga kirish uchun topagon.uz → «Telegram orqali kirish»."
 )
-
 
 async def notify_admin(text: str) -> None:
     """Murojaatni administrator chatiga yuboradi.
@@ -84,23 +77,18 @@ async def notify_admin(text: str) -> None:
     except Exception:
         _log.exception("admin notify failed")
 
-
 def nonce_key(nonce: str) -> str:
     return f"tg:login:{nonce}"
 
-
 def new_nonce() -> str:
     return secrets.token_urlsafe(24)
-
 
 def new_confirm_code() -> str:
     """Ilova ekranida ham, bot xabarida ham ko'rinadigan 4 belgili kod."""
     return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(4))
 
-
 def pending_value(code: str) -> str:
     return _PENDING_PREFIX + code
-
 
 def pending_code(value: str | None) -> str | None:
     """Redis qiymatidan tasdiq kodini ajratadi; kutish holatida bo'lmasa None."""
@@ -108,15 +96,9 @@ def pending_code(value: str | None) -> str | None:
         return value[len(_PENDING_PREFIX):]
     return None
 
-
 def deep_link(nonce: str) -> str:
-    # `.env` da username `@topagonuzbot` deb yozilishi juda oson xato, va u
-    # `https://t.me/@topagonuzbot` degan ISHLAMAYDIGAN havola beradi — xato
-    # esa faqat foydalanuvchi havolani bosганда ko'rinadi. Shu sababli `@`
-    # shu yerda kesiladi.
     username = _settings.telegram_bot_username.strip().lstrip("@")
     return f"https://t.me/{username}?start={nonce}"
-
 
 # --------------------------------------------------------------------------- #
 #  Bot API                                                                     #
@@ -137,7 +119,6 @@ async def _call(method: str, payload: dict) -> None:
     except Exception:
         _log.exception("telegram %s failed", method)
 
-
 async def send_message(chat_id: int, text: str,
                        reply_markup: dict | None = None) -> None:
     """Botdan xabar. Yuborilmasa oqim buzilmaydi — foydalanuvchi baribir
@@ -147,14 +128,12 @@ async def send_message(chat_id: int, text: str,
         payload["reply_markup"] = reply_markup
     await _call("sendMessage", payload)
 
-
 async def answer_callback(callback_id: str, text: str = "") -> None:
     """Tugma bosilganda Telegram'dagi kutish aylanasini to'xtatadi. Chaqirilmasa
     foydalanuvchi bir necha soniya "yuklanyapti" ni ko'radi va tugmani qayta
     bosadi."""
     await _call("answerCallbackQuery",
                 {"callback_query_id": callback_id, "text": text})
-
 
 async def set_webhook(url: str) -> dict:
     """Bir marta ishlatiladi (deploy'dan keyin). scripts/telegram_setup.py chaqiradi."""
@@ -164,17 +143,10 @@ async def set_webhook(url: str) -> dict:
         r = await client.post(api, json={
             "url": url,
             "secret_token": _settings.telegram_webhook_secret,
-            # `callback_query` MAJBURIY: kirish tasdiqlash tugmasi aynan shu
-            # turdagi update yuboradi. Ro'yxatda bo'lmasa Telegram uni umuman
-            # jo'natmaydi va tasdiqlash tugmasi jim ishlamaydi.
             "allowed_updates": ["message", "callback_query"],
         })
         return r.json()
 
-
-# --------------------------------------------------------------------------- #
-#  Foydalanuvchi                                                               #
-# --------------------------------------------------------------------------- #
 async def get_or_create_by_telegram(
     db: AsyncSession,
     telegram_id: int,
@@ -202,7 +174,6 @@ async def get_or_create_by_telegram(
     await db.flush()
     return user
 
-
 # --------------------------------------------------------------------------- #
 #  Update ishlovchisi — webhook ham, dev long-polling ham shuni chaqiradi      #
 # --------------------------------------------------------------------------- #
@@ -214,7 +185,6 @@ def _display_name(sender: dict) -> str | None:
     raw = " ".join(x for x in [sender.get("first_name"),
                                sender.get("last_name")] if x)
     return names.safe_name(raw) or None
-
 
 async def _handle_callback(db: AsyncSession, cq: dict) -> None:
     """Kirish tasdiqlash tugmasi. FAQAT shu yerda hisob bog'lanadi."""
@@ -240,8 +210,6 @@ async def _handle_callback(db: AsyncSession, cq: dict) -> None:
     key = nonce_key(nonce)
     value = await redis.get(key)
     if pending_code(value) is None:
-        # Muddati tugagan yoki allaqachon ishlatilgan. Ikkalasi ham bir xil
-        # javob oladi: qaysi nonce mavjudligini bilish kerak emas.
         await answer_callback(cq_id, "Havolaning muddati tugagan")
         if chat_id:
             await send_message(
@@ -253,14 +221,12 @@ async def _handle_callback(db: AsyncSession, cq: dict) -> None:
         db, int(telegram_id), display_name=_display_name(sender))
     await db.commit()
 
-    # TTL saqlanadi: ilova bor-yo'g'i bir necha soniya so'rab turadi.
     ttl = await redis.ttl(key)
     await redis.set(key, str(user.id), ex=max(ttl, 60))
 
     await answer_callback(cq_id, "Tasdiqlandi")
     if chat_id:
         await send_message(chat_id, "Tayyor ✅ Ilovaga qayting.")
-
 
 async def handle_update(db: AsyncSession, update: dict) -> None:
     if "callback_query" in update:
@@ -278,12 +244,6 @@ async def handle_update(db: AsyncSession, update: dict) -> None:
         return
 
     if not text.startswith("/start"):
-        # BOT ENDI SUPPORT KANALI HAM.
-        #
-        # Ilgari bot "/start" dan boshqa hamma narsaga bir xil javob berardi
-        # va xabar hech qayerga bormasdi. Foydalanuvchi botga yozgan savoliga
-        # javob olmagach, ilova tashlab ketilgan deb o'ylardi.
-        # Endi xabar administrator chatiga yetkaziladi.
         who = " ".join(x for x in [sender.get("first_name"),
                                    sender.get("last_name")] if x) or "?"
         username = sender.get("username")
@@ -298,7 +258,6 @@ async def handle_update(db: AsyncSession, update: dict) -> None:
 
     parts = text.split(maxsplit=1)
     if len(parts) < 2:
-        # Botni to'g'ridan ochgan — nonce yo'q.
         await send_message(chat_id,
                            _START_HINT)
         return
@@ -316,15 +275,9 @@ async def handle_update(db: AsyncSession, update: dict) -> None:
 
     code = pending_code(current)
     if code is None:
-        # Allaqachon tasdiqlangan — takroriy bosish. Yangi akkaunt yaratilmaydi.
         await send_message(chat_id, "Bu havola allaqachon ishlatilgan.")
         return
 
-    # HISOB SHU YERDA BOG'LANMAYDI. Faqat so'raymiz.
-    #
-    # Xabar matni ataylab ogohlantirish bilan: bu ekranni ko'rgan odamning
-    # bir qismi hujum qurboni bo'ladi — u hech qayerda kirishga urinmagan,
-    # havolani esa birov yuborgan. Ular uchun to'g'ri harakat «Bekor qilish».
     await send_message(
         chat_id,
         "Topag'onga kirishni tasdiqlaysizmi?\n\n"

@@ -27,18 +27,13 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-# httpx INFO darajasida har bir so'rovning TO'LIQ URL'ini yozadi. Telegram Bot
 # API'da token aynan URL yo'lida turadi:
 #     POST https://api.telegram.org/bot<TOKEN>/sendMessage
-# ya'ni bot tokeni har bir xabar yuborilganda konteyner log'iga tushadi va
-# `docker compose logs` chiqishi bilan birga tarqaladi. WARNING ga tushiramiz:
-# xatolar baribir ko'rinadi, muvaffaqiyatli so'rovlar esa yozilmaydi.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 _log = logging.getLogger("topagon")
 settings = get_settings()
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -50,7 +45,6 @@ async def lifespan(_: FastAPI):
         _log.warning("DEV %s", msg)          # dev: allowed, but loud
     yield
     await close_redis()
-
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
@@ -78,7 +72,6 @@ app.include_router(analytics_router)
 app.include_router(invites_router)
 app.include_router(password_auth_router)
 app.include_router(telegram_router)
-
 
 @app.get("/health")
 async def health():

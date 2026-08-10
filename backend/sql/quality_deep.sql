@@ -1,15 +1,10 @@
 -- =============================================================================
---  quality_deep.sql — audit ochib bergan uchta savolga aniq javob.
 --
 --    Get-Content sql/quality_deep.sql | docker compose exec -T db psql -U edu -d edu
 --
---  Faqat SELECT. Hech narsa o'zgarmaydi.
 -- =============================================================================
 
 \echo '===== A. media USTUNIDA NIMA BOR? ====='
--- 13 596 raqami shubhali: bu deyarli butun bank. Ehtimol media ustuni SQL NULL
--- emas, JSON null yoki bo'sh obyekt — u holda `media IS NOT NULL` HAMMASIGA
--- to'g'ri keladi va rasm bilan aloqasi yo'q.
 SELECT
     jsonb_typeof(media)                    AS tur,
     count(*)                               AS soni,
@@ -58,11 +53,8 @@ WHERE q.status = 'active'
   AND NOT (q.media ? 'ref')
 GROUP BY s.code ORDER BY 2 DESC;
 
-
 \echo ''
 \echo '===== B. ona_tili TAKRORLARI — variantlari HAM bir xilmi? ====='
--- Agar savol matni bir xil, LEKIN variantlar boshqa bo'lsa — bu normal
--- (bitta savol shakli, har xil parcha). Variantlar ham bir xil bo'lsa —
 -- chinakam dublikat.
 WITH sig AS (
   SELECT q.id, q.source_ref, qt.stem,
@@ -100,7 +92,6 @@ SELECT fan, count(*) AS nusxa,
 FROM sig GROUP BY fan, stem, variantlar HAVING count(*) > 1
 ORDER BY 2 DESC LIMIT 40;
 
-
 \echo ''
 \echo '===== C. bio_g9_q0127..0131 va geo_g10_q1120 — to`liq ko`rinish ====='
 SELECT q.source_ref, o.option_key, o.position,
@@ -135,8 +126,6 @@ ORDER BY 1 LIMIT 100;
 
 \echo ''
 \echo '===== D. OCR buzilgan belgilar (тАФ, ┬л, ╩╗ kabi) ====='
--- Bular hisobotdagi "тАФ" ko'rinishidagi belgilar. Ular bazada emas, psql
--- kodlashida ham bo'lishi mumkin — shu so'rov haqiqatini aniqlaydi.
 SELECT s.code AS fan, count(*) AS soni
 FROM questions q
 JOIN subjects s ON s.id = q.subject_id

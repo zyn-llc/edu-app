@@ -17,15 +17,10 @@ from __future__ import annotations
 import asyncio, os, re
 from collections import defaultdict
 
-
 def resolve_url() -> str:
     # Almashtirish mantig'i `app/ingest/dsn.py` da — u konteyner ichida
-    # ekanligini tekshiradi. Ilgari bu yerda shartsiz `@db:` -> `@127.0.0.1:`
-    # turardi va `docker compose exec api ...` da skript o'z konteynerining
-    # loopback'iga ulanmoqchi bo'lib yiqilardi.
     from app.ingest.dsn import resolve_url as _resolve
     return _resolve()
-
 
 async def main() -> int:
     from sqlalchemy import select
@@ -55,12 +50,8 @@ async def main() -> int:
     finally:
         await engine.dispose()
 
-    # Har turning o'z grading_spec shakli bor. Ilgari bu funksiya faqat
-    # `correct_option_ids` ni bilardi va `numeric` / `open_keyword` savollarni
-    # "empty correct_option_ids" deb noto'g'ri belgilardi.
     #
     # Tekshiruv `services/grading.py` dagi graderlar HAQIQATAN o'qiydigan
-    # maydonlarga qarab yozilgan — ikkisi bir-biriga mos bo'lishi shart.
     bad = []
     by_type = defaultdict(int)
     for qid, qtype, spec, src in rows:
@@ -95,7 +86,6 @@ async def main() -> int:
                             [str(spec.get("value")), str(spec.get("tolerance"))], []))
 
         elif qtype == "open_keyword":
-            # `_grade_keyword` spec["accepted"] ro'yxatini o'qiydi.
             acc = spec.get("accepted")
             if not isinstance(acc, list) or not [a for a in acc if str(a).strip()]:
                 bad.append((src, qtype, "open_keyword: 'accepted' bo'sh yoki ro'yxat emas",
@@ -110,7 +100,6 @@ async def main() -> int:
                 bad.append((src, qtype, "ordering: 'order' bo'sh", [], []))
 
         elif qtype == "open_text":
-            # AI-rubric bilan baholanadi (phase 4) — hali grader yo'q.
             bad.append((src, qtype, "open_text graderi hali yozilmagan "
                         "(phase 4) — status='draft' bo'lishi kerak", [], []))
 
@@ -131,7 +120,6 @@ async def main() -> int:
         return 1
     print("RESULT: all grading_spec consistent with options.")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(asyncio.run(main()))

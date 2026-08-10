@@ -6,26 +6,15 @@ import 'package:dio/dio.dart';
 ///
 ///     flutter run -d chrome --dart-define=MOCK=true
 ///
-/// Nega kerak: prezentatsiya, jyuri ko'rsatuvi yoki internetsiz sinov paytida
-/// VPS, Postgres va Redis ishlamasligi mumkin. Bu rejimda butun backend
-/// brauzer xotirasida yashaydi — hech qanday tarmoq so'rovi chiqmaydi.
 ///
-/// MUHIM INVARIANT: javob kaliti (`_Q.correctKey`) hech qachon `/v1/questions`
-/// javobida yuborilmaydi. Faqat `/v1/submissions` javobida
-/// `correct_option_ids` sifatida qaytadi — real backenddagi qoida bilan bir xil.
-/// Agar bu buzilsa, mock real serverdan "osonroq" bo'lib qoladi va klientdagi
 /// xatoni yashiradi.
 const kMockMode = bool.fromEnvironment('MOCK', defaultValue: false);
 
 /// Dio zanjirining OXIRIGA qo'shiladi: undan oldingi interceptorlar
-/// `Authorization` / `Accept-Language` sarlavhalarini qo'yib bo'lgan bo'ladi,
-/// shuning uchun mock ularni real server kabi o'qiy oladi.
 class MockInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    // Sun'iy kechikish: yuklanish indikatorlari real ko'rinsin va "bir zumda
-    // paydo bo'lgan" UI holatlari sinovdan o'tsin.
     await Future<void>.delayed(const Duration(milliseconds: 220));
     try {
       final data = _MockServer.instance.handle(options);
@@ -45,9 +34,6 @@ class MockInterceptor extends Interceptor {
         ),
       ));
     } catch (e) {
-      // Mockdagi kutilmagan xato 500 bo'lib chiqsin. Aks holda istisno
-      // interceptor ichida yo'qoladi va so'rov abadiy "yuklanmoqda" holatida
-      // muzlab qoladi — sabab topish juda qiyin bo'lgan xato turi.
       handler.reject(DioException(
         requestOptions: options,
         type: DioExceptionType.badResponse,
@@ -67,10 +53,6 @@ class _MockHttpError implements Exception {
   _MockHttpError(this.status, String detail) : body = {'detail': detail};
 }
 
-// --------------------------------------------------------------------------- //
-//  Server                                                                     //
-// --------------------------------------------------------------------------- //
-
 class _MockServer {
   static final _MockServer instance = _MockServer._();
   _MockServer._();
@@ -79,7 +61,6 @@ class _MockServer {
   int _seq = 0;
   String _id(String prefix) => '$prefix-${++_seq}';
 
-  // --- sessiya holati ---
   String _pendingRole = 'student';
   String? _pendingPhone;
   String? _tgNonce;
@@ -87,14 +68,11 @@ class _MockServer {
 
   _User? _user;
 
-  // --- o'yin holati ---
   int _xp = 0;
   int _answered = 0;
   int _correct = 0;
   int _coins = 120;
 
-  /// Real `config.py` bilan bir xil bo'lishi SHART — aks holda demo
-  /// foydalanuvchiga noto'g'ri raqamlarni o'rgatadi.
   ///   xp_per_point=10, xp_per_level=100, coins_per_correct=5,
   ///   coins_per_wrong_penalty=1, coins_per_ad=15, ads_per_day_cap=3
   static const _xpPerPoint = 10;
@@ -107,31 +85,21 @@ class _MockServer {
   int _adsLeftToday = _adsPerDayCap;
   final Set<String> _seenQuestionIds = {};
 
-  /// Fan kodi -> shu fan bo'yicha shaxsiy natija. `/v1/subjects` javobidagi
-  /// `answered`/`correct`/`accuracy`/`last_practiced_at` shu yerdan keladi.
   final Map<String, _SubjectProgress> _subjectProgress = {};
 
-  /// Savol id -> fan kodi. `_grade()` da qaysi fan hisobiga yozishni bilish
-  /// uchun; `_Q` da fan maydoni yo'q, bank esa fan bo'yicha guruhlangan.
   late final Map<String, String> _subjectOfQuestion = {
     for (final e in _bank.entries)
       for (final q in e.value) q.id: e.key,
   };
 
-  /// Tanga faqat BIR MARTA beriladi (har savol uchun). Serverda buni
-  /// `coin_transactions(user_id, ref_id)` ustidagi qisman unique indeks
   /// ta'minlaydi — `services/coins.try_award_quiz`. Mock ham xuddi shunday,
-  /// aks holda bitta savolni qayta-qayta yechib tanga "farm" qilish mumkin
-  /// bo'lib qolardi va demo real xatti-harakatdan uzoqlashardi.
   final Set<String> _rewardedQuestionIds = {};
 
   final List<_Ch> _challenges = [];
   final List<Map<String, dynamic>> _notes = [];
 
-  /// Ota-ona paneli: kod kiritilganidan keyingina farzand ko'rinadi.
   bool _hasLinkedChild = false;
 
-  /// Har `/v1/submissions` uchun savol id → to'g'ri kalit izlash jadvali.
   late final Map<String, _Q> _byId = {
     for (final list in _bank.values)
       for (final q in list) q.id: q,
@@ -145,16 +113,11 @@ class _MockServer {
     final p = o.path;
     final q = o.queryParameters;
     final body = (o.data is Map) ? (o.data as Map).cast<String, dynamic>() : const <String, dynamic>{};
-    // Mehmon (`X-Debug-User-Id`) ham sessiya hisoblanadi — real backendda
-    // ham mehmon mashq qila oladi va javoblari serverda saqlanadi. Aks holda
-    // demo paytida tanga balansi va bellashuv ro'yxati kirmasdan turib 401
-    // qaytarardi.
     final authed = o.headers['Authorization'] != null ||
         o.headers['X-Debug-User-Id'] != null;
 
     // --- auth ---
     if (m == 'GET' && p == '/v1/auth/methods') {
-      // Demoda to'rtala yo'l ham ochiq — sinovchi hammasini ko'rib chiqsin.
       return {
         'password': true,
         'phone': true,
@@ -170,7 +133,6 @@ class _MockServer {
       return {
         'retry_after_seconds': 60,
         'expires_in_seconds': 300,
-        // Mock rejimida kod doim ko'rinadi — sinovchi SMS kutmaydi.
         'debug_code': '111111',
       };
     }
@@ -202,12 +164,9 @@ class _MockServer {
     }
 
     // --- parol yo'li ---
-    // Demoda haqiqiy parol tekshiruvi yo'q: mock'da baza ham, hash ham yo'q.
-    // Maqsad — oqimni (forma -> token -> dashboard) sinab ko'rish.
     if (m == 'POST' && p == '/v1/auth/register') {
       final name = (body['username'] as String?)?.trim() ?? '';
       if (name.length < 3) throw _MockHttpError(400, 'bad_username');
-      // "band" holatini ham ko'rsata olish uchun bitta nom ataylab olingan.
       if (name.toLowerCase() == 'admin') {
         throw _MockHttpError(409, 'username_taken');
       }
@@ -228,8 +187,6 @@ class _MockServer {
     if (m == 'POST' && p == '/v1/auth/login') {
       final name = (body['username'] as String?)?.trim() ?? '';
       final pw = body['password'] as String? ?? '';
-      // Demoda 6+ belgili istalgan parol o'tadi; qisqasi 401 beradi, ya'ni
-      // xato holatini ham ko'rish mumkin.
       if (name.length < 3 || pw.length < 6) {
         throw _MockHttpError(401, 'bad_credentials');
       }
@@ -253,33 +210,23 @@ class _MockServer {
         throw _MockHttpError(400, 'username_required');
       }
       if (name != null && name.isNotEmpty) u.username = name;
-      // Real server bu yerda eski sessiyalarni bekor qilib, YANGI juftlik
-      // beradi — mock ham shuni qaytaradi, aks holda klientdagi "yangi
       // tokenni saqlash" yo'li mockda umuman sinalmasdi.
       return {'ok': true, 'username': u.username, ..._tokens()};
     }
 
     if (m == 'POST' && p == '/v1/auth/telegram/start') {
       _tgNonce = _id('nonce');
-      // Sanoq BIRINCHI so'rovdan boshlanadi (`poll`), havola olinganidan emas.
-      // Aks holda foydalanuvchi havolani 5 soniyadan ko'proq o'qib tursa,
-      // birinchi so'rovning o'ziyoq "kirdi" deb qaytarardi.
       _tgStartedAt = null;
       return {
         'nonce': _tgNonce,
         'deep_link': 'https://t.me/topagonuzbot?start=$_tgNonce',
         'expires_in_seconds': 600,
-        // Real serverda bu kod bot tugmasida ham chiqadi va foydalanuvchi
-        // ikkalasini solishtiradi. Mockda bot yo'q, lekin kod ko'rsatiladi —
-        // aks holda ekranning bu qismi demoda umuman sinalmasdi.
         'confirm_code': 'A7K2',
       };
     }
 
     if (m == 'POST' && p == '/v1/auth/telegram/poll') {
       if (body['nonce'] != _tgNonce) throw _MockHttpError(410, 'nonce_expired');
-      // Demo: birinchi so'rovdan 5 soniya o'tgach "foydalanuvchi botda Start
-      // bosdi" deb hisoblanadi.
       _tgStartedAt ??= DateTime.now();
       final elapsed = DateTime.now().difference(_tgStartedAt!);
       if (elapsed.inSeconds < 5) return {'status': 'pending'};
@@ -346,12 +293,6 @@ class _MockServer {
     }
 
     if (m == 'GET' && p == '/v1/subjects') {
-      // MUHIM: shakl `app/api/v1/content.py` dagi `list_subjects` bilan
-      // AYNAN bir xil bo'lishi kerak. Ilgari bu yerda bitta `progress`
-      // (double) qaytardi — `Subject.fromJson` esa yassi `question_count`,
-      // `answered`, `accuracy` maydonlarini o'qiydi. Natijada MOCK rejimda
-      // har bir fan `questionCount == 0` bo'lib "Savollar tayyorlanmoqda"
-      // ko'rinardi.
       return {
         'items': [
           for (final s in _subjects)
@@ -518,7 +459,6 @@ class _MockServer {
       return {'ok': true};
     }
 
-    // --- ota-ona ---
     if (m == 'POST' && p == '/v1/parent/link-code') {
       _require(authed);
       return {'code': _code(), 'expires_in_seconds': 600};
@@ -534,9 +474,6 @@ class _MockServer {
 
     if (m == 'GET' && p == '/v1/parent/children') {
       _require(authed);
-      // Demo haqiqiy oqimni takrorlasin: kod kiritilmaguncha ro'yxat bo'sh.
-      // Ilgari bu yerda hamma vaqt tayyor bola qaytardi va "kod kiriting"
-      // qadamini sinab ko'rib bo'lmasdi.
       return {'children': _hasLinkedChild ? _children : const []};
     }
 
@@ -554,9 +491,6 @@ class _MockServer {
   //  Yordamchilar                                                       //
   // ------------------------------------------------------------------- //
 
-  /// Web'da sahifa yangilanganda tokenlar `SharedPreferences` da qoladi,
-  /// lekin mock xotirasi bo'shaydi. Sarlavhada token bor ekan — sessiyani
-  /// tiklaymiz, aks holda demo har `F5` da tizimdan chiqib ketardi.
   _User _require(bool authed) {
     if (!authed) throw _MockHttpError(401, 'not_authenticated');
     _user ??= _User(
@@ -596,26 +530,16 @@ class _MockServer {
         'expires_in': 900,
       };
 
-  /// `YYYY-MM-DD` — server `week[].date` bilan bir xil format.
   static String _ymd(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  /// Demo uchun oldingi 6 kunning javob soni (eng eskisidan boshlab).
-  ///
-  /// Bu YAGONA o'ylab topilgan raqam guruhi va u faqat MOCK rejimida
-  /// ko'rinadi (`--dart-define=MOCK=true`). Sababi: haftalik chiziq va
-  /// "Bu hafta" yig'indisi bo'sh bo'lsa demo ularni umuman ko'rsatmasdi va
-  /// ekranni tekshirib bo'lmasdi. Ikkita nol kun ATAYLAB qoldirilgan —
-  /// bo'sh doira ham ko'rinishi kerak.
   static const _mockWeekPast = [8, 0, 14, 20, 0, 6];
 
   Map<String, dynamic> _progress() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Bugungi kun — sessiyadagi HAQIQIY javoblar (mock ichida sessiya =
-    // bitta kun).
     final week = <Map<String, dynamic>>[
       for (var i = 0; i < _mockWeekPast.length; i++)
         {
@@ -656,8 +580,6 @@ class _MockServer {
       'answered_7d': answered7d,
       'correct_7d': correct7d,
       'accuracy_7d': answered7d == 0 ? 0.0 : correct7d / answered7d,
-      // Serverda XP faqat BIRINCHI to'g'ri javob uchun beriladi; demoda
-      // o'tgan kunlar uchun shu qoidani taxminan takrorlaymiz.
       'xp_7d': correct7d * _xpPerPoint,
       'active_days_7d': activeDays,
       'week': week,
@@ -684,17 +606,11 @@ class _MockServer {
     return c;
   }
 
-  // --- savollar ---
-
   List<Map<String, dynamic>> _pickQuestions(String subjectId, int limit) {
     final bank = _bank[subjectId] ?? _bank['geografiya']!;
-    // Ko'rilmaganlarini oldinga qo'yamiz — demo paytida bir xil savol
     // qayta-qayta chiqmasin.
     final fresh = bank.where((q) => !_seenQuestionIds.contains(q.id)).toList();
 
-    // Dublikatsiz to'plash: `fresh` yetmasa bankning boshidan davom etamiz,
-    // lekin bitta mashqda AYNI savol ikki marta chiqmasligi kerak — bu demo
-    // paytida darrov ko'zga tashlanadi.
     final out = <_Q>[];
     for (final q in [...fresh, ...bank]) {
       if (out.length >= limit) break;
@@ -704,13 +620,11 @@ class _MockServer {
     for (final q in out) {
       _seenQuestionIds.add(q.id);
     }
-    // Bank tugab qolsa (barcha savol ko'rilgan) — hisobni tozalaymiz.
     if (fresh.length <= limit) _seenQuestionIds.clear();
 
     return [for (final q in out) q.toPublicJson()];
   }
 
-  /// Baholash. Javob kaliti FAQAT shu yerda ochiladi.
   Map<String, dynamic> _grade(Map<String, dynamic> body) {
     final qid = body['question_id'] as String?;
     final q = _byId[qid];
@@ -722,7 +636,6 @@ class _MockServer {
 
     _answered += 1;
 
-    // Fan bo'yicha hisob — dashboard kartochkalari shu raqamlarni ko'rsatadi.
     final subjectCode = _subjectOfQuestion[q.id];
     if (subjectCode != null) {
       final sp = _progressOf(subjectCode);
@@ -731,9 +644,6 @@ class _MockServer {
       sp.lastAt = DateTime.now();
     }
 
-    // Mukofot hisoboti — serverdagi `GradeResult` bilan bir xil maydonlar,
-    // aks holda MOCK rejimida "+10 XP" chipi hech qachon ko'rinmaydi va
-    // demo haqiqiy ilovadan farq qilib qoladi.
     int xpAwarded = 0;
     int coinsAwarded = 0;
     int coinsPenalty = 0;
@@ -741,7 +651,6 @@ class _MockServer {
 
     if (isCorrect) {
       _correct += 1;
-      // XP ham, tanga ham faqat birinchi to'g'ri javobda (`try_award_quiz`).
       if (_rewardedQuestionIds.add(q.id)) {
         _xp += _xpPerPoint;
         _coins += _coinsPerCorrect;
@@ -753,8 +662,6 @@ class _MockServer {
       }
     } else {
       // Jarima 0 dan pastga tushmaydi — qarz UX aynan qiynalayotgan
-      // o'quvchini jazolaydi, ular esa bizga eng kerakli auditoriya.
-      // (`clamp()` ataylab ishlatilmadi: uning statik turi `num`.)
       final before = _coins;
       _coins -= _coinsWrongPenalty;
       if (_coins < 0) _coins = 0;
@@ -766,9 +673,6 @@ class _MockServer {
       'is_correct': isCorrect,
       'score': isCorrect ? 1 : 0,
       'max_score': 1,
-      // Kalit va izoh FAQAT to'g'ri javobda — real backend bilan aynan bir
-      // xil qoida. Aks holda mockda ishlaydigan ekran prodda boshqacha
-      // ko'rinardi va noto'g'ri javob holati umuman sinalmasdi.
       'correct_option_ids': isCorrect ? [q.correctKey] : <String>[],
       'explanation': isCorrect ? q.explanation : null,
       'xp_awarded': xpAwarded,
@@ -778,8 +682,6 @@ class _MockServer {
     };
   }
 
-  /// Fan bo'yicha shaxsiy progress. Yo'q bo'lsa bo'sh yozuv yaratiladi —
-  /// chaqiruv joyida `null` tekshiruvi kerak bo'lmasin.
   _SubjectProgress _progressOf(String code) =>
       _subjectProgress.putIfAbsent(code, () => _SubjectProgress());
 
@@ -871,7 +773,6 @@ class _User {
   String? regionCode;
   int? grade;
   int? avatarColor;
-  /// `null` = tanlanmagan; server buni "yoqilgan" deb hisoblaydi.
   bool? tgNotifications;
 
   _User({
@@ -898,8 +799,6 @@ class _User {
       };
 }
 
-/// Bellashuv. Raqib **4 soniyadan keyin** avtomatik qo'shiladi — demo paytida
-/// ikkinchi qurilma yoki ikkinchi akkaunt kerak bo'lmasin.
 class _Ch {
   final String id;
   final String code;
@@ -969,11 +868,6 @@ class _Ch {
     required void Function(int delta) onCoins,
   }) {
     myScore = score;
-    // Raqib biroz zaifroq o'ynaydi: demo ko'pincha g'alaba bilan tugasin,
-    // lekin har doim emas — durang va mag'lubiyat ham ko'rinishi kerak.
-    //
-    // `.toInt()` SHART: `num.clamp()` ning statik turi `num`, `int` emas —
-    // `int?` maydonga to'g'ridan-to'g'ri berilsa kompilyatsiya xatosi bo'ladi.
     theirScore = (score - 1 + (DateTime.now().second % 3)).clamp(0, maxScore).toInt();
     settled = true;
     final pot = stake * 2;
@@ -1000,7 +894,6 @@ class _Q {
 
   const _Q(this.id, this.stem, this.options, this.correctKey, this.explanation);
 
-  /// Ommaviy proyeksiya — javob kaliti YO'Q.
   Map<String, dynamic> toPublicJson() => {
         'id': id,
         'type': 'single_choice',
@@ -1019,21 +912,15 @@ class _Subject {
   const _Subject(this.code, this.name, this.count);
 }
 
-/// Bitta fan bo'yicha shaxsiy natija (mock sessiyasi davomida).
 class _SubjectProgress {
   int answered = 0;
   int correct = 0;
   DateTime? lastAt;
 
-  /// 0..1 — ANIQLIK (`correct / answered`), bank qamrovi emas. Serverdagi
-  /// `content.py` bilan bir xil ta'rif.
   double get accuracy => answered == 0 ? 0.0 : correct / answered;
 }
 
 extension _FirstOrNullX<E> on Iterable<E> {
-  /// `package:collection` ni pubspec'ga qo'shmaslik uchun. Nomi ataylab
-  /// noyob (`_FirstOrNullX`) — kelajakda `collection` qo'shilsa ham
-  /// `firstOrNull` bilan to'qnashmasin.
   E? get firstOrNull {
     final it = iterator;
     return it.moveNext() ? it.current : null;
@@ -1044,19 +931,12 @@ extension _FirstOrNullX<E> on Iterable<E> {
 //  Ma'lumotlar                                                                //
 // --------------------------------------------------------------------------- //
 
-/// Savol sonlari REAL bankdan olingan (`D:\data_subjects\clean_data\*/core.json`,
-/// `status == 'active'`), 2026-08-05 holati:
 ///
 ///   matematika 9 942 (1 655 mcq + 7 967 text_open + 317 proof_open)
 ///   geografiya 7 365 · ozbekiston_tarixi 2 420 · biologiya 1 658
 ///   ona_tili 834 · huquq 645 · jahon_tarixi 620      -> jami 23 484
 ///
-/// Bazaga yuklanganda matematikaning `text_open` qismi `numeric` (2 924) va
-/// `open_keyword` (895 active + 4 097 draft) ga bo'linadi, shuning uchun
-/// matematikaning AKTIV soni ~5 450. Bu yerda aynan shu — bazadagi holat —
-/// ko'rsatilgan, aks holda demo bankni bor-yo'g'idan katta ko'rsatardi.
 /// 2026-08-05: sonlar PROD bazasidan olingan (`preflight.py` chiqishi),
-/// ya'ni demo real ilova bilan bir xil raqamni ko'rsatadi. Jami 18 665 aktiv.
 const _subjects = <_Subject>[
   _Subject('geografiya', 'Geografiya', 7169),
   _Subject('matematika', 'Matematika', 5453),
@@ -1067,7 +947,6 @@ const _subjects = <_Subject>[
   _Subject('jahon_tarixi', 'Jahon tarixi', 620),
 ];
 
-/// Tahlil ekrani uchun aralash ro'yxat (fanlararo "zaif/kuchli mavzular").
 const _topicNames = <String>[
   'Tabiiy geografiya',
   'Aholi va iqtisodiyot',
@@ -1079,11 +958,6 @@ const _topicNames = <String>[
   'Inson anatomiyasi',
 ];
 
-/// Fan bo'yicha bo'limlar — nomlar REAL bankdagi eng katta `topic` larning
-/// o'qiladigan ko'rinishi (`natural_va_butun_sonlar` -> "Natural va butun
-/// sonlar"). Bankda bo'limlar ancha ko'p (matematika 196, geografiya 180),
-/// lekin demo ro'yxati qisqa: `topic_count` shu ro'yxat uzunligidan olinadi,
-/// ya'ni kartochkadagi son bilan tanlagichdagi ro'yxat HAR DOIM mos keladi.
 const _topicsBySubject = <String, List<String>>{
   'geografiya': [
     'Atlas bilan ishlash',
@@ -1227,7 +1101,6 @@ final _children = <Map<String, dynamic>>[
   },
 ];
 
-/// Demo savol banki. Haqiqiy savollar — jyuri oldida "lorem ipsum" chiqmasin.
 const _bank = <String, List<_Q>>{
   'geografiya': [
     _Q('geo-m1', "O'zbekistonning eng baland cho'qqisi qaysi?",

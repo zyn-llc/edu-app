@@ -32,14 +32,11 @@ from app.models import Submission, UserProgress
 _log = logging.getLogger("topagon.progress")
 _settings = get_settings()
 
-
 def level_for_xp(xp: int) -> int:
     return 1 + xp // _settings.xp_per_level
 
-
 def xp_for_score(score: int) -> int:
     return score * _settings.xp_per_point
-
 
 def next_streak(prev_streak: int, last_active: date | None, today: date) -> int:
     if last_active == today:
@@ -47,7 +44,6 @@ def next_streak(prev_streak: int, last_active: date | None, today: date) -> int:
     if last_active is not None and (today - last_active).days == 1:
         return prev_streak + 1                # consecutive day
     return 1                                  # first ever, or a gap broke it
-
 
 async def touch_activity(
     db: AsyncSession,
@@ -70,14 +66,12 @@ async def touch_activity(
     prog.last_active = today
     return prog
 
-
 def award_xp(prog: UserProgress, score: int) -> None:
     """Add XP for a score and recompute level. Call ONLY on a first-correct answer
     (gated by the coin ledger's one-reward-per-question guard) so XP can't be farmed
     by re-answering."""
     prog.xp = (prog.xp or 0) + xp_for_score(score)
     prog.level = level_for_xp(prog.xp)
-
 
 async def parent_signals(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Ota-ona uchun MA'NOLI ko'rsatkichlar.
@@ -125,27 +119,9 @@ async def parent_signals(db: AsyncSession, user_id: uuid.UUID) -> dict:
         "last_practiced_at": last_at.isoformat() if last_at else None,
     }
 
-
-# --------------------------------------------------------------------------- #
-#  Bugungi va haftalik kesim                                                   #
-# --------------------------------------------------------------------------- #
-#
-# NEGA KERAK (2026-08-08). Bosh ekranda "Bugungi maqsad" bor edi, lekin
-# BAJARILGANLIK darajasi yo'q edi: server "bugun nechta savol yechildi" ni
-# bilmasdi, shuning uchun klient uni ha/yo'q sifatida taxmin qilardi
-# (fanlarning `last_practiced_at` i orqali). Natijada eng motivatsion element
-# — to'ladigan progress chizig'i — umuman ko'rsatilmasdi.
-#
-# Hammasi `submissions` dan hisoblanadi: yangi jadval ham, denormalizatsiya
-# ham kerak emas. 30 sinovchi va bir necha ming submission uchun bu arzon.
-
 #: Kun chegarasini SQL tomonda mahalliy vaqtga o'tkazish.
 #
 # `created_at` timestamptz. `AT TIME ZONE 'UTC'` uni UTC devor-soatiga
-# aylantiradi (natija — oddiy timestamp), so'ng ofset qo'shiladi va sana
-# olinadi. `AT TIME ZONE 'Asia/Tashkent'` ATAYLAB ISHLATILMADI: u konteynerda
-# tz bazasi bo'lishini talab qiladi va bo'lmasa jim ravishda noto'g'ri
-# javob beradi.
 _LOCAL_DAY = (
     f"((s.created_at AT TIME ZONE 'UTC') "
     f"+ interval '{UZ_UTC_OFFSET_HOURS} hours')::date"
@@ -162,13 +138,6 @@ GROUP BY 1
 ORDER BY 1
 """
 
-# XP faqat savolga BIRINCHI marta to'g'ri javob berilganda beriladi (tanga
-# daftaridagi "bitta savol — bitta mukofot" qo'riqchisi bilan). Shu sababli
-# "bugun qancha XP" ni submission'larni shunchaki sanab chiqarib bo'lmaydi:
-# takroriy to'g'ri javoblar XP bermaydi va raqam shishib ketardi.
-#
-# `DISTINCT ON (question_id) ... ORDER BY question_id, created_at` — har bir
-# savolning ENG BIRINCHI to'g'ri javobi. XP o'sha lahzada berilgan.
 _XP_WINDOW_SQL = """
 WITH firsts AS (
     SELECT DISTINCT ON (s.question_id)
@@ -182,7 +151,6 @@ SELECT
     coalesce(sum(score) FILTER (WHERE created_at >= :week_start), 0)  AS week
 FROM firsts
 """
-
 
 async def daily_breakdown(
     db: AsyncSession,
@@ -238,7 +206,6 @@ async def daily_breakdown(
         "week": week,
     }
 
-
 async def get_progress(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Progress + lifetime answer stats for /v1/me and parent dashboards."""
     prog = (await db.execute(
@@ -262,27 +229,6 @@ async def get_progress(db: AsyncSession, user_id: uuid.UUID) -> dict:
         "accuracy": (correct / answered) if answered else 0.0,
     }
 
-    # Kunlik kesim ALOHIDA qo'riqlanadi.
-    #
-    # NEGA. `/v1/me` — ilovaning eng issiq endpointi: bosh ekran har
-    # ochilganda chaqiriladi va u yerda XP, daraja, seriya, reyting bor.
-    # Kunlik kesim esa xom SQL bilan yoziladi (`text()`), ya'ni Postgres
-    # versiyasi yoki ustun turi kutilmagan bo'lsa xato ISH VAQTIDA chiqadi.
-    # Qo'riqchisiz bitta shunday xato butun bosh ekranni o'ldiradi.
-    #
-    # Qo'riqchi bilan eng yomon holat: yangi bloklar (bugungi maqsad
-    # progressi, haftalik chiziq) ko'rinmaydi, qolgan hamma narsa ishlaydi.
-    # Klient bo'sh `week` ni allaqachon "ko'rsatma" deb tushunadi.
-    #
-    # SAVEPOINT MAJBURIY, oddiy `try/except` YETARLI EMAS: Postgres'da
-    # xato bergan so'rov butun tranzaksiyani "aborted" holatiga o'tkazadi va
-    # SHU sessiyadagi keyingi so'rovlar ham yiqiladi. `/v1/me` da esa
-    # `get_progress` dan KEYIN yana bazaga murojaat bor
-    # (`coin_service.balance`) — savepointsiz qo'riqchi hech narsani
-    # qutqarmagan bo'lardi. Bu naqsh `content.py` dagi mukofot hisobidan
-    # olingan (u yerda ham xuddi shu sabab bo'lgan).
-    #
-    # Xato JIM YUTILMAYDI — `docker compose logs api | grep daily_breakdown`.
     try:
         async with db.begin_nested():
             base.update(await daily_breakdown(db, user_id))

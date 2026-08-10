@@ -39,12 +39,7 @@ router = APIRouter(prefix="/v1/auth", tags=["auth"])
 _settings = get_settings()
 _log = logging.getLogger("bilim.auth")
 
-#: `users.locale` — `languages(code)` ga FK, va `sql/002_seed.sql` faqat
-#: SHU IKKITASINI kiritadi. Ro'yxatga uchinchi til qo'shishdan oldin uni
-#: `languages` ga ham kirit, aks holda FK buzilib 500 qaytadi. Ilova
-#: lokalizatsiyasi ham aynan shu ikkisi (`lib/l10n/app_{uz,ru}.arb`).
 _SUPPORTED_LOCALES = {"uz-Latn", "ru"}
-
 
 def _user_out(u: User) -> UserOut:
     return UserOut(
@@ -53,7 +48,6 @@ def _user_out(u: User) -> UserOut:
         region_code=u.region_code, grade=u.grade, locale=u.locale,
         avatar_color=u.avatar_color, tg_notifications=u.tg_notifications,
     )
-
 
 def _require_phone_login() -> None:
     """SMS_PROVIDER=disabled bo'lganda telefon+OTP yo'li yopiq.
@@ -66,7 +60,6 @@ def _require_phone_login() -> None:
                        "hozircha telefon orqali kirish yopiq — taklif kodi "
                        "yoki Telegram orqali kiring",
                        type_="urn:bilim:auth:phone_disabled")
-
 
 @router.get("/methods")
 async def auth_methods():
@@ -82,21 +75,14 @@ async def auth_methods():
     qanday sir oshkor bo'lmaydi — faqat yoqilgan/o'chirilgan bayroqlar.
     """
     return {
-        # 022: parol yo'li hech qanday tashqi xizmatga bog'liq emas (SMS ham,
-        # Telegram ham kerak emas), shuning uchun u doim ochiq. Klient uni
-        # birinchi o'ringa qo'yadi.
         "password": True,
         "phone": _settings.sms_provider != "disabled",
         "telegram": _settings.telegram_login_enabled,
         "invite": _settings.invite_login_enabled,
-        # Kirish (login) emas — parol bilan YANGI hisob ochish taklif kodi
-        # so'raydimi. Klient shu bayroqqa qarab ro'yxatdan o'tish formasida
-        # kod maydonini ko'rsatadi/yashiradi.
         "password_register_requires_invite":
             _settings.require_invite_for_password_register,
         "telegram_bot_username": _settings.telegram_bot_username or None,
     }
-
 
 @router.post("/otp/request", response_model=OtpRequestOut)
 async def request_otp(body: OtpRequestIn, request: Request):
@@ -145,7 +131,6 @@ async def request_otp(body: OtpRequestIn, request: Request):
         debug_code=code if _settings.otp_debug_return else None,
     )
 
-
 @router.post("/otp/verify", response_model=TokenPair)
 async def verify_otp(body: OtpVerifyIn, db: AsyncSession = Depends(get_db)):
     _require_phone_login()
@@ -166,7 +151,6 @@ async def verify_otp(body: OtpVerifyIn, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return pair
 
-
 @router.post("/refresh", response_model=TokenPair)
 async def refresh(body: RefreshIn, db: AsyncSession = Depends(get_db)):
     try:
@@ -177,18 +161,15 @@ async def refresh(body: RefreshIn, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return pair
 
-
 @router.post("/logout")
 async def logout(body: RefreshIn, db: AsyncSession = Depends(get_db)):
     await auth_service.revoke_refresh_token(db, body.refresh_token)
     await db.commit()
     return {"status": "ok"}
 
-
 @router.get("/me", response_model=UserOut)
 async def me(user: User = Depends(get_current_user)):
     return _user_out(user)
-
 
 @router.patch("/me", response_model=UserOut)
 async def update_me(
@@ -197,10 +178,6 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
 ):
     if body.display_name is not None:
-        # Uzunlik YETARLI EMAS. `display_name` reytingda, bellashuvda va
-        # ota-ona ekranida BOSHQA odamlarga ko'rinadi — sinovda `火` ismli
-        # hisob shu tekshiruvdan o'tib ketgan edi. `core/names.py` emoji,
-        # CJK, RTL va ko'rinmas belgilarni rad etadi.
         try:
             user.display_name = names.validate_name(body.display_name)
         except names.NameError_ as e:
@@ -216,25 +193,16 @@ async def update_me(
         user.grade = body.grade
     if body.locale is not None:
         # `users.locale` — `languages(code)` ga FK. Tekshiruvsiz noma'lum
-        # qiymat FK buzilishi bilan 500 berardi va tranzaksiyani "aborted"
-        # holatiga tashlardi. Bu yerdagi ro'yxat `sql/001_init.sql` dagi
-        # `languages` seed'i bilan mos.
         if body.locale not in _SUPPORTED_LOCALES:
             raise AppError(400, "Invalid locale",
                            f"locale must be one of: "
                            f"{', '.join(sorted(_SUPPORTED_LOCALES))}")
         user.locale = body.locale
     if body.avatar_color is not None:
-        # Palitra indeksi — chegara bazadagi CHECK bilan bir xil (021).
-        # Bu yerda ham tekshiramiz: 400 xatosi 500 dan ancha foydaliroq.
         if not (0 <= body.avatar_color <= 11):
             raise AppError(400, "Invalid avatar", "avatar_color must be 0–11")
         user.avatar_color = body.avatar_color
     if body.tg_notifications is not None:
-        # Telegram xabarlarini butunlay o'chirish. Bu tugma BO'LISHI SHART:
-        # xabar yuborish huquqi faqat uni to'xtatish oson bo'lgandagina
-        # halol bo'ladi, va to'xtata olmaydigan odam botni bloklaydi —
-        # o'shanda kirish yo'li ham yo'qoladi.
         user.tg_notifications = body.tg_notifications
     await db.commit()
     return _user_out(user)

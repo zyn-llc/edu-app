@@ -51,7 +51,6 @@ from app.services.projection import to_grading, to_public
 
 _log = logging.getLogger("bilim.submissions")
 
-
 router = APIRouter(prefix="/v1")
 _settings = get_settings()
 
@@ -66,10 +65,8 @@ _GUEST_SUBMIT_PER_HOUR = 120
 # a script.
 _USER_SUBMIT_PER_HOUR = 300
 
-
 def _lang(accept_language: str | None) -> str:
     return accept_language or _settings.default_lang
-
 
 # --------------------------------------------------------------------------- #
 #  Subjects + metadata-driven catalog                                         #
@@ -101,9 +98,6 @@ async def list_subjects(
         .order_by(Subject.sort_order)
     )).scalars().all()
 
-    # --- bank hajmi: aktiv savol va (savoli bor) bo'lim soni --------------
-    # `count(DISTINCT topic_id)` NULL larni sanamaydi — bo'limi belgilanmagan
-    # savollar bo'lim sifatida ko'rinmaydi, bu to'g'ri.
     bank = {
         sid: (int(qn or 0), int(tn or 0))
         for sid, qn, tn in (await db.execute(
@@ -117,15 +111,6 @@ async def list_subjects(
         )).all()
     }
 
-    # --- so'ralgan tilda haqiqatan tarjima qilingan savollar ---------------
-    #
-    # `to_public` tarjima topilmasa jimgina `uz-Latn` ga tushadi. Bu ruscha
-    # tanlagan o'quvchi uchun eng yomon holat: interfeys ruscha, savollar
-    # o'zbekcha, hech qanday tushuntirish yo'q — ilova buzuq ko'rinadi.
-    # Klient buni ayta olishi uchun raqam kerak, taxmin emas.
-    #
-    # Asosiy tilda so'rov kelganda qo'shimcha JOIN qilmaymiz: u yerda javob
-    # ta'rifan `question_count` ning o'zi.
     if lang == _settings.default_lang:
         translated = None
     else:
@@ -173,22 +158,16 @@ async def list_subjects(
             "name": names.get(lang) or names.get(_settings.default_lang)
                     or next(iter(names.values()), s.code),
             "question_count": q_count,
-            # So'ralgan tildagi savollar soni. Asosiy tilda `question_count`
-            # bilan bir xil. Klient `question_count > 0` bo'lsa-yu bu 0 bo'lsa
             # o'quvchini ogohlantiradi.
             "translated_count": q_count if translated is None
                                 else translated.get(s.id, 0),
             "topic_count": t_count,
             "answered": answered,
             "correct": correct,
-            # 0..1. ATAYLAB aniqlik (correct/answered), bank qamrovi emas:
-            # 5 700 savolli bankda 50 ta yechgan o'quvchi 0.9% ko'rsatardi va
-            # bu ilova buzuq degan taassurot qoldirardi.
             "accuracy": (correct / answered) if answered else 0.0,
             "last_practiced_at": last_at.isoformat() if last_at else None,
         })
     return {"items": out}
-
 
 @router.get("/subjects/{subject_id}/catalog")
 async def subject_catalog(
@@ -218,14 +197,12 @@ async def subject_catalog(
     """
     active = (Question.subject_id == subject_id) & (Question.status == "active")
 
-    # Sinf ro'yxati — har doim to'liq, filtrsiz.
     grade_rows = (await db.execute(
         select(Question.grade, func.count()).where(active)
         .where(Question.grade.isnot(None)).group_by(Question.grade)
         .order_by(Question.grade)
     )).all()
 
-    # Bo'lim va kontekst — tanlangan sinf doirasida.
     scoped = active if grade is None else (active & (Question.grade == grade))
 
     # exam_context is text[]; unnest to count per context value.
@@ -263,7 +240,6 @@ async def subject_catalog(
         "exam_contexts": [{"code": c, "count": n} for c, n in ctx_rows],
         "topics": topics,
     }
-
 
 # --------------------------------------------------------------------------- #
 #  Public questions (no answer keys, ever)                                    #
@@ -308,7 +284,6 @@ def _mix_by_difficulty(pool: list[Question], limit: int) -> list[Question]:
     random.shuffle(out)
     return out
 
-
 @router.get("/questions")
 async def list_questions(
     subject_id: uuid.UUID,
@@ -316,8 +291,6 @@ async def list_questions(
     grade: int | None = None,
     topic_id: uuid.UUID | None = None,
     exam_context: str | None = None,
-    # `ge=1` MAJBURIY: usiz `limit=-1` `pool_size` ni manfiy qilib,
-    # `SELECT ... LIMIT -4` bilan Postgres xatosiga (500) olib borardi.
     limit: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     accept_language: str | None = Header(None),
@@ -346,22 +319,6 @@ async def list_questions(
             s = s.where(antiabuse.guest_pool_clause())
         return s
 
-    # ---- 1) Ko'rilmagan savollar birinchi ---------------------------------
-    #
-    # NEGA. Ilgari tanlov shunchaki `ORDER BY random() LIMIT n` edi. Kichik
-    # bo'limda (masalan 9 ta savol) o'quvchi ikkinchi mashqda deyarli o'sha
-    # savollarni oldi — takroriy savol esa XP bermaydi, ya'ni u ishlab
-    # turgan ilovani "buzuq" deb qabul qildi.
-    #
-    # Endi avval JAVOB BERILMAGANLARI olinadi. Yetmasa — qolgani eskilardan
-    # to'ldiriladi (savolsiz qolgandan ko'ra takror yaxshi).
-    #
-    # Mehmonda `submissions` bo'ylab filtr yo'q: mehmon bitta umumiy hisob,
-    # ya'ni "u ko'rgan" degan tushuncha ma'nosiz.
-    #
-    # `POOL_FACTOR` — qiyinlik aralashtirish uchun keragidan ko'p olinadi,
-    # keyin Python'da saralanadi. 200 chegarasi: bitta so'rov bankning
-    # katta qismini tortib olmasin (anti-scraping bilan bir mantiqda).
     POOL_FACTOR = 4
     pool_size = min(limit * POOL_FACTOR, 200)
 
@@ -392,10 +349,6 @@ async def list_questions(
 
     return {"items": [to_public(q, lang).model_dump() for q in rows]}
 
-
-# --------------------------------------------------------------------------- #
-#  Submit + grade (server is the only judge)                                  #
-# --------------------------------------------------------------------------- #
 @router.post("/submissions", response_model=GradeResult)
 async def submit(
     body: SubmissionIn,
@@ -474,7 +427,6 @@ async def submit(
     # correct_option_ids out of the response, resubmit. That cost one coin and
     # paid 10 XP + 5 coins + leaderboard points, on every question in the bank.
     # The explanation is withheld for the same reason — most of them name the
-    # answer outright ("to'g'ri javob C, chunki...").
     if result.is_correct:
         result.correct_option_ids = list(
             (q.grading_spec or {}).get("correct_option_ids", []))
@@ -509,8 +461,6 @@ async def submit(
     # XP/streak can't drift from the submission log.
     persisted = True
     awarded = False   # True only when this is the FIRST correct answer to this q
-    # Mukofot hisoboti — javobga qo'shiladi, klient "+10 XP" chipini shundan
-    # chizadi va "nega XP o'smadi" degan savol tug'ilmaydi.
     xp_awarded = 0
     coins_awarded = 0
     coins_penalty = 0
@@ -583,7 +533,6 @@ async def submit(
         persisted = False
         awarded = False
         xp_awarded = coins_awarded = coins_penalty = 0
-        # Mehmonligi saqlanadi: klient uchun "saqlanmadi" sababi o'zgarmagan.
         reward_reason = "guest" if current_user is None else None
         if is_guest:
             _log.warning("guest submission not persisted question_id=%s", q_id_str)

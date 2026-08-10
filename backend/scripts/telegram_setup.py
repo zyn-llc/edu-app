@@ -1,16 +1,12 @@
 """
 Telegram botni sozlash va dev rejimida ishlatish.
 
-    # 1) PROD: webhook o'rnatish (HTTPS domen tayyor bo'lgach, bir marta)
     python scripts/telegram_setup.py --webhook https://api.MISOL.uz/v1/telegram/webhook
 
-    # 2) DEV: webhook yo'q (localhost'ga Telegram kira olmaydi) — long polling
     python scripts/telegram_setup.py --poll
 
-    # 3) Holatni ko'rish
     python scripts/telegram_setup.py --info
 
---poll rejimi getUpdates orqali update'larni o'zi oladi va bir xil
 `handle_update` funksiyasini chaqiradi — ya'ni dev'da sinaganing prod'da
 ishlaydigan kodning aynan o'zi. Prod'da --poll ISHLATMA: webhook bilan birga
 ikkalasi bir vaqtda ishlamaydi.
@@ -32,15 +28,12 @@ from app.services import telegram as tg                         # noqa: E402
 
 s = get_settings()
 
-
 def _api(method: str) -> str:
     return f"{s.telegram_api_base}/bot{s.telegram_bot_token}/{method}"
-
 
 def _check_token() -> None:
     if not s.telegram_bot_token:
         sys.exit("TELEGRAM_BOT_TOKEN .env da yo'q")
-
 
 async def info() -> None:
     _check_token()
@@ -50,19 +43,16 @@ async def info() -> None:
     print("getMe:", me.get("result", me))
     print("webhook:", hook.get("result", hook))
 
-
 async def set_hook(url: str) -> None:
     _check_token()
     if not s.telegram_webhook_secret:
         sys.exit("TELEGRAM_WEBHOOK_SECRET .env da yo'q — usiz webhook o'rnatma")
     print(await tg.set_webhook(url))
 
-
 async def delete_hook() -> None:
     _check_token()
     async with httpx.AsyncClient(timeout=20) as c:
         print((await c.post(_api("deleteWebhook"))).json())
-
 
 async def poll() -> None:
     """Dev: getUpdates long-polling. Ctrl+C bilan to'xtatiladi."""
@@ -98,7 +88,6 @@ async def poll() -> None:
     finally:
         await close_redis()
 
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--webhook", type=str, help="webhook URL o'rnatish")
@@ -115,7 +104,6 @@ def main() -> None:
         asyncio.run(poll())
     else:
         asyncio.run(info())
-
 
 if __name__ == "__main__":
     main()

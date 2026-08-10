@@ -37,15 +37,12 @@ from app.core.database import get_db
 router = APIRouter(prefix="/v1/admin", tags=["admin"])
 _settings = get_settings()
 
-
 def _guest() -> uuid.UUID:
     return uuid.UUID(str(_settings.guest_user_id))
-
 
 async def _rows(db: AsyncSession, sql: str, **params) -> list[dict]:
     res = await db.execute(text(sql), params)
     return [dict(r) for r in res.mappings().all()]
-
 
 # --------------------------------------------------------------------------- #
 #  Retention                                                                   #
@@ -118,8 +115,6 @@ GROUP BY sub.code
 ORDER BY submissions DESC
 """
 
-# Buzuq savol detektori. Guest ham hisobga olinadi — savol buzuqligi kim
-# javob berganiga bog'liq emas, va guest trafigi bu yerda signalni kuchaytiradi.
 _SUSPECT_SQL = """
 SELECT
     q.id::text                                                AS question_id,
@@ -143,7 +138,6 @@ ORDER BY count(*) DESC
 LIMIT :limit
 """
 
-
 @router.get("/analytics", dependencies=[Depends(require_admin)])
 async def analytics(
     days: int = Query(30, ge=1, le=180),
@@ -157,10 +151,6 @@ async def analytics(
 
     cohorts = await _rows(db, _RETENTION_SQL, since=since, guest=guest)
 
-    # Kohort darajasidagi umumiy nisbat. D1 uchun bugungi kohort hali
-    # "qaytish" imkoniga ega emas, D7 uchun oxirgi 7 kun — shuning uchun
-    # yetilmagan kohortlar maxrajdan chiqariladi, aks holda raqam pastga
-    # qarab yolg'on ko'rsatadi.
     today = datetime.now(timezone.utc).date()
 
     def _rate(offset_days: int, key: str) -> dict:

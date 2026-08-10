@@ -34,8 +34,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _name = TextEditingController(text: u?.displayName ?? '');
     _region = u?.regionCode;
     _grade = u?.grade;
-    // Tanlanmagan bo'lsa — ism hash'idan barqaror rang. Foydalanuvchi hech
-    // narsa tanlamasa ham avatari "tasodifiy" emas, o'ziniki bo'lib qoladi.
     _avatarColor =
         u?.avatarColor ?? AvatarPalette.indexForName(u?.displayName);
   }
@@ -72,10 +70,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Navigator.pop(context);
       }
     } on DioException catch (e) {
-      // Ilgari bu yerda HAR QANDAY DioException "Ulanishda xatolik" bo'lardi:
-      // 400 (noto'g'ri hudud), 401 (token eskirgan) va haqiqiy tarmoq uzilishi
-      // bir xil ko'rinardi va nima bo'lganini bilishning iloji yo'q edi.
-      // `humanError` serverning RFC 7807 `title` maydonini ko'rsatadi.
       setState(() => _error = humanError(e, l));
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -87,8 +81,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l = L10n.of(context);
     final lang = ref.watch(localeCodeProvider);
     final regionsAsync = ref.watch(regionsProvider);
-    // `watch`, `read` emas: parol o'rnatilgandan keyin `refreshMe()` holatni
-    // yangilaydi va "Parol" bandi darhol "O'rnatilgan" ga o'tishi kerak.
     final user = ref.watch(authControllerProvider).user;
 
     return Scaffold(
@@ -102,8 +94,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(22),
           children: [
-            // Avatar — ekranning boshida: foydalanuvchi o'zgarishni darhol
-            // ko'radi (ism yozilganda bosh harf ham yangilanadi).
             Center(
               child: UserAvatar(
                 name: _name.text.trim().isEmpty ? null : _name.text.trim(),
@@ -137,13 +127,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: _name,
-              // Bosh harf avatarda jonli yangilansin.
               onChanged: (_) => setState(() {}),
-              // Ism REYTINGDA va BELLASHUVDA boshqalarga ko'rinadi. Emoji,
-              // CJK va o'ngdan-chapga yoziladigan matn qatorni buzadi —
-              // sinovda `火` ismli hisob paydo bo'lgan edi. Serverda ham
-              // (`core/names.py`) shu qoida bor; bu yerdagisi faqat qulaylik:
-              // foydalanuvchi xatoni yuborishdan OLDIN ko'radi.
               inputFormatters: [
                 LengthLimitingTextInputFormatter(40),
                 FilteringTextInputFormatter.allow(
@@ -216,10 +200,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 /// Profildagi "Parol" bandi.
 ///
-/// Telegram bilan kirgan hisobda `username` bo'lmaydi — o'sha holatda bu
-/// yerda nima uchun har safar Telegram'ga o'tish kerakligi va uni qanday
-/// to'xtatish mumkinligi aytiladi. Aynan shu bosqichda foydalanuvchi
-/// muammoni his qilib turadi, ya'ni taklif joyida bo'ladi.
 class _PasswordRow extends StatelessWidget {
   const _PasswordRow({this.username});
 
@@ -257,8 +237,6 @@ class _PasswordRow extends StatelessWidget {
   }
 }
 
-/// Palitradagi bitta rang. Tanlanganda ichida belgi chiqadi — faqat halqa
-/// bilan ajratish rang ko'rish buzilishi bor foydalanuvchiga yetarli emas.
 class _ColorDot extends StatelessWidget {
   const _ColorDot({
     required this.color,

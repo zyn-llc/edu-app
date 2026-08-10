@@ -26,10 +26,8 @@ from app.services import coins
 router = APIRouter(prefix="/v1/me/coins", tags=["coins"])
 _settings = get_settings()
 
-
 class AdRewardIn(BaseModel):
     ad_id: str = Field(default="", max_length=128)   # SSV transaction id later
-
 
 @router.get("")
 async def my_coins(
@@ -46,13 +44,11 @@ async def my_coins(
         "ads_left_today": await _ads_left(user.id),
     }
 
-
 async def _ads_left(user_id: uuid.UUID) -> int:
     redis = get_redis()
     key = f"ads:{user_id}:{datetime.now(timezone.utc).date().isoformat()}"
     used = int(await redis.get(key) or 0)
     return max(_settings.ads_per_day_cap - used, 0)
-
 
 @router.post("/ad-reward")
 async def ad_reward(
@@ -60,7 +56,6 @@ async def ad_reward(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # Until AdMob server-side verification is implemented, this endpoint only
     # exists in client-trust mode (dev). With the flag off there is no way to
     # verify an ad was watched, so the only safe answer is 403.
     if not _settings.allow_client_ad_rewards:

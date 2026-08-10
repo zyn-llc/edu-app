@@ -5,13 +5,11 @@
 --    Answer keys live ONLY in questions.grading_spec and option correctness is
 --    NEVER stored on a renderable row. The "options" table has no is_correct
 --    column on purpose, so it is *structurally impossible* to leak a key by
---    serializing an option. The server is the only thing that knows answers.
 --
 --  EXTENSIBILITY (built in from day one, even though only MCQ exists now):
 --    - question.type is text (app-validated), so adding 'matching', 'numeric',
 --      'open_keyword', etc. is a data change, never a migration.
 --    - All type-specific answer data lives in grading_spec JSONB — one shape per
---      type, server-only. No schema change to add a new question type.
 --    - Multilingual via *_translations tables (uz-Latn, uz-Cyrl, ru, en, ...).
 --      The "core" row is language-independent; text is in translations.
 -- =============================================================================
@@ -92,7 +90,6 @@ CREATE TABLE topic_translations (
 --      'ordering'     put items in correct order
 --      'open_text'    AI-graded essay/short answer  (rubric)   <-- later
 --
---  grading_spec JSONB shapes (SERVER ONLY — never serialized to a client):
 --      mcq/multi_select : {"correct_option_ids": ["..."]}
 --      numeric          : {"value": 3.14, "tolerance": 0.01, "unit": "km"}
 --      open_keyword     : {"accepted": ["..."], "match": "any"}
@@ -187,9 +184,6 @@ CREATE TABLE refresh_tokens (
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- ---------------------------------------------------------------------------
---  Submissions  (every graded answer; server is the only judge)
--- ---------------------------------------------------------------------------
 CREATE TABLE submissions (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -268,9 +262,6 @@ CREATE TABLE challenges (
     created_at    timestamptz NOT NULL DEFAULT now()
 );
 
--- ---------------------------------------------------------------------------
---  Gamification  (phase 2 — server-authoritative XP / streaks / badges)
--- ---------------------------------------------------------------------------
 CREATE TABLE user_progress (
     user_id     uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     xp          int  NOT NULL DEFAULT 0,

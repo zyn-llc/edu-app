@@ -25,7 +25,6 @@ from app.models import Challenge, CoinTransaction, Question, Submission, User
 router = APIRouter(prefix="/v1/admin", tags=["admin"])
 _settings = get_settings()
 
-
 @router.get("/stats", dependencies=[Depends(require_admin)])
 async def stats(db: AsyncSession = Depends(get_db)):
     now = datetime.now(timezone.utc)
@@ -78,9 +77,6 @@ async def stats(db: AsyncSession = Depends(get_db)):
         select(func.coalesce(func.sum(-CoinTransaction.amount), 0))
         .where(CoinTransaction.created_at >= day_ago, CoinTransaction.amount < 0))
 
-    # "Do'stlaringizni taklif qiling" (024) — mukofotsiz, shuning uchun
-    # yagona nazorat vositasi shu: kim qancha odam olib kelganini ko'rish.
-    # Faqat TOP 10 — dashboard, cheksiz ro'yxat emas.
     referrals_total = await one(
         select(func.count(User.id)).where(User.referred_by.isnot(None)))
     top_referrers = (await db.execute(

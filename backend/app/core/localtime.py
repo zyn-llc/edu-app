@@ -21,22 +21,18 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 
-#: O'zbekiston vaqti. Yozgi vaqt yo'q — qat'iy ofset.
 UZ_TZ = timezone(timedelta(hours=5))
 
 #: SQL tomonda ishlatiladigan bir xil ofset (soatlarda).
 UZ_UTC_OFFSET_HOURS = 5
 
-
 def local_now() -> datetime:
     """Hozirgi mahalliy vaqt (tz-aware)."""
     return datetime.now(UZ_TZ)
 
-
 def local_today() -> date:
     """Bugungi MAHALLIY kalendar kuni."""
     return local_now().date()
-
 
 def day_start_utc(d: date) -> datetime:
     """Mahalliy `d` kunining boshlanishi, UTC lahzasi sifatida.

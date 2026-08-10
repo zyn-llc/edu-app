@@ -7,29 +7,15 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/spacing.dart';
 
-/// Mehmonga ro'yxatdan o'tishni taklif qiluvchi oyna.
 ///
-/// NEGA AYNAN MASHQ O'RTASIDA: `GuestNotice` bosh ekranda va natija ekranida
-/// turadi, lekin uni o'quvchi hech qachon o'qimaydi — chunki u hali hech
-/// narsa yo'qotmagan. Bir necha savol yechib, XP va tanga ishlagandan keyin
-/// esa yo'qotadigan narsa PAYDO BO'LADI. Konversiya uchun eng kuchli daqiqa
-/// shu: "sen 5 ta savol yeching, lekin natijang saqlanmayapti".
 ///
-/// MUHIM: bu oyna MAJBURIY EMAS. "Keyinroq" tugmasi bor va mashq to'xtamaydi.
-/// Majburiy devor qo'yilsa, o'quvchi ro'yxatdan o'tmaydi — u shunchaki
 /// ilovani yopadi va qaytmaydi.
 ///
-/// Bir sessiyada bir marta ko'rsatiladi — chaqiruvchi tomon shuni nazorat
-/// qiladi (`_signupPromptShown`).
 class GuestSignupPrompt extends ConsumerWidget {
   const GuestSignupPrompt({super.key, required this.answered});
 
-  /// Shu paytgacha yechilgan savollar soni — matnda ishlatiladi.
   final int answered;
 
-  /// Mehmon bo'lsa oynani ochadi. Kirgan foydalanuvchida hech narsa qilmaydi.
-  ///
-  /// `true` qaytarsa — ko'rsatildi (chaqiruvchi buni eslab qoladi).
   static Future<bool> maybeShow(
     BuildContext context,
     WidgetRef ref, {
@@ -81,7 +67,6 @@ class GuestSignupPrompt extends ConsumerWidget {
                 style: text.headlineSmall, textAlign: TextAlign.center),
             const Gap.sm(),
             Text(
-              // "5 ta savol yechding" — aniq raqam mavhum gapdan kuchliroq.
               '${l.guestSolvedCount(answered)}\n${l.guestProgressHint}',
               style: text.bodyMedium,
               textAlign: TextAlign.center,

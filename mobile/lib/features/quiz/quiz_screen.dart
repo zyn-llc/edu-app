@@ -22,12 +22,6 @@ import 'result_screen.dart';
 
 const _green = Color(0xFF2FA36B);
 const _red = Color(0xFFD64545);
-/// Bitta savolga beriladigan vaqt (soniya).
-///
-/// 30 — variantli savol uchun: o'qish + tanlash. Yozma javobda (`numeric`,
-/// `open_keyword`) esa foydalanuvchi klaviaturada teradi, matematikada
-/// bundan tashqari qo'lda hisoblaydi ham — shuning uchun ikki barobar vaqt.
-/// Bitta raqamdan foydalanilganda matematik savollarda taymer doim yetmasdi.
 const _perQuestionSeconds = 30;
 const _typedQuestionSeconds = 60;
 
@@ -69,7 +63,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   final TextEditingController _typed = TextEditingController();
 
   /// Typed-answer questions (numeric / open_keyword) render a text field
-  /// instead of option cards; the server normalizes ("0,5", "1/3") and grades.
   bool _isTypedType(Question q) =>
       q.type == 'numeric' || q.type == 'open_keyword';
 
@@ -77,12 +70,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final q = _questions[_index];
     return _isTypedType(q) ? _typed.text.trim().isNotEmpty : _selected != null;
   }
-  /// Mehmonga ro'yxatdan o'tish taklifi shu sessiyada ko'rsatildimi.
-  /// Bir marta — takroriy oyna faqat asabga tegadi va konversiyani tushiradi.
   bool _signupPromptShown = false;
 
-  /// Nechanchi savoldan keyin taklif chiqadi. 5 — o'quvchi ilova qandayligini
-  /// tushunib ulgurgan, lekin hali zerikmagan nuqta.
   static const _promptAfter = 5;
 
   GradeResult? _result;
@@ -93,28 +82,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Timer? _ticker;
   int _remaining = _perQuestionSeconds;
 
-  /// Shu savolda vaqt tugadi.
   ///
-  /// NEGA ALOHIDA HOLAT (2026-08-08 ko'rigi). Ilgari vaqt tugaganda
-  /// `_grade(_selected)` chaqirilardi: tanlanmagan javob serverga ketardi
-  /// va o'quvchi «Noto'g'ri» degan qizil javobni ko'rardi. Bu ikki jihatdan
   /// yomon:
   ///
-  ///  1. **Yolg'on.** O'quvchi noto'g'ri javob bermadi — u umuman javob
-  ///     bermadi. Ikkalasi bir xil ko'rsatilishi adolatsiz.
-  ///  2. **Statistikani buzadi.** Bo'sh javob `submissions` ga tushib,
-  ///     aniqlik foizini pasaytirardi va «kuchsiz mavzular» tahlilini
-  ///     noto'g'ri hisoblardi.
   ///
-  /// Endi vaqt tugasa savol serverga UMUMAN yuborilmaydi: ekranda «Vaqt
-  /// tugadi» chiqadi va keyingi savolga o'tiladi. Savol yechilmagan bo'lib
-  /// qoladi, ya'ni keyinroq yana uchrashi mumkin — bu to'g'ri.
   bool _timedOut = false;
 
-  /// `dispose()` da `ref` dan foydalanib bo'lmaydi (u shu payt allaqachon
-  /// yopilgan bo'lishi mumkin), shuning uchun konteynerni oldindan olamiz.
-  /// Bu mashqni yarmida tashlab chiqqan foydalanuvchi uchun kerak: u ham
-  /// XP olgan bo'lishi mumkin.
   ProviderContainer? _container;
 
   @override
@@ -130,10 +103,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     _ticker?.cancel();
     final c = _container;
     if (c != null && (_xpEarned > 0 || _coinsEarned != 0)) {
-      // Kadr ichida (vidjet daraxti demontaj qilinayotganda) provider'ni
-      // o'zgartirish "modified a provider while the widget tree was building"
-      // xatosini beradi. Shuning uchun keyingi kadrga suramiz — konteyner
-      // ilova darajasida, u yopilmaydi.
+      // Invalidate after the frame: touching a provider during build throws.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         c.invalidate(meOverviewProvider);
         c.invalidate(analysisProvider);
@@ -184,7 +154,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       setState(() => _remaining--);
       if (_remaining <= 0) {
         t.cancel();
-        // Serverga YUBORILMAYDI — sabab `_timedOut` izohida.
         setState(() => _timedOut = true);
       }
     });
@@ -192,7 +161,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   Future<void> _grade(String? key) async {
     if (_result != null || _submitting) return;
-    // `await` dan OLDIN olinadi: keyin `context` yaroqsiz bo'lishi mumkin.
     final l = L10n.of(context);
     setState(() => _submitting = true);
     _ticker?.cancel();
@@ -221,14 +189,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       }
       // Mukofot fikr-mulohaza blokidan yuqoriga uchib ketadi.
       //
-      // NEGA POST-FRAME: `_feedback` bloki AYNAN shu `setState` da paydo
-      // bo'ladi, ya'ni hozir uning `RenderBox` i hali yo'q va boshlanish
-      // nuqtasini hisoblab bo'lmaydi. Keyingi kadrda esa u joyida turadi.
       //
-      // NEGA `_rewardAnchor`: `context` (butun ekran) ishlatilsa mukofot
-      // ekranning yuqori chetidan uchardi — o'quvchi unga qaramaydi, chunki
-      // ko'zi javob bergan joyda. Harakat AYNAN shu yerdan boshlanishi
-      // kerak, aks holda "nima uchun berildi" bog'lanishi yo'qoladi.
       if (r.xpAwarded > 0 || r.coinsAwarded > 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final anchor = _rewardAnchor.currentContext;
@@ -240,10 +201,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     } catch (e) {
       setState(() => _submitting = false);
       if (mounted) {
-        // Sabab bo'yicha aniq matn: tarmoq uzilishi, 429 va server xatosi —
-        // uchtasi uchun uchta boshqacha harakat kerak. Ilgari uchalasi ham
-        // "qayta urinib ko'ring" derdi, holbuki 429 da qayta urinish aynan
-        // noto'g'ri harakat.
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(humanError(e, l))));
         _startTimer(); // give the time back on a failed send
@@ -251,18 +208,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     }
   }
 
-  /// Mashq davomida to'plangan XP/noncoin. Faqat ko'rsatish uchun — haqiqiy
-  /// hisob serverda.
   int _xpEarned = 0;
   int _coinsEarned = 0;
 
-  /// Mukofot animatsiyasi shu nuqtadan uchadi (fikr-mulohaza bloki).
   final GlobalKey _rewardAnchor = GlobalKey();
 
-  /// Dashboard, tahlil, fan kartochkalari va tanga balansi shu mashqdan
-  /// keyin eskirgan bo'ladi. Ilgari ular faqat "tortib yangilash" bilan
-  /// yangilanardi va foydalanuvchi "XP o'smadi" deb o'ylardi — aslida
-  /// ekrandagi raqam eski edi.
   void _refreshProgress() {
     ref.invalidate(meOverviewProvider);
     ref.invalidate(analysisProvider);
@@ -271,20 +221,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   void _next() {
-    // Mehmon bir necha savol yechgach — ro'yxatdan o'tishga taklif.
-    // MASHQ TUGAGANDA ko'rsatilmaydi: u yerda `ResultScreen` dagi
-    // `GuestNotice` ayni shu vazifani bajaradi, ikkitasi ketma-ket chiqsa
-    // bosim bo'lib tuyuladi.
     if (!_signupPromptShown &&
         _index + 1 >= _promptAfter &&
         _index + 1 < _questions.length) {
-      _signupPromptShown = true; // qayta chaqirilmasin (natijasidan qat'i nazar)
+      _signupPromptShown = true;
       GuestSignupPrompt.maybeShow(context, ref, answered: _index + 1);
     }
 
     if (_index + 1 >= _questions.length) {
-      // Mashq tugadi — kichik fanfar. Natija ekrani ochilishidan oldin
-      // chaqiriladi, shunda ovoz va maskot bir vaqtda ko'rinadi.
       ref.read(soundServiceProvider).complete();
       _refreshProgress();
       Navigator.pushReplacement(
@@ -328,11 +272,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       );
     }
     if (_error != null) {
-      // Ilgari bu yerda `Text('$_error')` turardi va o'quvchi ekranda
       // `DioException [connection error]: http://api.topagon.uz/v1/questions`
-      // ni ko'rardi — bu ilova buzuq degan yagona xulosaga olib boradi.
-      // `humanError` xatoni sababiga qarab tarjima qiladi, `EmptyState` esa
-      // chiqish yo'lini beradi.
       return Scaffold(
         appBar: AppBar(),
         body: EmptyState(
@@ -351,8 +291,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       );
     }
     if (_questions.isEmpty) {
-      // Bo'sh ekran + bitta qator matn "ilova buzuq" degan taassurot
-      // qoldiradi. Endi sabab ham, chiqish yo'li ham ko'rsatiladi.
       return Scaffold(
         appBar: AppBar(),
         body: EmptyState(
@@ -405,9 +343,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             ),
         ],
       ),
-      // Keng ekranda savol matni butun monitor bo'ylab cho'zilmasin: bir
-      // qatorda 60–75 belgidan ko'p bo'lsa ko'z qatordan qatorga o'ta olmaydi.
-      // Telefonda `ContentWidth` hech narsa qilmaydi (maxWidth ekrandan katta).
       body: ContentWidth(
         maxWidth: 760,
         child: Column(
@@ -428,12 +363,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
               children: [
-                // Tema shkalasidan: savol matni — `titleMedium`. Ilgari bu
-                // yerda qattiq `fontSize: 17` turardi va sahifadagi boshqa
-                // matnlardan farq qilmasdi.
-                // Kalit `Animate` ning O'ZIDA bo'lishi kerak (shuning uchun
-                // `KeyedSubtree`), aks holda savol almashganda Flutter eski
-                // animatsiya holatini qayta ishlatadi va matn "ochilmaydi".
                 KeyedSubtree(
                   key: ValueKey('stem_${q.id}'),
                   child: MathText(q.stem,
@@ -441,10 +370,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                       .enterFade(),
                 ),
                 const SizedBox(height: 18),
-                // `ValueKey` savol ID sidan: kalit o'zgarganda `Animate`
-                // yangi holat oladi va variantlar KEYINGI savolda ham
-                // qaytadan ochiladi. Kalitsiz animatsiya faqat birinchi
-                // savolda ishlardi.
                 for (final (i, opt) in q.options.indexed)
                   KeyedSubtree(
                     key: ValueKey('${q.id}_${opt.optionKey}'),
@@ -483,12 +408,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     );
   }
 
-  // Kursor turgan joyga belgi qo'yadi (bor tanlovni almashtiradi).
   //
-  // NEGA KERAK. `/` klaviaturada allaqachon terilishi mumkin edi (formatter
-  // ruxsat beradi), lekin telefonning standart klaviaturasida u SIMVOLLAR
-  // sahifasining orqasida yashiringan — o'quvchi uni qidirib topmaydi va
-  // "kasrni qanday yozish kerak?" degan xabar yuboradi. Tugma buni bir
   // bosishga tushiradi.
   void _insertSymbol(String value) {
     final text = _typed.text;
@@ -520,16 +440,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   Widget _typedField(L10n l, ColorScheme scheme, AppPalette p) {
     final answered = _result != null;
-    // FAQAT `numeric` savolda kiritish cheklanadi.
-    //
-    // XATO (2026-08-08 sinovida topilgan): "matematika ochiq savolida harf
-    // yozib bo'lmadi". Filtr HAR QANDAY yozma savolga qo'llanardi, holbuki
-    // `open_keyword` javobi — matn: «Toshkent», «uchburchak», «x=3, y=8».
-    // Foydalanuvchi harf bosardi, ekranda hech narsa chiqmasdi va bu
-    // klaviatura buzuq degan taassurot berardi.
-    //
-    // `numeric` da esa filtr o'z o'rnida: u yerda javob son bo'lishi shart
-    // va tasodifiy harf serverda «noto'g'ri» ga aylanardi.
     final numericOnly = _questions[_index].type == 'numeric';
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -537,21 +447,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         TextField(
           controller: _typed,
           enabled: !answered && !_submitting && !_timedOut,
-          // `numberWithOptions` EMAS: u telefonda faqat raqamli panelni ochadi
-          // va u yerda `/` tugmasi YO'Q. Server esa kasr javobni ("1/3")
-          // to'liq tushunadi — ya'ni javob qabul qilinardi-yu, uni yozib
-          // bo'lmasdi. Endi to'liq klaviatura, lekin faqat matematik belgilar
-          // kiritishga ruxsat beriladi.
           keyboardType: TextInputType.text,
           autocorrect: false,
           enableSuggestions: false,
           inputFormatters: [
-            // HARF YO'Q. Ilgari ro'yxatda `e` va `r` turardi va sonli
-            // javobga harf yozib bo'lardi. `e` ayniqsa zararli edi:
-            // serverdagi `float()` "1e3" ni JIM QABUL QILADI va uni 1000
-            // deb o'qiydi, ya'ni tasodifan bosilgan harf javobni butunlay
             // boshqa songa aylantirardi. Qolgan belgilar — pastdagi
-            // tugmalar qatori chiqaradigan belgilar.
             if (numericOnly)
               FilteringTextInputFormatter.allow(
                   RegExp(r'[0-9,.\-+/()π√^ ]')),
@@ -573,8 +473,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 : null,
           ),
         ),
-        // Matematik belgilar qatori faqat sonli savolda: matnli javobda
-        // («Toshkent») √ va π tugmalari faqat chalkashtiradi.
         if (!answered && numericOnly) ...[
           const SizedBox(height: 8),
           SingleChildScrollView(
@@ -597,9 +495,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     Color border = p.hairline;
     Color bg = scheme.surface;
     Color letterBg = p.surfaceAlt;
-    // `muted` EMAS. Kulrang harf + kulrang matn variantni "faol emas" qilib
-    // ko'rsatardi — bu ilovadagi eng ko'p ko'riladigan ekran, u yerda
-    // "bosiladigan" degan signal eng aniq bo'lishi kerak.
     Color letterFg = scheme.onSurface;
     Widget? trailing;
 
@@ -631,12 +526,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       padding: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         // Vaqt tugagach ham variantlar bosilmaydi: aks holda o'quvchi
-        // javobni tanlab, «Keyingi» bosardi va tanlovi hech qayerga
-        // ketmagani uchun buni ilova xatosi deb o'ylardi.
         onTap: (_result != null || _timedOut)
             ? null
-            // Variant tanlanganda qisqa klik. Javob yuborilgandan keyin
-            // (_result != null) tugma o'chadi, ya'ni ovoz ham chiqmaydi.
             : () {
                 ref.read(soundServiceProvider).tap();
                 setState(() => _selected = opt.optionKey);
@@ -668,8 +559,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               Expanded(
                 child: MathText(
                   opt.text,
-                  // Rang va vazn ATAYLAB aniq berilgan: variant matni asosiy
-                  // kontent, temaning standart matn uslubiga tashlab
                   // qo'yilmaydi.
                   style: TextStyle(
                     fontSize: 15,
@@ -687,11 +576,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     );
   }
 
-  /// «+10 XP · +2 tanga» yoki nega mukofot berilmagani.
-  ///
-  /// Bu qator #1 muammoning javobi: XP tizimi to'g'ri ishlardi, lekin
-  /// foydalanuvchi mehmon rejimida yoki AYNI savolni ikkinchi marta
-  /// yechayotganini bilmasdi — server ikkala holatda ham XP bermaydi.
   Widget _rewardLine(L10n l, AppPalette p) {
     final r = _result!;
     final scheme = Theme.of(context).colorScheme;
@@ -700,9 +584,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       return Padding(
         padding: const EdgeInsets.only(top: 6),
         // Chiplar `widgets/currency.dart` dan — dashboarddagi va uchib
-        // ketgan mukofotdagi belgilar bilan AYNAN bir xil. Ilgari bu yerda
         // yashil `Icons.bolt` va sariq tanga turardi, dashboardda esa
-        // boshqacha — foydalanuvchi ularni bir narsa deb tanimasdi.
         child: Wrap(spacing: 6, runSpacing: 4, children: [
           RewardChip.xp(l.rewardXp(r.xpAwarded)),
           if (r.coinsAwarded > 0) RewardChip.coin(l.rewardCoins(r.coinsAwarded)),
@@ -726,12 +608,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     );
   }
 
-  /// «Vaqt tugadi» — javob KELMAGAN holat.
-  ///
-  /// Rangi ataylab NEYTRAL (kulrang/sariq), qizil emas: qizil butun ilovada
-  /// «noto'g'ri javob» degan ma'noni bildiradi va shu holat aynan undan
-  /// farq qilishi kerak. Maskot ham `encouraging` — bu muvaffaqiyatsizlik
-  /// emas, shunchaki tugagan vaqt.
   Widget _timeUpBanner(L10n l, AppPalette p) {
     final color = p.warning;
     return Container(
@@ -794,11 +670,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                         fontWeight: FontWeight.w700,
                         color: color)),
                 _rewardLine(l, p),
-                // Noto'g'ri javobda server kalitni ham, izohni ham bermaydi
-                // (aks holda "xato qil → javobni o'qi → qayta yubor" farmi
-                // ochilardi). Sababsiz bo'sh joy "ilova javobni ko'rsatmay
-                // qo'ydi" degan taassurot qoldiradi — shuning uchun nima
-                // bo'lgani aytiladi.
                 if (!ok) ...[
                   const SizedBox(height: 4),
                   Text(l.quizWrongHint,

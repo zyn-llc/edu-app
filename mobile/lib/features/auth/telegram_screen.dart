@@ -12,17 +12,6 @@ import 'password_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../core/breakpoints.dart';
 
-/// Telegram orqali kirish.
-///
-/// Oqim: server bir martalik havola beradi -> foydalanuvchi botni ochib «Start»
-/// bosadi -> ilova serverdan «bo'ldimi?» deb so'rab turadi -> token oladi.
-///
-/// Foydalanuvchi hech narsa yozmaydi: kod ham, telefon ham kerak emas. SMS
-/// shlyuzi tayyor bo'lmaganda eng qulay yo'l shu.
-///
-/// So'rov 2 soniyada bir marta, ko'pi bilan havola muddatigacha. Ilova fonga
-/// ketganda ham timer ishlayveradi — foydalanuvchi Telegram'dan qaytganda
-/// ekran allaqachon o'zgargan bo'ladi.
 class TelegramLoginScreen extends ConsumerStatefulWidget {
   const TelegramLoginScreen({super.key});
 
@@ -35,8 +24,6 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
   TelegramLogin? _session;
   Timer? _timer;
 
-  /// So'rov zanjiri ishlayaptimi. `Timer.isActive` yetarli emas: so'rov
-  /// yuborilgan paytda timer allaqachon "o'chgan" bo'ladi.
   bool _polling = false;
   bool _starting = true;
   bool _opened = false;
@@ -71,11 +58,6 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
         _session = s;
         _starting = false;
       });
-      // DIQQAT: bu yerda so'rov BOSHLANMAYDI. Foydalanuvchi havolani ochmasdan
-      // turib so'rov yuborish — real serverda bekorga trafik, MOCK rejimda esa
-      // undan ham yomoni: mock 5 soniyadan keyin "kirdi" deb javob beradi va
-      // ekran havolani ko'rsatishga ulgurmay o'zi yopilib ketardi.
-      // So'rov `_ensurePolling()` bilan, foydalanuvchi harakatidan keyin
       // boshlanadi.
     } on DioException catch (e) {
       if (!mounted) return;
@@ -88,21 +70,14 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
     }
   }
 
-  /// So'rov oralig'i vaqt o'tishi bilan uzayadi.
   ///
-  /// NEGA: odam Telegramda «Start» ni odatda dastlabki 15–20 soniyada bosadi.
-  /// Shu oynada tez so'rash (2 s) kirishni bir zumda sezadi. Undan keyin esa
-  /// foydalanuvchi ilovadan chalg'igan bo'ladi — 10 daqiqa davomida har 2
   /// soniyada so'rash 300 ta bekor so'rov degani. Bosqichma-bosqich uzaytirish
-  /// buni ~90 taga tushiradi, sezgirlikni esa deyarli yo'qotmaydi.
   int _pollDelaySeconds() {
-    if (_elapsed < 30) return 2;    // birinchi 30 s — tez
+    if (_elapsed < 30) return 2;
     if (_elapsed < 120) return 4;   // 2 daqiqagacha — o'rtacha
-    return 8;                       // undan keyin — kamdan-kam
+    return 8;
   }
 
-  /// So'rovni boshlaydi. Ikki marta chaqirilsa ham bitta zanjir bo'ladi
-  /// (foydalanuvchi tugmani ham bosishi, havolani ham nusxalashi mumkin).
   void _ensurePolling() {
     if (_polling) return;
     _polling = true;
@@ -115,9 +90,7 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
     _timer = null;
   }
 
-  /// Bitta so'rovni rejalashtiradi va javobdan keyin O'ZI keyingisini qo'yadi.
   ///
-  /// `Timer.periodic` ATAYLAB ishlatilmadi: oraliq o'zgaruvchan, va periodic
   /// timer oldingi so'rov tugashini kutmaydi — sekin tarmoqda so'rovlar
   /// bir-birining ustiga chiqib ketardi.
   void _scheduleNextPoll() {
@@ -141,18 +114,6 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
           _stopPolling();
           await ref.read(authControllerProvider.notifier).completeLogin(pair);
           if (!mounted) return;
-          // Hisobni SAQLAB QO'YISH taklifi.
-          //
-          // Sabab: Telegram bilan kirish tez, lekin QAYTIB kirishga
-          // yaramaydi — har safar brauzerdan chiqib, botda «Start» bosish
-          // kerak. Sinovchi buni "yana ro'yxatdan o'tyapman" deb qabul
-          // qildi. Shu tufayli kirish tugagan zahoti (foydalanuvchi
-          // hisobi allaqachon borligini bilgan paytda) parol taklif
-          // qilinadi.
-          //
-          // Nomi allaqachon bo'lsa (masalan ilgari qo'ygan) varaq uni
-          // qulflangan holda ko'rsatadi. Parol allaqachon o'rnatilgan
-          // bo'lsa varaq umuman chiqmaydi — buni `hasPassword` hal qiladi.
           final me = ref.read(authControllerProvider).user;
           if (me != null && (me.username == null || me.username!.isEmpty)) {
             await SetPasswordSheet.show(context);
@@ -169,7 +130,6 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
           }
           return;
         }
-        // Boshqa xatolar (tarmoq uzilishi) — keyingi urinishda o'zi tuzaladi.
       }
 
       if (mounted && _polling) _scheduleNextPoll();
@@ -180,9 +140,7 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
     final s = _session;
     if (s == null) return;
 
-    // Webda pop-up blokirovkasi `launchUrl` ni `false` qaytarishga majbur
-    // qilishi mumkin. Bunday holda ham havola ekranda ko'rinib turadi va
-    // nusxalash mumkin — foydalanuvchi boshi berk ko'chada qolmaydi.
+    // On web a blocked pop-up makes `launchUrl` return false.
     var ok = false;
     try {
       ok = await launchUrl(Uri.parse(s.deepLink),
@@ -252,13 +210,8 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
                   child: Text(l.telegramRetry),
                 ),
             ] else ...[
-              // TASDIQ KODI — havoladan ham oldin.
               //
-              // Bot xuddi shu kodni tugmada ko'rsatadi. Foydalanuvchi
               // ikkalasini solishtiradi va shundan keyingina tasdiqlaydi.
-              // Usiz oqim bir bosishda hisob o'g'irlash edi: birov yuborgan
-              // havolani bosgan odam bilmasdan o'z hisobiga kirishni
-              // tasdiqlab yuborardi (izoh: app/services/telegram.py).
               if ((_session?.confirmCode ?? '').isNotEmpty) ...[
                 Container(
                   width: double.infinity,
@@ -302,8 +255,6 @@ class _TelegramLoginScreenState extends ConsumerState<TelegramLoginScreen> {
               ),
               const SizedBox(height: 14),
   
-              // Havolaning O'ZI ham ko'rinib turadi. Brauzer yangi oynani
-              // bloklasa yoki Telegram boshqa qurilmada bo'lsa — yagona yo'l shu.
               if (_session != null)
                 Container(
                   padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),

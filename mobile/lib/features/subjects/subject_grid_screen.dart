@@ -12,10 +12,6 @@ import 'subjects.dart';
 
 /// Fanlar gridi.
 ///
-/// Ustunlar soni `crossAxisCount` bilan qattiq belgilanmagan: `maxCrossAxisExtent`
-/// har bir kartaga eng ko'pi 340 px beradi va ustunlar soni ekran kengligidan
-/// o'zi kelib chiqadi. Telefonda 1–2, planshetda 3, desktopda 4–5 bo'ladi va
-/// oraliq o'lchamlarda ham hech narsa siqilib qolmaydi.
 class SubjectGridScreen extends ConsumerWidget {
   const SubjectGridScreen({super.key});
 
@@ -45,10 +41,6 @@ class SubjectGridScreen extends ConsumerWidget {
               onAction: () => ref.invalidate(subjectsProvider),
             );
           }
-          // Ogohlantirish grid bilan BIR skroll ichida: ustiga alohida
-          // qo'yilsa u ekranda qotib qolardi va telefonda kartalar uchun
-          // joyni yeb turardi. Rus tili tanlanmagan bo'lsa vidjet nol
-          // balandlik qaytaradi, ya'ni sliver'lar tartibi o'zgarmaydi.
           return CustomScrollView(
             slivers: [
               const SliverPadding(
@@ -64,10 +56,6 @@ class SubjectGridScreen extends ConsumerWidget {
               maxCrossAxisExtent: 340,
               crossAxisSpacing: Spacing.ms,
               mainAxisSpacing: Spacing.ms,
-              // Balandlik ATAYLAB piksel bilan berilgan, `childAspectRatio`
-              // bilan emas: nisbat ishlatilganda keng ekranda karta cho'zilib,
-              // ichida yana bo'sh joy paydo bo'lardi. Shrift kattalashtirilsa
-              // balandlik ham o'sadi — aks holda matn kesilib qolardi.
               mainAxisExtent: subjectCardHeight(context),
             ),
                   itemCount: subjects.length,

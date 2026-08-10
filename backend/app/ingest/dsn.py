@@ -22,7 +22,6 @@ from __future__ import annotations
 import os
 import re
 
-
 def in_container() -> bool:
     """Konteyner ichidamizmi.
 
@@ -37,7 +36,6 @@ def in_container() -> bool:
     except OSError:
         return False
 
-
 def resolve_url(url: str | None = None) -> str:
     """Ishlayotgan muhitga mos DSN qaytaradi.
 
@@ -51,11 +49,8 @@ def resolve_url(url: str | None = None) -> str:
     if in_container():
         return url
 
-    # Hostda: compose servis nomi hal bo'lmaydi. `localhost` esa Windowsda
-    # IPv6 `::1` ga ketadi, Docker faqat IPv4 ni uzatadi.
     url = re.sub(r"@db:", "@127.0.0.1:", url).replace("@localhost:", "@127.0.0.1:")
     # Windows/Docker: port proxy asyncpg ning SSL muzokarasini uzib qo'yishi
-    # mumkin. Lokal ulanishda SSL kerak emas — aniq o'chiramiz.
     if "ssl=" not in url and "127.0.0.1" in url:
         url += ("&" if "?" in url else "?") + "ssl=disable"
     return url

@@ -12,31 +12,14 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/spacing.dart';
 
-/// Sahifa oxiri.
 ///
-/// ## Nega kerak edi
 ///
-/// Sinovda aytilgan: "sahifalar to'satdan tugaydi". Bu haqiqat edi — oxirgi
-/// kartadan keyin bo'sh joy boshlanardi va foydalanuvchi "yuklanmay qoldimi?"
-/// deb o'ylardi. Footer sahifaga OXIR beradi.
 ///
-/// ## Nega ikkita variant
 ///
-/// Bu ilova — kirilgan panel (dashboard), marketing sayti emas. Har bir
 /// tabning ostiga uch ustunli katta footer qo'yish interfeysni YOMONLASHTIRADI:
-/// reyting yoki bellashuv ro'yxatini skroll qilgan odam pastda "Biz bilan"
-/// ustunini ko'rishni xohlamaydi.
 ///
-///  * [AppFooter.full] — faqat BOSH ekranda. U kashfiyot yuzasi: bu yerda
-///    boshqa bo'limlarga havola mantiqli.
-///  * [AppFooter.compact] — qolgan hamma joyda. Bitta qator, ikkita havola.
 ///
-/// ## Nega umumiy SaaS ustunlari yo'q
 ///
-/// "About / Services / Solutions / Resources" — shablon footer. Bu yerda
-/// faqat o'quvchi va ota-onaga HAQIQATAN kerak bo'ladigan yo'llar bor, va
-/// har bir havola ishlaydigan joyga olib boradi (mavjud bo'lmagan
-/// "Maxfiylik siyosati" sahifasiga havola ataylab qo'yilmagan).
 class AppFooter extends ConsumerWidget {
   const AppFooter.full({super.key}) : compact = false;
   const AppFooter.compact({super.key}) : compact = true;
@@ -133,8 +116,6 @@ class AppFooter extends ConsumerWidget {
           ],
         ),
         const Gap.sm(),
-        // Shiorning kengligi cheklanadi: 1100 px li footerda bitta qatorga
-        // cho'zilgan matnni ko'z o'qimaydi.
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 280),
           child: Text(l.footerTagline, style: text.bodySmall),
@@ -152,34 +133,18 @@ class AppFooter extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Keng ekranda brend chapda, uchta ustun qolgan joyni TENG bo'lib
-          // oladi — ya'ni footer butun kenglikni egallaydi. Birinchi
-          // versiyada ustunlar `Wrap` ichida edi va desktopda hammasi CHAP
           // CHETGA yopishib qolardi: 1100 px li footerning o'ng yarmi bo'sh
-          // turardi. Tor ekranda ustma-ust joylashuv qoladi — 360 px da
-          // to'rtta ustunni yonma-yon qo'yib bo'lmaydi.
           //
-          // NEGA `MediaQuery`, `LayoutBuilder` EMAS. Footer
           // `SliverFillRemaining(hasScrollBody: false)` ichida turadi
           // (`FooterSliver`) va u bolasining INTRINSIC balandligini
-          // so'raydi. `LayoutBuilder` esa intrinsic o'lchamni bermaydi va
           // "LayoutBuilder does not support returning intrinsic dimensions"
-          // bilan yiqiladi — bu xato `flutter test` da tutildi.
           //
-          // `expanded` (≥840 dp) — rail chiqqandan keyin footerga qoladigan
-          // kenglik uchta ustunni yonma-yon ko'rsatishga yetadigan chegara.
           if (context.windowSize.index >= WindowSize.expanded.index)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Brend BO'SH JOYNI oladi, ustunlar esa o'z eniga teng va
                 // o'ngga yig'iladi.
                 //
-                // Ilgari hammasi `Expanded(4:3:3:3)` edi. Har bir ustun keng
-                // slotga tushib, matni chapga tekislanardi — natijada oxirgi
-                // ustundan keyin footerning o'ng choragi bo'sh ko'rinardi
-                // (1920 px da ayniqsa yaqqol). Endi bo'sh joy BITTA joyda,
-                // brend bilan ustunlar orasida — bu odatiy footer naqshi.
                 Expanded(child: brand),
                 for (final col in columns) ...[
                   const SizedBox(width: Spacing.xxl),
@@ -206,12 +171,6 @@ class AppFooter extends ConsumerWidget {
                 child: Text(l.footerCopyright(DateTime.now().year),
                     style: text.labelSmall?.copyWith(color: palette.faint)),
               ),
-              // Tilni almashtirish sozlamalarda; bu yerda unga qisqa yo'l.
-              //
-              // Ikonka 16 px edi va matn `labelSmall` — ikkalasi ham shu
-              // qadar kichik ediki, foydalanuvchi buni bosiladigan element
-              // deb tanimasdi. 20 px + `labelMedium` + aniq apelsin rang:
-              // hali ham ikkilamchi, lekin endi ko'rinadi.
               TextButton.icon(
                 onPressed: () => _push(context, const SettingsScreen()),
                 icon: Icon(Icons.language_rounded,
@@ -240,32 +199,19 @@ class AppFooter extends ConsumerWidget {
   }
 }
 
-/// Footer — sliver sifatida, EKRAN PASTIGA bosilgan holda.
 ///
-/// ## Muammo
 ///
-/// Reyting sahifasida bitta qator bor. Footer to'g'ridan-to'g'ri ro'yxatdan
-/// keyin turgani uchun u ekranning o'rtasida qolib, ostida ~400 px bo'sh
-/// oq joy paydo bo'lardi. Sahifa "yuklanmay qolgandek" ko'rinadi.
 ///
 /// ## Yechim
 ///
 /// `SliverFillRemaining(hasScrollBody: false)` — viewportda qolgan bo'sh
-/// joyni oladi (kontent kalta bo'lsa), kontent uzun bo'lsa esa faqat
 /// bolasining balandligini oladi. Ichidagi `Column(mainAxisAlignment: end)`
 /// footerni pastga bosadi.
 ///
-/// NEGA `Column(Expanded(scroll), Footer())` EMAS: u footerni DOIMIY
-/// ko'rinadigan qilib qo'yadi va uzun ro'yxatda ham ekranning pastki
-/// qismini egallab turadi. Bu yerda kerak bo'lgani boshqa — kontent kalta
-/// bo'lsa pastda, uzun bo'lsa scroll oxirida.
 ///
-/// `SizedBox(height: 400)` bilan "to'ldirish" YARAMAYDI: u faqat bitta
-/// ekran o'lchamida to'g'ri ko'rinadi.
 class FooterSliver extends StatelessWidget {
   const FooterSliver({super.key, this.full = false});
 
-  /// `true` — bosh ekrandagi to'liq (uch ustunli) variant.
   final bool full;
 
   @override
@@ -314,7 +260,6 @@ class _FooterColumn extends StatelessWidget {
   }
 }
 
-/// Footer havolasi. `TextButton` EMAS: uning ichki paddingi 8–16 px va
 /// ustun ichida havolalar bir-biridan juda uzoqda turadi.
 class _FooterLink extends StatefulWidget {
   const _FooterLink(this.label, {required this.onTap});

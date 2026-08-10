@@ -21,9 +21,6 @@ class ChildSummary {
   final int? avatarColor;
   final Progress progress;
 
-  /// Ota-onaga xos signallar — bola o'z ekranida bularni ko'rmaydi.
-  /// Aynan shu farq ota-ona panelini takrorlashdan ma'noli panelga
-  /// aylantiradi: ota-ona XP nima ekanini bilmaydi, lekin "bu hafta 3 kun
   /// shug'ullandi" ni darrov tushunadi.
   final int answered7d;
   final double accuracy7d;
@@ -91,10 +88,6 @@ final childAnalysisProvider =
 
 /// Ulangan farzandlar.
 ///
-/// `isParent` sharti ATAYLAB olib tashlandi: rol ro'yxatdan o'tishda bir
-/// marta beriladi va o'zgarmaydi, shuning uchun u bilan gate qilinsa
-/// guardianship yozuvi bor foydalanuvchi ham bo'sh ro'yxat ko'rardi.
-/// Ruxsatni server hal qiladi — bu yerda faqat kirilganini tekshiramiz.
 final childrenProvider = FutureProvider<List<ChildSummary>>((ref) async {
   final auth = ref.watch(authControllerProvider);
   if (!auth.isAuthenticated) return [];

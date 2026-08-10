@@ -20,8 +20,6 @@ Android ikonkani doira, kvadrat yoki tomchi shaklida KESADI. Shuning uchun
 80% ichida turadi — aks holda chetlari kesiladi. Oddiy `Icon-*` da esa
 shaffoflik saqlanadi.
 
-## Nima QILINMAYDI
-
 Play Store ikonkasi (512x512, shaffofliksiz) va feature grafik (1024x500)
 avtomatik chiqarilmaydi: ular do'kon sahifasining dizayn elementi, oddiy
 masshtablash yetarli emas.
@@ -41,8 +39,6 @@ ROOT = Path(__file__).resolve().parent.parent
 MOBILE = ROOT / "mobile"
 LANDING = ROOT / "landing"
 
-# Brend foni — maskable variantlar uchun. `mobile/lib/theme/app_colors.dart`
-# dagi `primary` bilan bir xil bo'lishi shart.
 BRAND = (248, 114, 28, 255)
 
 PWA = [
@@ -53,7 +49,6 @@ PWA = [
     ("web/favicon.png", 64, False),
 ]
 
-# Android launcher. Zichlik nomi -> piksel.
 MIPMAP = {
     "mipmap-mdpi": 48,
     "mipmap-hdpi": 72,
@@ -62,12 +57,9 @@ MIPMAP = {
     "mipmap-xxxhdpi": 192,
 }
 
-
 def load(src: Path) -> Image.Image:
     im = Image.open(src).convert("RGBA")
     if im.width != im.height:
-        # Kvadratga to'ldiramiz (kesmaymiz — logotipning bir qismi
-        # yo'qolib qolmasin).
         side = max(im.size)
         canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
         canvas.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
@@ -77,7 +69,6 @@ def load(src: Path) -> Image.Image:
         print(f"  ! ogohlantirish: manba {im.width}px — 512 dan kichik, "
               f"katta o'lchamlar xira chiqadi")
     return im
-
 
 def render(src: Image.Image, size: int, maskable: bool) -> Image.Image:
     if maskable:
@@ -89,7 +80,6 @@ def render(src: Image.Image, size: int, maskable: bool) -> Image.Image:
         out.paste(mark, (off, off), mark)
         return out
     return src.resize((size, size), Image.LANCZOS)
-
 
 def main() -> int:
     if len(sys.argv) < 2:
@@ -114,8 +104,6 @@ def main() -> int:
     for folder, size in MIPMAP.items():
         d = res / folder
         d.mkdir(parents=True, exist_ok=True)
-        # Launcher ikonkasi shaffof bo'lmasligi kerak — eski Android
-        # versiyalarida shaffof fon qora bo'lib chiqadi.
         render(src, size, True).save(d / "ic_launcher.png")
         print(f"  {folder}/ic_launcher.png  ({size}x{size})")
 
@@ -143,7 +131,6 @@ def main() -> int:
     print("  4. Brauzerda: F12 -> Application -> Clear site data")
     print("     (favicon eng qattiq keshlanadigan fayllardan biri)")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

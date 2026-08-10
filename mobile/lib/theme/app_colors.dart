@@ -14,13 +14,6 @@ class AppColors {
   static const lightPrimaryTint = Color(0xFFFFF1E6);
   static const lightOnPrimary = Color(0xFFFFFFFF);
 
-  // 2026-08-06: iliq krem fon (#FBF7F2) neytral kulrangga o'zgartirildi.
-  //
-  // NEGA. Iliq fonda oq karta deyarli ko'rinmasdi — ikkalasining yorqinligi
-  // juda yaqin edi, natijada interfeys "yassi" (flat) tuyulardi va soya ham
-  // yordam bermasdi. #F8F9FA neytral va biroz sovuqroq: ustidagi TOZA OQ
-  // karta aniq ajralib turadi, apelsin brend rangi esa undan yanada yorqin
-  // ko'rinadi (sovuq fon issiq aksentni kuchaytiradi).
   static const lightBackground = Color(0xFFF8F9FA);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightSurfaceAlt = Color(0xFFF1F3F5);
@@ -51,7 +44,6 @@ class AppColors {
   static const darkWarning = Color(0xFFF5B93C);
   static const darkDanger = Color(0xFFFF6F5A);
 
-  // ---- Podium (ikkala temada bir xil — medal ranglari brenddan mustaqil) ----
   static const gold = Color(0xFFE0A106);
   static const silver = Color(0xFF9AA3AC);
   static const bronze = Color(0xFFB4703A);
@@ -68,8 +60,6 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color primaryTint;
   final Color primaryPressed;
 
-  /// Semantik ranglar. Ilgari `Colors.green` / `Colors.red` kodda tarqoq
-  /// yozilgan edi — qorong'i temada ular juda yorqin chiqadi va brend
   /// palitrasidan chiqib ketadi.
   final Color success;
   final Color warning;

@@ -53,12 +53,6 @@ mobile/android/.gradle/
 mobile/android/local.properties
 mobile/android/key.properties
 
-# ---- Vositalar --------------------------------------------------------------
-# Claude Code'ning MASHINAGA XOS ruxsatlar fayli. `.local.` — aynan shu
-# "bo'lishilmaydi" degani. Loyiha sozlamalari kerak bo'lsa ular
-# `.claude/settings.json` da (bu esa repoda qoladi).
-.claude/settings.local.json
-
 # ---- OS / muharrir ----------------------------------------------------------
 .DS_Store
 Thumbs.db

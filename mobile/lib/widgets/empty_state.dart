@@ -3,17 +3,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/spacing.dart';
 
-/// Bo'sh holat — ikonka, sarlavha, izoh va HARAKAT.
-///
-/// Nega shunchaki "Hozircha bellashuvlar yo'q" yetarli emas: bo'sh ekran
-/// foydalanuvchiga ilova buzuq yoki tugallanmagandek tuyuladi. Yaxshi bo'sh
-/// holat uch savolga javob beradi:
-///   1. Nima uchun bu yer bo'sh?
-///   2. Bu normalmi?
-///   3. Endi nima qilay?
-///
-/// Uchinchisi eng muhimi — shuning uchun `action` ixtiyoriy emas, deyarli
-/// har doim berilishi kerak.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -35,7 +24,6 @@ class EmptyState extends StatelessWidget {
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
 
-  /// Karta ichida ko'rsatilganda — kichikroq ikonka, kamroq bo'shliq.
   final bool compact;
 
   @override
@@ -90,11 +78,7 @@ class EmptyState extends StatelessWidget {
 }
 
 /// Yuklanish paytidagi "skelet" — kulrang to'rtburchak, yengib o'tuvchi
-/// yaltirash bilan.
 ///
-/// `CircularProgressIndicator` dan afzalligi: foydalanuvchi kontent QANDAY
-/// joylashishini oldindan ko'radi, shuning uchun yuklanish tezroq tuyuladi
-/// va kontent kelganda sahifa "sakramaydi".
 class Skeleton extends StatefulWidget {
   const Skeleton({
     super.key,
@@ -137,7 +121,6 @@ class _SkeletonState extends State<Skeleton>
             borderRadius: BorderRadius.circular(widget.radius),
             gradient: LinearGradient(
               // Yaltirash chapdan o'ngga suriladi. `-1..2` oralig'i —
-              // yaltirash to'liq chiqib ketishi uchun.
               begin: Alignment(-1 + _c.value * 3, 0),
               end: Alignment(_c.value * 3, 0),
               colors: [

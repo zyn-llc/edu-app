@@ -1,10 +1,4 @@
-// Bosh ekranning yangi shaxsiy bloklari — 2026-08-08.
 //
-// NEGA BU TESTLAR BOR. Bloklar `/v1/me` dan keladigan yangi maydonlarga
-// (`answered_today`, `week`, ...) tayanadi. Ular bo'sh yoki eski bo'lganda
-// ekran YIQILMASLIGI, to'lganda esa haqiqiy raqamni ko'rsatishi kerak.
-// `flutter analyze` buni tekshira olmaydi: maydon bor-yo'qligi ish vaqtida
-// hal bo'ladi.
 //
 // Ishga tushirish:
 //     flutter test
@@ -93,8 +87,6 @@ List<DayStat> _week(List<int> answered) {
 /// qo'ygan `Timer(Duration.zero)` larni bo'shatadi (`enterStaggered`).
 /// Aks holda test oxirida "A Timer is still pending".
 ///
-/// `pumpAndSettle` EMAS: ilovada uzluksiz animatsiyalar bor va u
-/// hech qachon tinchimaydi.
 Future<void> _settle(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
@@ -102,17 +94,16 @@ Future<void> _settle(WidgetTester tester) async {
 
 void main() {
   group('DailyGoalCard', () {
-    testWidgets('mehmon uchun progress ko\'rsatilmaydi', (tester) async {
+    testWidgets('no progress is shown for a guest', (tester) async {
       await tester.pumpWidget(
           _wrap(DailyGoalCard(subjects: _subjects, progress: null)));
       await _settle(tester);
 
       expect(find.text('Bugungi maqsad'), findsOneWidget);
-      // Mehmonning javoblari saqlanmaydi — "0 / 20" yolg'on bo'lardi.
       expect(find.textContaining('/ $kDailyTarget'), findsNothing);
     });
 
-    testWidgets('bugungi raqam va qolgan savol ko\'rinadi', (tester) async {
+    testWidgets('shows today\'s count and the questions left', (tester) async {
       await tester.pumpWidget(_wrap(DailyGoalCard(
         subjects: _subjects,
         progress: _progress(answeredToday: 12, correctToday: 9, xpToday: 90),
@@ -127,7 +118,7 @@ void main() {
       expect(find.text('3 kunlik seriya'), findsOneWidget);
     });
 
-    testWidgets('maqsad bajarilganda tugma yo\'qoladi', (tester) async {
+    testWidgets('the button disappears once the goal is met', (tester) async {
       await tester.pumpWidget(_wrap(DailyGoalCard(
         subjects: _subjects,
         progress: _progress(answeredToday: 22, correctToday: 20, xpToday: 200),
@@ -141,7 +132,7 @@ void main() {
   });
 
   group('WeekStrip', () {
-    testWidgets('week bo\'sh bo\'lsa (eski server) hech narsa chizmaydi',
+    testWidgets('draws nothing when week is empty (older server)',
         (tester) async {
       await tester.pumpWidget(_wrap(WeekStrip(progress: _progress())));
       await _settle(tester);
@@ -149,7 +140,7 @@ void main() {
       expect(find.text('Bu hafta'), findsNothing);
     });
 
-    testWidgets('7 kun va yig\'indi ko\'rinadi', (tester) async {
+    testWidgets('shows seven days and the total', (tester) async {
       await tester.pumpWidget(_wrap(WeekStrip(
         progress: _progress(week: _week([8, 0, 14, 20, 0, 0, 12])),
       )));
@@ -160,15 +151,13 @@ void main() {
       expect(find.text('+660 XP'), findsOneWidget);
       expect(find.text('4 kun faol'), findsOneWidget);
       // Faol kunlar belgilanadi: 8, 14, 20, 12 — to'rtta (nol kunlar bo'sh
-      // doira bo'lib qoladi, bu ATAYLAB: o'tkazib yuborilgan kun ko'rinsin).
       expect(find.byIcon(Icons.check_rounded), findsNWidgets(4));
     });
   });
 
   group('AppFooter', () {
-    // Birinchi versiyada ustunlar `Wrap` ichida edi va desktopda hammasi
     // chap chetga yopishib qolardi — footerning o'ng yarmi bo'sh turardi.
-    testWidgets('keng ekranda ustunlar kenglik bo\'ylab taqsimlanadi',
+    testWidgets('columns spread across the width on a wide screen',
         (tester) async {
       tester.view.physicalSize = const Size(1100, 900);
       tester.view.devicePixelRatio = 1.0;
@@ -180,12 +169,11 @@ void main() {
       final platforma = tester.getTopLeft(find.text('PLATFORMA')).dx;
       final bizBilan = tester.getTopLeft(find.text('BIZ BILAN')).dx;
 
-      // Birinchi ustun chap yarmida, oxirgisi o'ng yarmida.
       expect(platforma, lessThan(550));
       expect(bizBilan, greaterThan(700));
     });
 
-    testWidgets('tor ekranda brend va ustunlar ustma-ust', (tester) async {
+    testWidgets('brand and columns stack on a narrow screen', (tester) async {
       tester.view.physicalSize = const Size(390, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -200,7 +188,7 @@ void main() {
   });
 
   group('ContinueCard', () {
-    testWidgets('mashq qilinmagan bo\'lsa tanlanmaydi', (tester) async {
+    testWidgets('not selectable before any practice', (tester) async {
       final fresh = [
         const Subject(id: 's2', code: 'biologiya', name: 'Biologiya',
             questionCount: 100),
@@ -208,7 +196,7 @@ void main() {
       expect(ContinueCard.pick(fresh), isNull);
     });
 
-    testWidgets('oxirgi fan nomi va aniqligi ko\'rinadi', (tester) async {
+    testWidgets('shows the last subject and its accuracy', (tester) async {
       await tester.pumpWidget(_wrap(ContinueCard(subjects: _subjects)));
       await _settle(tester);
 

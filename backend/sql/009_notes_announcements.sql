@@ -3,10 +3,6 @@
 --
 --    Get-Content sql/009_notes_announcements.sql | docker compose exec -T db psql -U edu -d edu
 --
---  Notes  — foydalanuvchiga tegishli, auth talab qiladi. question_id/subject_id
---           ixtiyoriy: quiz natijasidan yozilgan yozuv savolga bog'lanadi.
---  Announcements — server-driven yangilik. Yangi xabar = INSERT, ilova relizi emas.
---           Ikki qatlamli (core + translations) — schema'dagi boshqa kontent bilan bir xil.
 -- =============================================================================
 
 -- ---- notes ------------------------------------------------------------------
@@ -21,11 +17,9 @@ CREATE TABLE IF NOT EXISTS notes (
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- Ro'yxat sahifasi: "mening yozuvlarim, yangisi tepada".
 CREATE INDEX IF NOT EXISTS idx_notes_user_updated
     ON notes (user_id, updated_at DESC);
 
--- Natija ekrani: "shu savolga yozgan yozuvim".
 CREATE INDEX IF NOT EXISTS idx_notes_user_question
     ON notes (user_id, question_id) WHERE question_id IS NOT NULL;
 
@@ -53,8 +47,6 @@ CREATE TABLE IF NOT EXISTS announcement_translations (
 CREATE INDEX IF NOT EXISTS idx_announcements_feed
     ON announcements (is_active, published_at DESC);
 
--- ---- ixtiyoriy: birinchi xabar (launch) -------------------------------------
--- Izohni ochib ishlat yoki keyin qo'lda INSERT qil.
 --
 -- WITH a AS (
 --   INSERT INTO announcements (kind, published_at)
@@ -62,12 +54,10 @@ CREATE INDEX IF NOT EXISTS idx_announcements_feed
 -- )
 -- INSERT INTO announcement_translations (announcement_id, lang, title, body)
 -- SELECT id, 'uz', 'Bilim ishga tushdi!',
---        '14 000 dan ortiq savol, 9 ta fan. Omad!' FROM a
 -- UNION ALL
 -- SELECT id, 'ru', 'Bilim запущен!',
 --        'Более 14 000 вопросов, 9 предметов. Удачи!' FROM a;
 
--- ---- tekshiruv --------------------------------------------------------------
 SELECT 'notes' AS jadval, count(*) FROM notes
 UNION ALL
 SELECT 'announcements', count(*) FROM announcements;

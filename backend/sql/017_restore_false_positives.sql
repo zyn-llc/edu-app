@@ -1,20 +1,13 @@
 -- =============================================================================
---  017_restore_false_positives.sql — 016 ning 2-bo'limi ortiqcha ushlaganini
 --  qaytarish.
 --
 --    Get-Content sql/017_restore_false_positives.sql | docker compose exec -T db psql -U edu -d edu
 --
 --  MUAMMO: 016 da naqsh `rasm` edi. U "rasmiy", "rasman", "rasmiylashtirish"
---  so'zlariga ham to'g'ri keladi — ular rasm bilan umuman bog'liq emas
---  ("O'zbekiston rasmiy tili qaysi?"). 334 ta draft ichida shunday savollar bor.
 --
---  Bu fayl aniqroq naqsh ishlatadi: so'z chegarasi bilan `\mrasm\M` yoki
 --  rasmda/rasmdagi/rasmga/rasmni/rasmlar/sxema/chizma/grafik.
 --  Sinovdan o'tgan:
 --     "Rasmda tasvirlangan..."      -> rasm            ✓
---     "O'zbekiston rasmiy tili"     -> rasm EMAS       ✓
---     "Hujjat rasmiylashtirish"     -> rasm EMAS       ✓
---     "Bu rasman tasdiqlangan"      -> rasm EMAS       ✓
 -- =============================================================================
 
 \echo '--- QAYTARILADIGANLAR (namuna) ---'
@@ -36,12 +29,10 @@ WHERE q.status = 'draft'
   AND NOT (q.media ? 'ref')
   AND qt.stem !~* '(\mrasm\M|rasmda|rasmdagi|rasmga|rasmni|rasmning|rasmlar|sxema|chizma|grafik)'
   AND q.id NOT IN (
-      -- 3-bo'lim: defekt izohi variantda
       SELECT o.question_id FROM options o
       JOIN option_translations ot ON ot.option_id = o.id AND ot.lang = 'uz-Latn'
       WHERE ot.text ~* '(noaniq|xira|\[.*bet)')
   AND q.id NOT IN (
-      -- 4-bo'lim: takroriy variant matni
       SELECT o.question_id FROM options o
       JOIN option_translations ot ON ot.option_id = o.id AND ot.lang = 'uz-Latn'
       GROUP BY o.question_id, ot.text HAVING count(*) > 1);
@@ -62,7 +53,6 @@ WHERE qt.question_id = q.id AND qt.lang = 'uz-Latn'
       SELECT o.question_id FROM options o
       JOIN option_translations ot ON ot.option_id = o.id AND ot.lang = 'uz-Latn'
       GROUP BY o.question_id, ot.text HAVING count(*) > 1)
-  -- dublikat sifatida draft qilinganlar qaytmasin
   AND q.id NOT IN (
       SELECT id FROM (
         SELECT q2.id, row_number() OVER (

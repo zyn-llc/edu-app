@@ -27,18 +27,12 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
   bool _topicBased = false;
   String? _topicId;
   int _count = 10;
-  /// Taymer STANDART YOQIQ (2026-08-08 ko'rigi).
   ///
-  /// Ilgari `false` edi va amalda hech kim uni yoqmasdi — mashq imtihonga
-  /// emas, cheksiz o'ylashga o'rgatardi. Vaqt tugasa savol NOTO'G'RI deb
-  /// sanalmaydi (`quiz_screen.dart` dagi `_timedOut`), ya'ni standart
-  /// yoqilgani foydalanuvchini jazolamaydi — xohlamasa bir bosishda
   /// o'chiradi.
   bool _timed = true;
 
   bool get _step0Done => _allLevels || _grade != null;
 
-  /// Bo'lim qidiruvi. Geografiyada 179 ta bo'lim bor — scroll bilan izlash
   /// amalda ishlamaydi.
   final _topicQuery = TextEditingController();
 
@@ -48,8 +42,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
     super.dispose();
   }
 
-  /// Qidiruv bo'sh bo'lsa hammasi. Solishtirish kichik harfda va apostrof
-  /// shakllari birxillashtiriladi: foydalanuvchi «gʻarbiy» ni «g'arbiy» deb
   /// yozsa ham topilsin (klaviaturaga qarab uch xil apostrof chiqadi).
   List<TopicEntry> _filteredTopics(Catalog cat) {
     final q = _norm(_topicQuery.text);
@@ -69,12 +61,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final accent = SubjectPalette.of(widget.subject.code).color(Theme.of(context).brightness);
-    // MUHIM: katalog TANLANGAN SINFGA bog'liq.
-    //
-    // 1-qadamda sinf hali tanlanmagan — to'liq katalog kerak (sinf ro'yxati
-    // shundan chiqadi). 2-qadamda esa faqat shu sinfning bo'limlari
-    // ko'rsatilishi kerak, aks holda foydalanuvchi 11-sinfni tanlab, 5-sinf
-    // bo'limini tanlab qo'yadi va bo'sh mashqqa tushadi.
     final catalogAsync = ref.watch(catalogProvider((
       subjectId: widget.subject.id,
       grade: _step == 0 ? null : (_allLevels ? null : _grade),
@@ -102,7 +88,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
           Flexible(child: Text(widget.subject.name, overflow: TextOverflow.ellipsis)),
         ]),
       ),
-      // Keng ekranda tanlov ro'yxati butun monitor bo'ylab yoyilmasin.
       body: ContentWidth(
         maxWidth: 760,
         child: catalogAsync.when(
@@ -147,10 +132,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
       children: [
-        // Ruscha savollar hali yo'q — buni mashq BOSHLANISHIDAN oldin aytish
-        // kerak. Bosh sahifadagi bir marta ko'rsatilgan xabar bu yergacha
-        // esda qolmaydi, chorrahaga to'g'ridan-to'g'ri kelgan bo'lsa esa
-        // umuman ko'rinmagan bo'ladi.
         const RuContentNotice(),
         Text(l.pickGradeTitle,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
@@ -181,8 +162,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
                   () => setState(() {
                         _grade = g.grade;
                         _allLevels = false;
-                        // Sinf o'zgardi — eski bo'lim endi bu sinfga
-                        // tegishli bo'lmasligi mumkin.
                         _topicId = null;
                       })),
           ],
@@ -209,9 +188,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
             _topicId = null;
           }),
         ),
-        // Bu sinfda bo'lim ajratilmagan bo'lsa, variantni umuman
-        // ko'rsatmaymiz. Bo'sh ro'yxatli tanlov — foydalanuvchi uchun
-        // boshi berk ko'cha.
         if (cat.topics.isNotEmpty) ...[
           const SizedBox(height: 12),
           _bigChoice(
@@ -223,9 +199,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
           ),
           if (_topicBased) ...[
             const SizedBox(height: 10),
-            // Qidiruv 12 tadan ko'p bo'lim bo'lgandagina chiqadi. Geografiyada
-            // 179 ta bo'lim bor — u yerda scroll bilan izlash amalda
-            // ishlamaydi; 5 ta bo'limda esa qidiruv qutisi ortiqcha shovqin.
             if (cat.topics.length > 12) ...[
               TextField(
                 controller: _topicQuery,
@@ -285,16 +258,11 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
 
   // ---------------- shared widgets ----------------
   Widget _bottomBar(L10n l, Catalog cat) {
-    // Bo'lim tanlash majburiy emas. Lekin "bo'lim bo'yicha" tanlangan-u,
-    // bo'lim tanlanmagan bo'lsa — tugma o'chadi. Bu sinfda umuman bo'lim
-    // bo'lmasa (`cat.topics` bo'sh) shart tushib qoladi.
     final ok = _step == 0
         ? _step0Done
         : (!_topicBased || cat.topics.isEmpty || _topicId != null);
 
-    // O'chiq tugma NEGA o'chiq ekanini aytishi shart. Ilgari foydalanuvchi
     // shart bajarilmaganini ham, buzuqlikni ham ajrata olmasdi — ikkalasi
-    // ham "kulrang tugma" bo'lib ko'rinardi.
     final String? blocker = ok
         ? null
         : (_step == 0 ? l.pickerNeedGrade : l.pickerNeedTopic);
@@ -313,9 +281,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
             ]),
             const SizedBox(height: 8),
           ],
-          // `SizedBox` kerak: ilgari tugma `Padding` ning bevosita bolasi
-          // bo'lgani uchun butun kenglikni egallardi. `Column` ichida esa u
-          // o'z matni bo'yicha qisqarib qolardi.
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -433,11 +398,6 @@ class _PickerScreenState extends ConsumerState<PickerScreen> {
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400))),
-          // Savol soni ATAYLAB ko'rsatilmaydi. Sabab: "9" turgan bo'lim
-          // o'quvchiga "arzimas" bo'lib tuyuladi va u eng katta raqamli
-          // bo'limni tanlaydi — ya'ni raqam mazmun o'rniga tanlov mezoniga
-          // aylanadi. Bo'sh bo'limlar ro'yxatga umuman tushmaydi, shuning
-          // uchun raqam foydalanuvchiga hech qanday qaror bermaydi.
           if (selected) ...[
             const SizedBox(width: 8),
             Icon(Icons.check, size: 18, color: primary),

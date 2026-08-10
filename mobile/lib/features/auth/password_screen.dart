@@ -12,32 +12,19 @@ import '../../core/prefs.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/spacing.dart';
+import '../challenges/challenge_invite.dart' show pendingJoinCodeProvider;
 import '../referral/invite_friends.dart';
 
-/// Foydalanuvchi nomi + parol bilan kirish va ro'yxatdan o'tish.
 ///
-/// ## Nega qo'shildi (2026-08-06)
 ///
-/// Mavjud uch yo'lning hech biri "qaytib kirish" ni yaxshi bajarmaydi:
 ///
 ///   * telefon+OTP — prodda o'chirilgan;
-///   * taklif kodi — bir martalik, ikkinchi marta ishlamaydi;
-///   * Telegram   — ishlaydi, lekin har kirishda brauzerdan Telegram'ga
-///     o'tish, botda «Start» bosish va qaytish kerak. Sinovchilar buni har
-///     safar YANGIDAN RO'YXATDAN O'TISH deb qabul qilishdi — aynan shu
-///     shikoyat keldi.
 ///
-/// Parol bu oqimni bitta ekranga siqadi va tashqi ilovaga umuman chiqmaydi.
 ///
-/// ## Ikki holat, bitta ekran
 ///
-/// Kirish va ro'yxatdan o'tish alohida ekran EMAS: farqi bitta qo'shimcha
-/// maydon (ism) va tugma matni. Ikkiga bo'lish foydalanuvchini "qaysi biriga
-/// bosay" degan keraksiz tanlov oldiga qo'yadi.
 class PasswordScreen extends ConsumerStatefulWidget {
   const PasswordScreen({super.key, this.startInRegister = false});
 
-  /// `true` — darhol ro'yxatdan o'tish holatida ochiladi.
   final bool startInRegister;
 
   @override
@@ -56,12 +43,9 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   bool _obscure = true;
   String? _error;
 
-  /// `null` — hali tekshirilmadi yoki server javob bermadi.
   bool? _free;
   Timer? _debounce;
 
-  /// Nom maydonini qurilmada saqlangan qiymat to'ldirganmi. Ro'yxatdan
-  /// o'tishga o'tilganda uni tozalash uchun kerak.
   bool _prefilled = false;
 
   @override
@@ -70,14 +54,8 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     _username.addListener(_onUsernameChanged);
     // Qaytib kirayotgan odam nomini QAYTA TERMASIN.
     //
-    // Sinovchilar shikoyati aynan shu edi: hisob bor, lekin har safar
-    // nomni eslab, harfma-harf yozish kerak. Bitta harf xato bo'lsa server
-    // «nom yoki parol noto'g'ri» deydi (ataylab — qaysi biri xato ekanini
-    // aytish hisob bor-yo'qligini oshkor qiladi), o'quvchi esa parolni
     // ayblab, uni qayta-qayta almashtiradi.
     //
-    // Faqat KIRISH holatida to'ldiriladi: ro'yxatdan o'tishda eski nom
-    // maydonda tursa, foydalanuvchi uni band deb o'ylaydi.
     if (!_register) {
       final saved = ref
           .read(sharedPreferencesProvider)
@@ -106,9 +84,7 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   // ------------------------------------------------------------------ //
   //  Nom bo'shligini tekshirish                                        //
   // ------------------------------------------------------------------ //
-  /// Har harfda so'rov yubormaymiz: 400 ms jim turgandan keyin bittasi
   /// ketadi. Aks holda "zizu" yozish 4 ta so'rov degani va ular teskari
-  /// tartibda qaytib, natija chalkashishi mumkin.
   void _onUsernameChanged() {
     _debounce?.cancel();
     if (!_register) return;
@@ -117,28 +93,23 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     if (name.length < 3) return;
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       final free = await ref.read(authRepositoryProvider).usernameFree(name);
-      // Javob kelguncha foydalanuvchi yozishda davom etgan bo'lishi mumkin —
-      // eskirgan natijani ko'rsatmaymiz.
       if (!mounted || _username.text.trim() != name) return;
       setState(() => _free = free);
     });
   }
 
-  /// Serverdan olingan bayroq: parol bilan YANGI hisob ochish taklif kodi
-  /// so'raydimi. Standart `true` (xavfsiz tomon) — provider hali
-  /// yuklanmagan yoki xato bo'lsa ham kod maydoni talab qilinadi, aks
-  /// holda foydalanuvchi kodsiz yuborib, tushunarsiz xato oladi.
-  ///
-  /// `ref.read` — bu `build()` DAN TASHQARIDA chaqiriladi (tugma bosilganda).
-  /// `ref.watch` faqat `build()` ichida kerak; bu yerda qiymat bir martalik
-  /// o'qiladi, qayta chizishga hojat yo'q.
   bool _needsInviteNow() {
     if (!_register) return false;
+    if (_joinCode != null) return false;
     return ref.read(authMethodsProvider).maybeWhen(
         data: (v) => v.passwordRegisterRequiresInvite, orElse: () => true);
   }
 
-  // ------------------------------------------------------------------ //
+  String? get _joinCode {
+    final c = ref.read(pendingJoinCodeProvider)?.trim();
+    return (c == null || c.isEmpty) ? null : c;
+  }
+
   Future<void> _submit() async {
     final l = L10n.of(context);
     final name = _username.text.trim();
@@ -173,14 +144,11 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
           ? await repo.register(name, pw,
               displayName: _name.text.trim(),
               inviteCode: needsInvite ? _inviteCode.text.trim() : null,
-              // `?ref=USERNAME` orqali kelgan bo'lsa — mukofotsiz kuzatuv,
+              joinCode: _joinCode,
               // batafsili `invite_friends.dart` da.
               referredBy: ref.read(pendingReferrerProvider))
           : await repo.login(name, pw);
       await ref.read(authControllerProvider.notifier).completeLogin(pair);
-      // Nom shu qurilmada eslab qolinadi — keyingi kirishda maydon tayyor.
-      // Parol EMAS, faqat nom: u reytingda va bellashuv havolasida
-      // allaqachon ochiq ko'rinadi, ya'ni sir emas.
       await ref
           .read(sharedPreferencesProvider)
           .setString(PrefKeys.lastUsername, name);
@@ -206,7 +174,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     }
   }
 
-  // ------------------------------------------------------------------ //
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
@@ -214,8 +181,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     final scheme = Theme.of(context).colorScheme;
     final p = Theme.of(context).extension<AppPalette>()!;
 
-    // Nom holati: bo'sh / band / noma'lum. Yozayotgan paytda ko'rinadi,
-    // ya'ni forma yuborilgach "band" xatosini ko'rish holati kamayadi.
     String? helper;
     Color? helperColor;
     if (_register && _username.text.trim().length >= 3 && _free != null) {
@@ -223,10 +188,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
       helperColor = _free! ? p.success : p.danger;
     }
 
-    // `ref.watch` — bu yerda, `build()` ichida, chunki provider
-    // yuklangach ekran qayta chizilib kod maydonini ko'rsatishi/
-    // yashirishi kerak. Standart `true`: hali yuklanmagan bo'lsa ham
-    // xavfsiz tomonga (kod so'rash) og'amiz.
     final needsInvite = _register &&
         ref.watch(authMethodsProvider).maybeWhen(
             data: (v) => v.passwordRegisterRequiresInvite,
@@ -252,8 +213,13 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               ),
             ),
             const Gap.md(),
-            Text(_register ? l.pwRegisterLead : l.pwLoginLead,
-                style: text.bodySmall, textAlign: TextAlign.center),
+            Text(
+                !_register
+                    ? l.pwLoginLead
+                    // o'tish so'ralayotganini kutmagan.
+                    : (_joinCode != null ? l.pwJoinLead : l.pwRegisterLead),
+                style: text.bodySmall,
+                textAlign: TextAlign.center),
             const Gap.lg(),
 
             Text(l.pwUsernameLabel, style: text.titleSmall),
@@ -265,10 +231,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               textInputAction: TextInputAction.next,
               inputFormatters: [
                 LengthLimitingTextInputFormatter(20),
-                // Serverdagi shart bilan bir xil. Kirillcha «с» lotincha «c»
-                // ga o'xshaydi, lekin boshqa belgi — foydalanuvchi keyin
-                // "parolim ishlamayapti" deb qolardi. Shu sababli faqat
-                // lotin, raqam va pastki chiziq kiritishga ruxsat.
                 FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
               ],
               decoration: InputDecoration(
@@ -298,8 +260,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               decoration: InputDecoration(
                 hintText: l.pwPasswordHint,
                 prefixIcon: const Icon(Icons.key_outlined),
-                // Ko'z tugmasi shart: parolni ko'rmasdan yozgan o'quvchi
-                // xato yozib, "parol noto'g'ri" xabarini oladi va sababini
                 // tushunmaydi.
                 suffixIcon: IconButton(
                   icon: Icon(_obscure
@@ -340,17 +300,12 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                     hintText: 'K7M4-X9QP',
                     prefixIcon: const Icon(Icons.confirmation_number_outlined),
                     border: const OutlineInputBorder(),
-                    // Yopiq beta davrida NEGA kod so'ralayotganini tushuntiradi
                     // — aks holda parol yo'li Telegram'dan "qiyinroq" tuyulib,
-                    // foydalanuvchi ortga qaytardi.
                     helperText: l.pwInviteHelp,
                   ),
                 ),
               ],
               const Gap.sm(),
-              // Tiklash yo'li yo'qligi OCHIQ aytiladi. Yashirilsa,
-              // parolini unutgan o'quvchi hisobini yo'qotadi va biz buni
-              // faqat u shikoyat qilganda bilamiz.
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Icon(Icons.info_outline_rounded, size: 16, color: p.muted),
                 const SizedBox(width: Spacing.sm),
@@ -381,11 +336,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                         _register = !_register;
                         _error = null;
                         _free = null;
-                        // Ro'yxatdan o'tishga o'tilganda oldindan
-                        // to'ldirilgan ESKI nom tozalanadi. Aks holda
-                        // foydalanuvchi o'z nomini ko'radi, ustiga
-                        // "bu nom band" chiqadi va bu qarama-qarshi
-                        // tuyuladi — nom band emas, u O'ZINIKI.
                         if (_register && _prefilled) {
                           _username.clear();
                           _prefilled = false;
@@ -400,15 +350,11 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   }
 }
 
-/// Kirgan foydalanuvchiga parol o'rnatish varag'i (profil ekranidan).
 ///
-/// Telegram yoki taklif kodi bilan kirgan hisob shu yerda nom+parol oladi.
-/// Shundan keyin u ikkala yo'l bilan ham kira oladi — Telegram esa amalda
 /// "parolni unutdim" ning o'rnini bosadi.
 class SetPasswordSheet extends ConsumerStatefulWidget {
   const SetPasswordSheet({super.key, this.existingUsername});
 
-  /// Hisobda nom allaqachon bo'lsa — u qulflangan holda ko'rsatiladi.
   final String? existingUsername;
 
   static Future<bool> show(BuildContext context, {String? existingUsername}) async {
@@ -467,8 +413,6 @@ class _SetPasswordSheetState extends ConsumerState<SetPasswordSheet> {
       _loading = true;
       _error = null;
     });
-    // `Navigator`, `ScaffoldMessenger` va matnlar await'dan OLDIN olinadi:
-    // varaq yopilgandan keyin `context` bilan ishlash mumkin emas.
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final okText = l.pwSaved;
@@ -479,15 +423,10 @@ class _SetPasswordSheetState extends ConsumerState<SetPasswordSheet> {
       final pair = await ref
           .read(authRepositoryProvider)
           .setPassword(_password.text, username: _locked ? null : name);
-      // Server parolni almashtirganda BARCHA eski refresh tokenlarni bekor
-      // qiladi. Yangi juftlik saqlanmasa, foydalanuvchi 15 daqiqadan keyin
-      // (access token muddati) o'zini chiqarib yuborgan bo'lardi.
       if (pair != null) {
         await ref.read(tokenStoreProvider).save(
             pair.accessToken, pair.refreshToken);
       }
-      // Profildagi "parol o'rnatilgan" holati `username` maydoniga qarab
-      // chiziladi — uni yangilash uchun /me qayta o'qiladi.
       await ref.read(authControllerProvider.notifier).refreshMe();
       navigator.pop(true);
       messenger.showSnackBar(SnackBar(content: Text(okText)));

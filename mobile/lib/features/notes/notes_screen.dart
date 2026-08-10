@@ -14,42 +14,10 @@ import '../auth/login_sheet.dart';
 import '../subjects/subjects.dart';
 import 'notes_data.dart';
 
-/// O'quvchining daftari.
-///
-/// ## Nima o'zgardi (2026-08-07)
-///
-/// Ilgari bu CRUD ro'yxati edi: bir xil oq to'rtburchaklar, sarlavha va uch
-/// qator matn. Yozuvlar 20 tadan oshganda ular bir-biridan farq qilmasdi va
-/// kerakligini topib bo'lmasdi.
-///
-/// Endi u DAFTAR:
-///
-/// | Element             | Nima uchun                                       |
-/// |---------------------|--------------------------------------------------|
-/// | Fan rangli chizig'i | Yozuvni o'qimasdan qaysi fandanligi bilinadi     |
-/// | Qidiruv             | 20+ yozuvda yagona ishlaydigan navigatsiya        |
-/// | Statistika qatori   | «24 yozuv · 8 fan» — mehnat ko'rinadi             |
-/// | Boy bo'sh holat     | Nega kerakligini TUSHUNTIRADI, shunchaki bo'sh emas |
-/// | Tezkor yozuv        | Sarlavha majburiy emas — birinchi qator o'zi sarlavha |
-/// | Saqlash tasdig'i    | Tugma «✓ Saqlandi» ga aylanadi, keyin yopiladi    |
-///
-/// Yozuvlar hisobga bog'langan, shuning uchun ekran kirishni talab qiladi.
-/// Mehmonga bo'sh ro'yxat emas, sabab ko'rsatiladi — bo'sh ro'yxat buzuq
-/// ilova taassurotini beradi.
+/// The student's notebook.
 class NotesScreen extends ConsumerStatefulWidget {
   const NotesScreen({super.key});
 
-  /// Daftarni ochish.
-  ///
-  /// Keng ekranda (≥900 px) — MARKAZLASHGAN MODAL, tor ekranda — odatdagi
-  /// to'liq sahifa.
-  ///
-  /// Nega ikki xil: web'da butun sahifani almashtirish kontekstni yo'qotadi —
-  /// foydalanuvchi dashboarddan uzoqlashgandek his qiladi va "orqaga"
-  /// tugmasini qidiradi. Modal esa dashboard ustida ochiladi, ortida u
-  /// ko'rinib turadi va Esc yoki tashqariga bosish bilan yopiladi. Telefonda
-  /// esa modal aksincha yomon: ekran kichik, modal deyarli butun ekranni
-  /// egallaydi va shunchaki sahifaning yomon ko'rinishiga aylanadi.
   static Future<void> open(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     if (!wide) {
@@ -66,12 +34,8 @@ class NotesScreen extends ConsumerStatefulWidget {
         insetPadding: const EdgeInsets.symmetric(
             horizontal: Spacing.xl, vertical: Spacing.xxl),
         shape: const RoundedRectangleBorder(borderRadius: Radii.cardRadius),
-        // DIQQAT: `ConstrainedBox` da `const` ATAYLAB yo'q, ichkaridagi
         // `NotesScreen()` da esa OSHKORA `const` bor.
         //
-        // Sabab: `const ConstrainedBox(...)` bo'lsa, ichkaridagi hamma narsa
-        // ham const kontekstga tushadi va sinf O'ZINING static metodi ichida
-        // o'zini const qilib qurmoqchi bo'ladi — analizator buni
         // `const_with_non_const` deb rad etadi.
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720, maxHeight: 720),
@@ -89,10 +53,6 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   final TextEditingController _search = TextEditingController();
   String _query = '';
 
-  /// Qidiruv maydoni shundan ko'p yozuv bo'lgandagina chiqadi.
-  ///
-  /// 6 tagacha yozuv bitta ekranga sig'adi — qidiruv u yerda faqat joy
-  /// egallaydi va "bu yerda ko'p narsa bor" degan yolg'on taassurot beradi.
   static const _searchThreshold = 6;
 
   @override
@@ -103,10 +63,6 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
 
   /// Apostrof shakllarini birxillashtiradi va registrni tushiradi.
   ///
-  /// Nega: o'zbek matnida `oʻ`, `o'`, `o'`, `o‘` — to'rt xil belgi, lekin
-  /// foydalanuvchi uchun bitta harf. Normallashtirilmasa «bogʻlanish» so'zi
-  /// «bog'lanish» so'rovi bilan TOPILMAYDI va qidiruv buzuq deb qabul
-  /// qilinadi. Bu `picker_screen` dagi bo'lim qidiruvi bilan bir xil qoida.
   static String _norm(String s) {
     var out = s.toLowerCase();
     for (final ch in const ['ʻ', 'ʼ', '‘', '’']) {
@@ -160,10 +116,6 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   Widget _body(L10n l, List<Note> notes) {
     if (notes.isEmpty) return _EmptyNotebook(onCreate: () => _openEditor(context));
 
-    // Fan ID → Fan. `subjectsProvider` allaqachon dashboardda yuklangan,
-    // shuning uchun bu yerda odatda tarmoqqa chiqilmaydi (Riverpod keshi).
-    // Yuklanmagan bo'lsa xarita bo'sh bo'ladi va kartalar neytral rangda
-    // chiqadi — bu yumshoq degradatsiya, xato emas.
     final subjects = <String, Subject>{
       for (final s in ref.watch(subjectsProvider).valueOrNull ?? const <Subject>[])
         s.id: s,
@@ -275,10 +227,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   }
 }
 
-/// «12 yozuv · 5 fan · 3 mashqdan».
 ///
-/// Nega kerak: raqamlar mehnatni ko'rsatadi. Bo'sh ro'yxatdan to'la ro'yxatga
-/// o'tish sezilmaydi, «1 yozuv» dan «24 yozuv» ga o'tish esa seziladi — bu
 /// daftarni davom ettirishga undaydigan yagona narsa.
 class _StatsRow extends StatelessWidget {
   const _StatsRow({required this.notes, required this.subjects});
@@ -313,8 +262,6 @@ class _StatsRow extends StatelessWidget {
           const Gap.sm(),
           Expanded(
             child: Text(
-              // ` · ` — vergul emas: ro'yxat emas, yonma-yon turgan
-              // mustaqil faktlar. Vergul ular bitta jumla deb o'qishga
               // majburlaydi.
               parts.join('  ·  '),
               style: text.labelMedium,
@@ -349,9 +296,6 @@ class _DeleteBackground extends StatelessWidget {
 
 /// Bo'sh daftar.
 ///
-/// Nega uzun: bu ekranni birinchi ko'rgan o'quvchi daftar NIMA UCHUN
-/// kerakligini bilmaydi. «Yozuv yo'q» degan matn unga hech narsa bermaydi
-/// va u qaytib kelmaydi. Uchta qator esa aniq foydani aytadi.
 class _EmptyNotebook extends StatelessWidget {
   const _EmptyNotebook({required this.onCreate});
 
@@ -422,12 +366,7 @@ class _EmptyNotebook extends StatelessWidget {
   }
 }
 
-/// Bitta yozuv kartochkasi.
 ///
-/// Chapdagi 4 px rangli chiziq — fan identifikatori. Nega chiziq, butun
-/// kartani bo'yash emas: 20 ta rangli karta ro'yxatni bezakka aylantiradi va
-/// matn o'qilmay qoladi. Ingichka chiziq esa periferik ko'rish bilan
-/// o'qiladi — foydalanuvchi «yashillar biologiya» ekanini bir kunda
 /// o'rganadi.
 class _NoteCard extends StatelessWidget {
   const _NoteCard({required this.note, required this.subject, required this.onTap});
@@ -464,8 +403,6 @@ class _NoteCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Fan chizig'i kartaning BUTUN balandligi bo'ylab. `IntrinsicHeight`
-            // shuning uchun kerak: `Row` bolalari o'z-o'zidan cho'zilmaydi.
             Container(
               width: 4,
               decoration: BoxDecoration(
@@ -535,9 +472,6 @@ class _NoteCard extends StatelessWidget {
     );
   }
 
-  /// Sarlavhasiz yozuvda birinchi qator sarlavha bo'lib xizmat qiladi.
-  /// Bo'sh qatorlar tashlab yuboriladi va 60 belgidan uzun qator kesiladi —
-  /// aks holda butun abzats sarlavha bo'lib chiqardi.
   static String? _firstLine(String body) {
     for (final raw in body.split('\n')) {
       final line = raw.trim();
@@ -548,7 +482,6 @@ class _NoteCard extends StatelessWidget {
   }
 }
 
-/// Kartochka ostidagi kichik yorliq: fan nomi yoki «Mashqdan».
 class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.label,
@@ -561,8 +494,6 @@ class _MetaChip extends StatelessWidget {
   final Color color;
   final IconData? icon;
 
-  /// Ikonka o'rniga kichik rangli nuqta — fan uchun. Fanning o'z ikonkasi
-  /// bor, lekin u chipda 12 px da tanib bo'lmas darajada kichik chiqadi.
   final bool dot;
 
   @override
@@ -593,8 +524,6 @@ class _MetaChip extends StatelessWidget {
 
 /// Yozuv yaratish/tahrirlash varag'i.
 ///
-/// Natijaviy ekrandan ham chaqiriladi — u yerda [questionId]/[subjectId]
-/// yozuvni o'quvchi hozir yechgan savolga bog'laydi.
 class NoteEditorSheet extends ConsumerStatefulWidget {
   final Note? note;
   final String? questionId;
@@ -622,13 +551,6 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
     super.dispose();
   }
 
-  /// Sarlavha MAJBURIY EMAS.
-  ///
-  /// Nega: daftarga yozish tez bo'lishi kerak. Ikkita majburiy maydon —
-  /// ikki barobar ko'p ish, va sinovchilar aynan shu sababli yozuv
-  /// qoldirmasdi. Sarlavha bo'sh bo'lsa matnning birinchi qatori ishlatiladi
-  /// (kartada ham xuddi shu qoida — `_NoteCard._firstLine`), ya'ni natija
-  /// bir xil ko'rinadi.
   String get _effectiveTitle {
     final t = _title.text.trim();
     if (t.isNotEmpty) return t;
@@ -665,11 +587,7 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
         ref.invalidate(questionNotesProvider(widget.questionId!));
       }
       if (!mounted) return;
-      // Tugma «✓ Saqlandi» ga aylanadi va SHUNDAN KEYIN varaq yopiladi.
       //
-      // Nega 550 ms kutamiz: varaq darhol yopilsa foydalanuvchi saqlanganini
-      // KO'RMAYDI — u faqat ekran yo'qolganini ko'radi va «saqlandimi?»
-      // degan savol qoladi. Yarim soniya — tasdiqni o'qishga yetadi, lekin
       // kutish sifatida sezilmaydi.
       setState(() {
         _saving = false;
@@ -702,7 +620,6 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Varaq "tutqichi" — bu modal ekan va uni pastga surib yopish
           // mumkinligini bildiradi.
           Center(
             child: Container(
@@ -723,12 +640,6 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
                 style: text.titleMedium),
           ]),
           const Gap.ms(),
-          // MATN MAYDONI BIRINCHI, sarlavha ikkinchi.
-          //
-          // Nega tartib teskari: odam daftarga fikrni yozadi, keyin (agar
-          // xohlasa) nom qo'yadi. Sarlavha birinchi turganda kursor u yerda
-          // bo'ladi va foydalanuvchi «nima deb nomlasam ekan» degan
-          // to'siqqa uriladi — aynan shu bosqichda yozuv tashlab ketiladi.
           TextField(
             controller: _body,
             minLines: 4,
@@ -751,8 +662,6 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
             decoration: InputDecoration(
               isDense: true,
               labelText: l.notesFieldTitle,
-              // Sarlavha bo'sh bo'lsa nima bo'lishini OLDINDAN ko'rsatamiz.
-              // Aks holda foydalanuvchi uni majburiy deb o'ylaydi.
               hintText: _title.text.trim().isEmpty ? _effectiveTitle : null,
               counterText: '',
               border: const OutlineInputBorder(
@@ -770,9 +679,7 @@ class _NoteEditorSheetState extends ConsumerState<NoteEditorSheet> {
               child: Text(l.cancel),
             ),
             const Spacer(),
-            // Tugma uch holatda: «Saqlash» → aylanuvchi indikator →
-            // «✓ Saqlandi». `AnimatedSize` kenglikni silliq o'zgartiradi,
-            // aks holda tugma bir kadrda sakrardi.
+            // `AnimatedSize` keeps the swap to the saved label smooth.
             AnimatedSize(
               duration: Motion.fast,
               curve: Motion.interactive,

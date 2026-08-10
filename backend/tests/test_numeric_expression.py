@@ -25,7 +25,6 @@ import pytest
 
 from app.services.grading import _parse_student_number as parse
 
-
 class TestEskiXattiHarakat:
     """Ilgari ishlagan har bir shakl AYNAN o'sha qiymatni qaytaradi."""
 
@@ -47,7 +46,6 @@ class TestEskiXattiHarakat:
     def test_nolga_bolish_hamon_xato(self):
         with pytest.raises(ValueError):
             parse("1/0")
-
 
 class TestTugmalarChiqaradiganShakllar:
     """Maydon ostidagi tugmalar aynan shu satrlarni hosil qiladi."""
@@ -86,10 +84,9 @@ class TestTugmalarChiqaradiganShakllar:
         natija shu oraliqqa tushishi kerak — aks holda bu tuzatishning
         amalda foydasi yo'q.
         """
-        saqlangan = 1.5708                      # kalit shu aniqlikda yozilgan
+        saqlangan = 1.5708
         tolerantlik = abs(saqlangan) * 1e-3
         assert abs(parse("π/2") - saqlangan) <= tolerantlik
-
 
 class TestXavfsizlik:
     """Baholagich foydalanuvchi satrini ko'radi — oq ro'yxat qulflanadi."""
@@ -107,12 +104,12 @@ class TestXavfsizlik:
         "abc",
         "1;2",
         "1+",
-        "sqrt(-1)",          # haqiqiy son emas
+        "sqrt(-1)",
         "9**9**9",           # serverni osishga urinish
         "2^999",
         "1+" * 100 + "1",    # uzunlik chegarasi
         "1+" * 30 + "1",     # daraxt hajmi chegarasi
-        "",                  # bo'sh javob — SyntaxError 500 ga aylanmasin
+        "",
         "   ",
     ])
     def test_rad_etiladi(self, raw):

@@ -1,30 +1,14 @@
-/// Kasrlarni ustma-ust (vertikal) chizadigan matn vidjeti.
 ///
-/// ## Nega kerak
 ///
 /// `math_text.dart` LaTeX'ni Unicode'ga o'giradi va kasrni `1/5` shaklida
-/// beradi. Sinovda aniqlangan muammo: o'quvchi darslikda kasrni HAR DOIM
-/// ustma-ust ko'radi, ilovada esa `1/5` — bu bir qarashda "bir bo'lingan
-/// besh" emas, "bir slash besh" bo'lib o'qiladi. Uzun ifodalarda esa
 /// (`(2x+1)/(x-3)`) qavslar tufayli o'qish butunlay qiyinlashadi.
 ///
-/// ## Nega to'liq LaTeX renderi emas
 ///
-/// `flutter_math_fork` haqiqiy LaTeX chizadi, lekin: yangi bog'liqlik,
-/// web'da qo'shimcha shrift yuklash, matn bilan aralash oqim muammosi.
-/// Deadline oldidan bu katta xavf. Bankdagi ifodalarning aksariyati oddiy
-/// kasr — ular `Column` + chiziq bilan to'liq chiziladi.
 ///
 /// ## Qanday ishlaydi
 ///
-/// `renderMathText()` kasrni Private Use Area belgilari bilan o'raydi
-/// (`fracOpen` + son + `fracMid` + maxraj + `fracClose`). Bu vidjet matnni
-/// bo'yicha bo'laklarga ajratadi va kasr bo'lagini `WidgetSpan` sifatida
-/// chizadi. Sentinel `\frac` dan boshqa joydan CHIQMAYDI, ya'ni matndagi
 /// oddiy `/` (`km/soat`, `2017/2018`) tegilmaydi.
 ///
-/// Sentinel topilmasa vidjet oddiy `Text` ga aylanadi — ya'ni matematikasiz
-/// savollar uchun hech qanday qo'shimcha xarajat yo'q.
 library;
 
 import 'package:flutter/material.dart';
@@ -51,7 +35,6 @@ class MathText extends StatelessWidget {
   Widget build(BuildContext context) {
     final base = style ?? DefaultTextStyle.of(context).style;
 
-    // Tez yo'l: kasr yo'q bo'lsa oddiy matn.
     if (!data.contains(fracOpen)) {
       return Text(data,
           style: style,
@@ -66,8 +49,6 @@ class MathText extends StatelessWidget {
       textAlign: textAlign,
       maxLines: maxLines,
       overflow: overflow,
-      // Ekran o'quvchisi uchun tekis shakl: "1/5" deb o'qiladi, aks holda
-      // PUA belgilari o'qilmaydi va kasr umuman yo'qoladi.
       semanticsLabel: flattenFractions(data),
     );
   }
@@ -85,8 +66,6 @@ class MathText extends StatelessWidget {
 
       final mid = data.indexOf(fracMid, open + 1);
       final close = data.indexOf(fracClose, mid + 1);
-      // Buzuq sentinel (bo'lishi mumkin emas, lekin matn hech qachon
-      // yo'qolmasligi kerak) — qolganini xom holda chiqaramiz.
       if (mid < 0 || close < 0) {
         out.add(TextSpan(text: flattenFractions(data.substring(open))));
         break;
@@ -119,8 +98,6 @@ class _Fraction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Kasr ichidagi matn biroz kichik: aks holda kasr qatorni ikki barobar
-    // balandlashtirib, atrofdagi matn qatorlari orasini yirtib yuboradi.
     final inner = style.copyWith(
       fontSize: (style.fontSize ?? 16) * 0.82,
       height: 1.05,
@@ -137,8 +114,6 @@ class _Fraction extends StatelessWidget {
         children: [
           Text(numerator, style: inner, textAlign: TextAlign.center),
           Container(
-            // Chiziq eng uzun qatordan bir oz uzunroq bo'lishi uchun
-            // `Column` kengligiga tayanamiz va vertikal joy beramiz.
             margin: const EdgeInsets.symmetric(vertical: 1.5),
             height: 1.2,
             constraints: const BoxConstraints(minWidth: 10),

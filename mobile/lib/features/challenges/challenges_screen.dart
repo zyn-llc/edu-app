@@ -17,12 +17,6 @@ import 'challenge_invite.dart';
 import 'challenge_play_screen.dart';
 import 'challenges_data.dart';
 
-/// "Bellashuv" tab — do'st bilan 1v1, tanga tikib.
-///
-/// TIL HAQIDA: ilgari kartochkada "Tikilgan tanga: 20" yozilardi. Bu qimor
-/// leksikasi va maktab o'quvchilari uchun mo'ljallangan ilovada noto'g'ri
-/// ohang beradi. Server mantig'i o'zgarmaydi (pot = 2 × stake), lekin
-/// foydalanuvchi ko'radigan matn endi MUKOFOT: "Bellashuv mukofoti: 40".
 class ChallengesScreen extends ConsumerStatefulWidget {
   const ChallengesScreen({super.key});
 
@@ -33,8 +27,6 @@ class ChallengesScreen extends ConsumerStatefulWidget {
 class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
   bool _joinHandled = false;
 
-  /// Havola bilan kelgan bo'lsa (`topagon.uz/?join=KOD`) — kodni oldindan
-  /// to'ldirib, qo'shilish oynasini o'zi ochamiz. Foydalanuvchi hech narsa
   /// yozmaydi: havolani bosdi — bellashuvda.
   void _consumePendingJoin() {
     if (_joinHandled) return;
@@ -74,9 +66,6 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l.navChallenges)),
-      // Apelsin porlashli FAB: bu ekrandagi ASOSIY harakat. Neytral
-      // `elevation` soyasi oq fonda deyarli ko'rinmasdi va tugma sahifaga
-      // yopishib qolgandek edi.
       floatingActionButton: GlowFab(
         onPressed: () => _openCreateSheet(context),
         icon: const Icon(Icons.add),
@@ -116,8 +105,6 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                 ],
               ),
               // `EmptyState` ichida `SingleChildScrollView` bor; `ListView`
-              // bolasi cheksiz balandlik oladi, shuning uchun `SizedBox`
-              // bilan cheklanadi — aks holda "unbounded height" xatosi.
               error: (e, _) => SizedBox(
                 height: 300,
                 child: EmptyState(
@@ -150,14 +137,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                       ],
                     ]),
             ),
-                  // FAB ro'yxatning oxirgi elementini to'smasligi uchun.
                   const SizedBox(height: 96),
                 ]),
               ),
             ),
-            // Sahifa oxiri. To'liq footer ATAYLAB emas: bu kirilgan
-            // panelning ichki tabi, marketing sahifasi emas — uch ustunli
-            // footer bu yerda faqat xalaqit berardi.
             const FooterSliver(),
           ],
         ),
@@ -170,9 +153,6 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      // Modal ilgari ekranning deyarli hammasini egallardi. `maxHeight` bilan
-      // u kontent qancha bo'lsa shuncha joy oladi va kengroq ekranda
-      // markazda tor ustun bo'lib qoladi.
       constraints: const BoxConstraints(maxWidth: 560),
       builder: (_) => const _CreateChallengeSheet(),
     );
@@ -217,7 +197,6 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
   }
 }
 
-// --------------------------------------------------------------------------
 class _CoinBar extends ConsumerWidget {
   const _CoinBar({required this.info});
 
@@ -245,9 +224,6 @@ class _CoinBar extends ConsumerWidget {
             height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              // Rang `warning` (sariq) EMAS — noncoinning o'z rangi.
-              // Sariq tanga bu ekranda "ogohlantirish" bilan bir xil rangda
-              // edi va balans kartasi xato xabari kabi ko'rinardi.
               color: Rewards.coinDark.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(Radii.md),
             ),
@@ -263,8 +239,6 @@ class _CoinBar extends ConsumerWidget {
               ],
             ),
           ),
-          // Tezkor to'ldirish: reklama, kuniga cheklangan. Launch'da bu
-          // chaqiruv o'rniga real AdMob oqimi keladi, tugma o'zgarmaydi.
           if (info.adsLeftToday > 0)
             FilledButton.tonalIcon(
               onPressed: () async {
@@ -288,7 +262,6 @@ class _CoinBar extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------------------------------
 class _ChallengeCard extends ConsumerWidget {
   const _ChallengeCard({required this.ch});
 
@@ -349,10 +322,7 @@ class _ChallengeCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Mukofot = ikkala tarafning tikilgan tangasi (server: pot =
-                // 2 × stake). Foydalanuvchi yutuqni ko'radi, tikimni emas.
                 Text(
-                  // Valyuta nomi ATAYLAB yoziladi: «Mukofot: 40» raqamning
                   // nimaligini aytmaydi — XP mi, ball mi, noncoin mi?
                   '${l.challengeRewardLabel}: ${ch.stake * 2} ${l.statCoins}',
                   style: text.titleMedium,
@@ -388,12 +358,6 @@ class _ChallengeCard extends ConsumerWidget {
   List<Widget> _trailing(BuildContext context, WidgetRef ref, L10n l) {
     if (ch.status == 'open') {
       return [
-        // MATNLI tugma, ikonka emas.
-        //
-        // Ilgari bu yerda faqat kichik ikonka turardi va sinovchi bellashuv
-        // yaratgandan keyin havolani QAYTA topa olmadi — varaq bir marta
-        // ochilib yopilgach, kod yo'qoladi deb o'yladi. Yorliqli tugma
-        // kartochkada aniq ko'rinadi.
         OutlinedButton.icon(
           onPressed: () => ChallengeInviteSheet.show(context, ch.code),
           icon: const Icon(Icons.link_rounded, size: 18),
@@ -439,14 +403,8 @@ class _ChallengeCard extends ConsumerWidget {
 }
 
 // --------------------------------------------------------------------------
-/// Yangi bellashuv modali.
 ///
-/// Ilgari modal butun ekranni egallardi, paddinglar notekis edi va tikim
-/// slayderi 0–200 oralig'ida 20 ta bo'linma bilan "aniq" ko'rinardi, lekin
-/// foydalanuvchi baribir 20/50/100 tanlardi. Endi:
 ///   * bo'shliqlar `Spacing` shkalasidan,
-///   * mukofot alohida ajratilgan qatorda (`challengeRewardHint` bilan),
-///   * balans yetmasa tugma o'chadi va sabab ko'rinadi.
 class _CreateChallengeSheet extends ConsumerStatefulWidget {
   const _CreateChallengeSheet();
 
@@ -489,7 +447,6 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             Text(l.challengeNew, style: text.headlineSmall),
             const Gap.lg(),
 
-            // ---- fan ---------------------------------------------------
             subjects.when(
               data: (items) => DropdownButtonFormField<String>(
                 initialValue: _subjectId,
@@ -506,7 +463,6 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             ),
             const Gap.lg(),
 
-            // ---- savol soni --------------------------------------------
             _SliderRow(
               label: l.challengeQuestionCount,
               value: '$_count',
@@ -560,16 +516,10 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
   }
 
   Future<void> _submit() async {
-    // Navigatorlar AWAIT dan OLDIN olinadi.
     //
-    // Ikkita sabab bor. Birinchisi — to'g'rilik: modal o'zini yopgach bu
-    // vidjetning `context` i daraxtdan chiqadi va u orqali hech narsa ocha
-    // olmaymiz. Ikkinchisi — `mounted` tekshiruvi BU vidjetga tegishli,
-    // ulashish varag'i esa ILDIZ navigatorda ochiladi; ya'ni tekshiruv
     // ishlatilayotgan kontekstni umuman kafolatlamaydi
     // (`use_build_context_synchronously` aynan shuni aytadi).
     //
-    // Ildiz navigator ilova ishlab turgan vaqtda doim tirik, shuning uchun
     // uning kontekstidan foydalanish xavfsiz.
     final sheetNavigator = Navigator.of(context);
     final rootNavigator = Navigator.of(context, rootNavigator: true);
@@ -585,8 +535,6 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
       ref.invalidate(coinInfoProvider);
       if (!mounted) return;
       sheetNavigator.pop();
-      // Kod o'rniga HAVOLA: do'stga bir bosishda yuboriladi va u ilovaga
-      // to'g'ridan-to'g'ri kirib qo'shiladi (`?join=KOD`).
       await ChallengeInviteSheet.show(rootNavigator.context, ch.code);
     } catch (e) {
       if (mounted) _showApiError(context, e);
@@ -598,8 +546,6 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
 
 /// Yorliq + qiymat bir qatorda, slayder pastda.
 ///
-/// Ilgari yorliq va qiymat `Text('${l.x}: $v')` bo'lib qo'shilardi — qiymat
-/// o'zgarganda matn kengligi sakrab, slayder joyini surardi.
 class _SliderRow extends StatelessWidget {
   const _SliderRow({
     required this.label,
@@ -638,9 +584,7 @@ class _SliderRow extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------------------------------
 void _showApiError(BuildContext context, Object e) {
-  // RFC 7807 javobida odam o'qiydigan 'title' bo'ladi; bo'lmasa xom xato.
   String msg = '$e';
   try {
     final data = (e as dynamic).response?.data;

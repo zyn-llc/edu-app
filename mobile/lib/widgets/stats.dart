@@ -7,10 +7,6 @@ import '../theme/elevation.dart';
 import '../theme/motion.dart';
 import '../theme/spacing.dart';
 
-/// Bo'lim sarlavhasi + ixtiyoriy "hammasi" harakati.
-///
-/// Nega alohida vidjet: sarlavhalar har ekranda qo'lda yozilganda o'lcham va
-/// masofa har joyda biroz boshqacha bo'lib qoladi — ko'z buni darrov sezadi.
 class SectionHeader extends StatelessWidget {
   const SectionHeader(
     this.title, {
@@ -61,23 +57,7 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// Dashboard uchun statistika kartochkasi.
-///
-/// Ilgari raqamlar quruq matn bo'lib turardi ("Daraja 12"). Bu ko'rinishda
-/// raqam asosiy element, yorliq ikkilamchi, `delta` ("+32 XP bugun") esa
-/// harakat hissini beradi — o'quvchi bugun nimadir qilganini ko'radi.
-///
-/// ## 2026-08-06 o'zgarishlari
-///
-/// * **Yumshoq soya** — karta oq fondan ajralib turadi (ilgari faqat
-///   `hairline` chegara bor edi va lentadagi kartalar bitta kulrang
-///   to'rtburchakka qo'shilib ketardi).
-/// * **Rangli ikonka foni** — har ko'rsatkichning o'z rangi bor: XP/Daraja/
-///   Tanga sariq-apelsin, Seriya qizil (olov), O'rin neytral. Rang ma'no
-///   tashiydi, bezak emas: ko'z kartani o'qimasdan ham tanib oladi.
-/// * **Raqam sanaladi** — 0 dan haqiqiy qiymatgacha 700 ms. Bu "erishilgan
-///   natija" hissini beradi; statik raqam shunchaki ma'lumot.
-/// * **Progress chizig'i 4 px** va u ham animatsiya bilan to'ladi.
+/// A single stat tile: icon, value and label.
 class StatCard extends StatelessWidget {
   const StatCard({
     super.key,
@@ -94,29 +74,18 @@ class StatCard extends StatelessWidget {
 
   final IconData? icon;
 
-  /// Material ikonkasi o'rniga ixtiyoriy vidjet — XP oltiburchagi yoki
   /// noncoin kristali (`widgets/currency.dart`).
   ///
-  /// Nega kerak: valyuta belgisi brendning bir qismi. `Icons.monetization_on`
-  /// bilan u har qanday boshqa ilovaga o'xshab qoladi va foydalanuvchi XP
-  /// bilan noncoinni ikkita "raqam" deb o'qiydi. O'z belgisi bo'lsa — ikkita
-  /// TURLI narsa ekani bir qarashda ko'rinadi.
   final Widget? iconWidget;
 
-  /// Ko'rsatiladigan matn. [count] berilsa faqat zaxira sifatida ishlatiladi
-  /// (masalan, raqam bo'lmagan "—" holati).
   final String value;
   final String label;
 
-  /// "+32 XP" kabi bugungi o'zgarish. Null bo'lsa ko'rsatilmaydi.
   final String? delta;
   final Color? accent;
 
-  /// 0..1. Berilsa kartochka pastida ingichka chiziq chiqadi.
   final double? progress;
 
-  /// Berilsa raqam 0 dan shu qiymatgacha sanaladi. Formatlash [value] dagi
-  /// ko'rinishga mos bo'lishi uchun bo'luvchi bo'shliq qo'yiladi.
   final int? count;
 
   @override
@@ -147,9 +116,6 @@ class StatCard extends StatelessWidget {
             child: SizedBox(
               width: 18,
               height: 18,
-              // Ikkala variant ham AYNAN 18×18 — aks holda lentadagi
-              // kartochkalarda ikonka qutisi turli o'lchamda bo'lib,
-              // ostidagi raqamlar bir chiziqda turmasdi.
               child: Center(
                 child: iconWidget ?? Icon(icon, size: 18, color: color),
               ),
@@ -170,8 +136,6 @@ class StatCard extends StatelessWidget {
           ],
           if (progress != null) ...[
             const Gap.ms(),
-            // Ingichka (4 px) va animatsiya bilan to'ladigan chiziq. Qalin
-            // chiziq kartochkadagi raqamdan e'tiborni o'g'irlaydi.
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: progress!.clamp(0.0, 1.0)),
               duration: const Duration(milliseconds: 700),
@@ -193,11 +157,6 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// Raqamni 0 dan sanab chiqadi. [count] null bo'lsa oddiy matn.
-///
-/// Nega `TweenAnimationBuilder`: u `AnimationController` talab qilmaydi va
-/// qiymat o'zgarganda (mashqdan keyin XP oshganda) ESKI qiymatdan yangisiga
-/// silliq o'tadi — ya'ni "0 dan qayta sanash" bo'lmaydi.
 class _Value extends StatelessWidget {
   const _Value({required this.count, required this.fallback, this.style});
 
@@ -205,8 +164,6 @@ class _Value extends StatelessWidget {
   final String fallback;
   final TextStyle? style;
 
-  /// 12 345 — mingliklar orasida ingichka bo'shliq. Vergul o'zbek tilida
-  /// o'nlik ajratgich, shuning uchun mingliklar uchun ishlatilmaydi.
   static String grouped(int n) {
     final s = n.abs().toString();
     final buf = StringBuffer(n < 0 ? '-' : '');
@@ -240,8 +197,6 @@ class _Value extends StatelessWidget {
 
 /// Halqa shaklidagi progress. Ichida foiz yoki ixtiyoriy vidjet.
 ///
-/// Chiziqli progressdan farqi: halqa kichik joyda ham o'qiladi va kartochka
-/// burchagida "belgi" bo'lib turadi — Duolingo/Brilliant uslubi.
 class ProgressRing extends StatelessWidget {
   const ProgressRing({
     super.key,

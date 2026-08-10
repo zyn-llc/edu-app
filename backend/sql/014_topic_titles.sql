@@ -1,22 +1,16 @@
 -- =============================================================================
---  014_topic_titles.sql — mavzu sarlavhalarini tuzatish (hamma fan).
+--  Repairs topic titles that lost their apostrophes or their capitals
+--  during import:
+--    bugdoydoshlar -> bug'doydoshlar,  qozgolonlari -> qo'zg'olonlari
+--    proper nouns lower-cased: rossiya -> Rossiya
 --
---    Get-Content sql/014_topic_titles.sql | docker compose exec -T db psql -U edu -d edu
+--  Only titles are touched, never the relations. Safe to re-run.
 --
---  Uch xil muammo tuzatiladi:
---    A) chinakam inglizcha sarlavhalar (geografiya ~90, huquq 34) -> o'zbekcha
---    B) o'zbekcha, lekin slug'dan yasalgani uchun tutuq belgisi yo'q:
---       Ozbekiston -> O'zbekiston, osimliklar -> o'simliklar,
---       bugdoydoshlar -> bug'doydoshlar, qozgolonlari -> qo'zg'olonlari
---    C) atoqli otlar kichik harfda (jahon_tarixi): rossiya -> Rossiya
---
---  FAQAT topic_translations.title o'zgaradi. Kodlar, id'lar va savol
---  bog'lanishlari tegilmaydi. Qayta yugurtirish xavfsiz (idempotent).
+--    psql -U edu -d edu -f sql/014_topic_titles.sql
 -- =============================================================================
 
 BEGIN;
 
--- ---- A + C: aniq kod bo'yicha almashtirish ---------------------------------
 UPDATE topic_translations tt SET title = v.title
 FROM (VALUES
     ('law_dtm_practice', 'DTM mashqlari'),
@@ -194,15 +188,12 @@ JOIN topics t ON t.code = v.code
 WHERE tt.topic_id = t.id AND tt.lang = 'uz-Latn';
 
 -- ---- B: tutuq belgisi tuzatishlari -----------------------------------------
--- Har biri aniq so'z, umumiy naqsh emas — "Toshkent", "Zarafshon" kabi
--- to'g'ri yozilgan so'zlar tegilmaydi.
 UPDATE topic_translations SET title =
     replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(title, 'Ozbekiston', 'O''zbekiston'), 'ozbekiston', 'o''zbekiston'), 'Ozbek', 'O''zbek'), 'ozbek', 'o''zbek'), 'Osimlik', 'O''simlik'), 'osimlik', 'o''simlik'), 'Bugdoy', 'Bug''doy'), 'bugdoy', 'bug''doy'), 'Qozgolon', 'Qo''zg''olon'), 'qozgolon', 'qo''zg''olon'), 'Topgul', 'To''pgul'), 'topgul', 'to''pgul'), 'Qoshimcha', 'Qo''shimcha'), 'qoshimcha', 'qo''shimcha'), 'Boyicha', 'Bo''yicha'), 'boyicha', 'bo''yicha'), 'Bolaklari', 'Bo''laklari'), 'bolaklari', 'bo''laklari'), 'Boglanish', 'Bog''lanish'), 'boglanish', 'bog''lanish'), 'Yigindi', 'Yig''indi'), 'yigindi', 'yig''indi'), 'Qoshish', 'Qo''shish'), 'qoshish', 'qo''shish'), 'Nomalum', 'Noma''lum'), 'nomalum', 'noma''lum'), 'Manaviy', 'Ma''naviy'), 'manaviy', 'ma''naviy'), 'Talim', 'Ta''lim'), 'talim', 'ta''lim'), 'Meyor', 'Me''yor'), 'meyor', 'me''yor'), 'Sanat', 'San''at'), 'sanat', 'san''at'), 'Memorchilik', 'Me''morchilik'), 'memorchilik', 'me''morchilik'), 'Ilmfan', 'Ilm-fan'), 'ilmfan', 'ilm-fan'), 'Kopayish', 'Ko''payish'), 'kopayish', 'ko''payish'), 'Urugianish', 'Urug''lanish'), 'urugianish', 'urug''lanish'), 'Urug ', 'Urug'' '), 'urug ', 'urug'' '), 'Qirqbogimlar', 'Qirqbo''g''imlar'), 'qirqbogimlar', 'qirqbo''g''imlar'), 'Yosinlar', 'Yo''sinlar'), 'yosinlar', 'yo''sinlar'), 'Suvotlar', 'Suvo''tlar'), 'suvotlar', 'suvo''tlar'), 'Ortasr', 'O''rta asr'), 'ortasr', 'o''rta asr'), 'Orta ', 'O''rta '), ' orta ', ' o''rta '), 'Qoltigi', 'Qo''ltig''i'), 'qoltigi', 'qo''ltig''i'), 'Fargona', 'Farg''ona'), 'fargona', 'Farg''ona'), 'Mirzachol', 'Mirzacho''l'), 'mirzachol', 'Mirzacho''l'), 'Xojalig', 'Xo''jalig'), 'xojalig', 'xo''jalig'), 'Korsatish', 'Ko''rsatish'), 'korsatish', 'ko''rsatish'), 'Gaznaviylar', 'G''aznaviylar'), 'gaznaviylar', 'G''aznaviylar'), 'Garbiy', 'G''arbiy'), 'garbiy', 'G''arbiy'), 'Mogullar', 'Mo''g''ullar'), 'mogullar', 'Mo''g''ullar'), 'Uygonish', 'Uyg''onish'), 'uygonish', 'uyg''onish'), 'Ozgargan', 'O''zgargan'), 'ozgargan', 'o''zgargan'), 'Toqima', 'To''qima'), 'toqima', 'to''qima'), 'Onli', 'O''nli'), ' onli', ' o''nli'), 'Qollash', 'Qo''llash'), 'qollash', 'qo''llash'), 'Soz ', 'So''z '), ' soz ', ' so''z '), 'Kop ', 'Ko''p '), ' kop ', ' ko''p '), 'Elon', 'E''lon'), 'elon', 'e''lon'), 'Zamburuglar', 'Zamburug''lar'), 'zamburuglar', 'zamburug''lar'), 'Movarounnahrlik', 'Movarounnahrlik'), 'Allomalar', 'Allomalar')
 WHERE lang = 'uz-Latn';
 
 COMMIT;
 
--- ---- tekshiruv --------------------------------------------------------------
 SELECT s.code AS fan,
        count(*) FILTER (WHERE tt.title ~ '^[A-Za-z0-9 ,()-]+$') AS hali_shubhali,
        count(*) AS jami

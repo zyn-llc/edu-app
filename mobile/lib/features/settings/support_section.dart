@@ -5,14 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../api/api_client.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Qo'llab-quvvatlash uchun Telegram nomi (`@` SIZ).
-///
-/// Ilgari bu yerda `BilimSupport` turgan edi — bunday akkaunt MAVJUD EMAS,
-/// ya'ni "Telegram orqali bog'lanish" tugmasi foydalanuvchini "user not found"
-/// sahifasiga olib borardi. Hozircha loyihaning o'z boti ko'rsatilgan.
-///
-/// Alohida support akkaunti ochsang (masalan @topagon_yordam), shu qatorni
-/// almashtir — boshqa joyda o'zgartirish kerak emas.
 const String kSupportTelegram = 'topagonuzbot';
 
 class SupportSection extends ConsumerWidget {
@@ -41,12 +33,6 @@ class SupportSection extends ConsumerWidget {
   }
 }
 
-/// Fikr/muammo yuborish oynasi.
-///
-/// Sinf ichidan chiqarildi (2026-08-08), chunki endi ikkita joydan
-/// chaqiriladi: sozlamalardagi ro'yxatdan va sahifa pastidagi footerdan.
-/// Nusxa ko'chirish o'rniga bitta funksiya — matn va xatolik ishlovi bir
-/// joyda qoladi.
 void openFeedbackDialog(BuildContext context, WidgetRef ref) {
     final l = L10n.of(context);
     final msg = TextEditingController();

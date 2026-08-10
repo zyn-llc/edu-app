@@ -27,14 +27,12 @@ EARN_REASONS = {"quiz_reward", "streak_bonus", "daily_ad_reward", "purchase",
 SPEND_REASONS = {"competition_entry", "cosmetic", "badge", "challenge_stake",
                  "quiz_penalty"}
 
-
 async def balance(db: AsyncSession, user_id: uuid.UUID) -> int:
     total = await db.scalar(
         select(func.coalesce(func.sum(CoinTransaction.amount), 0))
         .where(CoinTransaction.user_id == user_id)
     )
     return int(total or 0)
-
 
 async def recent(db: AsyncSession, user_id: uuid.UUID, limit: int = 20) -> list[dict]:
     rows = (await db.execute(
@@ -53,7 +51,6 @@ async def recent(db: AsyncSession, user_id: uuid.UUID, limit: int = 20) -> list[
         }
         for t in rows
     ]
-
 
 async def try_award_quiz(
     db: AsyncSession, user_id: uuid.UUID, question_id: str, amount: int
@@ -82,7 +79,6 @@ async def try_award_quiz(
     except IntegrityError:
         # Lost a race to the unique index — already rewarded. Outer tx intact.
         return False
-
 
 async def spend(
     db: AsyncSession,
@@ -113,7 +109,6 @@ async def spend(
     ))
     return True
 
-
 # --------------------------------------------------------------------------- #
 #  Economy v2 — gentle penalty, guaranteed daily recovery, ad top-up           #
 #                                                                              #
@@ -129,10 +124,6 @@ async def apply_wrong_penalty(
     Returns the coins actually deducted (0 if broke). Caller commits."""
     if amount <= 0:
         return 0
-    # `spend()` bilan bir xil qulf. Usiz balansi 1 bo'lgan foydalanuvchining
-    # ikkita parallel noto'g'ri javobi ikkalasi ham 1 ni ko'rib, ikkalasi ham
-    # 1 tanga yechardi — natija −1, ya'ni "0 dan pastga tushmaydi" qoidasi
-    # buzilardi. 026 dagi CHECK belgini qo'riqlaydi, bu qulf esa miqdorni.
     await db.execute(
         text("SELECT pg_advisory_xact_lock(hashtext(:uid))"),
         {"uid": str(user_id)},
@@ -146,7 +137,6 @@ async def apply_wrong_penalty(
         source="earned", ref_type="question", ref_id=question_id,
     ))
     return take
-
 
 async def try_award_daily_login(
     db: AsyncSession, user_id: uuid.UUID, day_iso: str, amount: int
@@ -175,7 +165,6 @@ async def try_award_daily_login(
     except IntegrityError:
         return False
 
-
 async def award_ad_reward(
     db: AsyncSession, user_id: uuid.UUID, amount: int, ref_id: str
 ) -> None:
@@ -185,7 +174,6 @@ async def award_ad_reward(
         user_id=user_id, amount=amount, reason="daily_ad_reward",
         source="earned", ref_type="ad", ref_id=ref_id,
     ))
-
 
 async def credit(
     db: AsyncSession, user_id: uuid.UUID, amount: int, reason: str,

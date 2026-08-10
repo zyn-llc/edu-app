@@ -1,16 +1,10 @@
 -- =============================================================================
---  015_topic_titles_ru.sql — mavzu nomlarining ruscha qatlami.
 --
 --    Get-Content sql/015_topic_titles_ru.sql | docker compose exec -T db psql -U edu -d edu
 --
---  FAQAT QO'SHADI. Mavjud 'uz-Latn' qatorlariga umuman tegmaydi:
---  yangi (topic_id, 'ru') qatorlari INSERT qilinadi, ON CONFLICT DO NOTHING.
 --  Qayta yugurtirish xavfsiz.
 --
---  Shart: languages jadvalida 'ru' bo'lishi kerak (002_seed da bor).
 --
---  Bu faylda geografiya, huquq va jahon_tarixi qamrab olingan. Biologiya,
---  matematika, ona tili va O'zbekiston tarixi keyingi bosqichda.
 -- =============================================================================
 
 BEGIN;
@@ -179,7 +173,6 @@ ON CONFLICT (topic_id, lang) DO NOTHING;
 
 COMMIT;
 
--- ---- tekshiruv --------------------------------------------------------------
 SELECT lang, count(*) FROM topic_translations GROUP BY lang ORDER BY lang;
 
 SELECT s.code AS fan,

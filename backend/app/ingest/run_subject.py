@@ -42,40 +42,17 @@ LOADABLE_TYPES = {"mcq", "text_open"}
 # --------------------------------------------------------------------------- #
 #  text_open ko'prigi                                                         #
 #                                                                              #
-#  Normalizator (data_subjects/config.py) `numeric` va `open` turlarini BITTA
-#  `text_open` turiga birlashtiradi va javobni `grading_spec.accepted_forms`
-#  ro'yxatida saqlaydi. Backend'da esa bunday tur yo'q — u yerda `numeric` va
-#  `open_keyword` alohida, har birining o'z graderi bor. Shu ikki quvur
-#  o'rtasida ko'prik bo'lmagani uchun 7 970 savol hech qachon yuklanmagan.
 #
-#  Bu yerda ko'prik quriladi: accepted_forms ni O'QIB, savolni qaysi grader
-#  to'g'ri baholay olishiga qarab yo'naltiramiz.
 # --------------------------------------------------------------------------- #
 
-# Grader bilan AYNI parser. Nusxa ko'chirilgan mantiq bu yerda yaramaydi:
-# vaqt o'tib asliyatdan ajralib ketadi va yuklashda "to'g'ri" deb belgilangan
-# javob baholashda "noto'g'ri" chiqadi.
 from app.services.grading import _parse_student_number  # noqa: E402
 from app.services.normalizer import normalize as _normalize  # noqa: E402
 
-# Butun sonlar uchun tolerantlik kerak emas: parser "6", "6.0", "6,0" ni bir xil
-# floatga keltiradi. Kasr javoblar uchun 0.1% — o'quvchi 1/3 ni 0.3333 deb
-# yozsa qabul qilinadi, 0.33 deb yozsa yo'q. `_parse_student_number` kasr
-# shaklini ("1/3") ham tushunadi, ya'ni aniq javob berish yo'li ochiq.
 NUMERIC_REL_TOLERANCE = 1e-3
 
-# Ikki variant orasidagi farq shu ulushdan kichik bo'lsa, ular BITTA javobning
 # turlicha yaxlitlangan shakli deb qaraladi ("2,333" va "2.333333" — ikkalasi
-# ham 7/3). Kattaroq farq esa haqiqatan ikki xil javob ("0" va "1/5").
-# 0.5% — yaxlitlash xatosini qamrab oladi, lekin ikki ildizni birlashtirmaydi.
 ROUNDING_SPREAD = 5e-3
 
-# `open_keyword` grader AYNAN moslikni talab qiladi va normalizator bo'sh joyni
-# saqlaydi. "x=3, y=8" saqlangan bo'lsa, o'quvchining "x=3,y=8" javobi noto'g'ri
-# deb baholanadi. Bunday savollarni o'chirib tashlamaymiz — `draft` sifatida
-# yuklaymiz (content API faqat 'active' ni tarqatadi). Ular bazada turadi,
-# ko'rib chiqiladi, va bitta UPDATE bilan yoqiladi — qayta ingest kerak emas.
-# Aynan `IMAGE_QUESTIONS_AS_DRAFT` bilan bir xil falsafa.
 RISKY_KEYWORD_AS_DRAFT = True
 _RISKY_ANSWER_RE = re.compile(r"[ ,;=()\[\]{}/]")
 
@@ -87,41 +64,20 @@ _RISKY_ANSWER_RE = re.compile(r"[ ,;=()\[\]{}/]")
 # moment the image pipeline exists, with no re-ingest.
 IMAGE_QUESTIONS_AS_DRAFT = True
 
-
-# Bo'lim kodi oldidagi darslik raqamlashi: `94-§.`, `14.1-bo'lim.`.
-#
-# Matematika manbasida bo'lim kodi darslik sarlavhasining o'zi
-# ("100-§. Hosilaning geometrik ma'nosi"). Kodda u qolishi KERAK — ingest
-# idempotentligi shunga tayanadi — lekin o'quvchiga ko'rsatiladigan
-# sarlavhada raqamning o'rni yo'q: u bo'limni mavzu bo'yicha tanlaydi,
-# darslik sahifasi bo'yicha emas, va qaysi darslik ekani hech qayerda
-# aytilmagan.
-#
-# Shart ataylab tor — raqamdan keyin `-§` yoki `-bo'lim` kelishi shart.
-# Jahon tarixida "1991-2017-yillarda ..." kabi sarlavhalar bor va u yerda
-# raqam ma'noning o'zi; keng shart ularni buzardi.
-#
-# DIQQAT: `sql/029_topic_titles.sql` AYNAN shu mantiqni bazadagi mavjud
-# qatorlarga qo'llaydi. Bittasini o'zgartirsang, ikkinchisini ham.
+# Strips a leading textbook section number from a topic title ("12 - §").
+# Deliberately narrow: a title like "1991-2017-yillarda ..." carries a real
+# year range that a looser pattern would eat.
 _TOPIC_NUMBER_RE = re.compile(r"^\d+(\.\d+)*\s*-\s*(§|bo['‘’ʻʼ]lim)\.?\s*")
 _WRAPPED_RE = re.compile(r"^\(([^()]*)\)$")
-
 
 def topic_title(code: str) -> str:
     """Bo'lim kodidan o'quvchiga ko'rsatiladigan sarlavha."""
     t = code.replace("_", " ").strip()
     t = _TOPIC_NUMBER_RE.sub("", t).strip()
-    # "104-§ (test qismi, variant 47)" dan prefiks olingach butun sarlavha
-    # qavs ichida qoladi. Ichki qavs bo'lmagandagina ochamiz — aks holda
-    # "aniq integral (qo'shimcha manba)" buzilardi.
     m = _WRAPPED_RE.match(t)
     if m:
         t = m.group(1).strip()
-    # `.capitalize()` EMAS: u qolgan harflarni kichraytiradi va
-    # "Xitoy Xalq Respublikasi" ni "Xitoy xalq respublikasi" qilib qo'yadi.
-    # Bizga faqat bosh harf kerak.
     return t[:1].upper() + t[1:] if t else t
-
 
 def parse_prefix(prefix):
     m = re.match(r"(.+?)_g(\d+)$", prefix)
@@ -158,7 +114,6 @@ def join_layers(core, langs):
             if qid is not None: by[qid][lang] = row
     for c in core: yield c, by.get(c.get("id"), {})
 
-
 @dataclass
 class IngestOption:
     option_key: str; position: int; texts: dict
@@ -171,9 +126,7 @@ class IngestQuestion:
     grading_spec: dict; stems: dict; explanations: dict
     options: list = field(default_factory=list)
     # Backend `QuestionType`: mcq | numeric | open_keyword | ...
-    # Ilgari insert'da "mcq" qattiq yozilgan edi; endi bu maydondan olinadi.
     qtype: str = "mcq"
-
 
 def _media_of(c, langrows):
     """Carry the image reference through instead of dropping it.
@@ -190,7 +143,6 @@ def _media_of(c, langrows):
         if ref:
             return {"type": "image", "ref": ref}
     return None
-
 
 def text_open_spec(c):
     """`text_open` -> (qtype, grading_spec, risky, error).
@@ -231,33 +183,20 @@ def text_open_spec(c):
             tol = 0.0 if float(v).is_integer() else abs(v) * NUMERIC_REL_TOLERANCE
             return "numeric", {"value": v, "tolerance": tol}, False, None
 
-        # Variantlar bir-biriga juda yaqin bo'lsa, bu IKKI JAVOB emas —
-        # bitta javobning turlicha yaxlitlangan shakli:
         #     ["2,333", "2.333333"]  ->  7/3
         #     ["-7,469136", "-7,469"]
-        # Bunday holda o'rtasini olamiz va tolerantlikni ikkala shaklni ham
-        # qamrab oladigan qilib kengaytiramiz — o'quvchi qaysi aniqlikda
-        # yozsa ham to'g'ri hisoblanadi.
         if scale > 0 and spread <= scale * ROUNDING_SPREAD:
             v = (lo + hi) / 2.0
             tol = max(spread / 2.0, abs(v) * NUMERIC_REL_TOLERANCE)
             return "numeric", {"value": v, "tolerance": tol}, False, None
 
-        # Haqiqatan turli sonlar — masalan ["0", "1/5"], kvadrat tenglamaning
-        # ikki ildizi. `numeric` grader bitta qiymatni biladi, shuning uchun
-        # bularni RAD ETMAYMIZ, `open_keyword` ga tushiramiz: u ro'yxatdagi
-        # istalgan shaklni qabul qiladi. Javoblar qisqa sonlar bo'lgani uchun
-        # aynan moslik bu yerda muammo tug'dirmaydi.
         norm = [_normalize(f) for f in forms]
         risky = any(_RISKY_ANSWER_RE.search(n) for n in norm)
         return "open_keyword", {"accepted": forms}, risky, None
 
-    # Matn (yoki son bilan matn aralash — "2" va "ikki" kabi). `open_keyword`
-    # hamma shaklni qabul qiladi, grader ularni normalizatsiya qilib solishtiradi.
     norm = [_normalize(f) for f in forms]
     risky = any(_RISKY_ANSWER_RE.search(n) for n in norm) or any(len(n) > 40 for n in norm)
     return "open_keyword", {"accepted": forms}, risky, None
-
 
 def build(c, langrows, bank_subject, bank_grade):
     """Return (verdict, obj_or_reason). verdict in OK/WARN/SKIP/ERROR."""
@@ -299,7 +238,6 @@ def build(c, langrows, bank_subject, bank_grade):
                 if o: texts[lang] = o.get("text","")
             options.append(IngestOption(oid, pos, texts))
     else:
-        # text_open — variantlari yo'q, javob grading_spec ichida.
         qtype, grading_spec, risky_answer, terr = text_open_spec(c)
         if terr: return "ERROR", terr
 
@@ -312,7 +250,6 @@ def build(c, langrows, bank_subject, bank_grade):
         status = "draft"
         verdict = "WARN"
     if risky_answer and RISKY_KEYWORD_AS_DRAFT and status == "active":
-        # Bazaga tushadi, lekin tarqatilmaydi. Ko'rib chiqilgach:
         #   UPDATE questions SET status='active'
         #    WHERE type='open_keyword' AND tags->>'risky_answer' = 'true' AND ...;
         status = "draft"
@@ -325,11 +262,6 @@ def build(c, langrows, bank_subject, bank_grade):
 
     obj = IngestQuestion(
         source_id=cid, subject_code=bank_subject, topic_code=c.get("topic"),
-        # DIQQAT: `c.get("grade", bank_grade)` EMAS.
-        # Manba JSON'da `"grade": null` kaliti MAVJUD, shuning uchun `.get()`
-        # standart qiymatni emas, `None` ni qaytaradi. Natijada butun bank
-        # `grade = NULL` bo'lib yuklangan va sinf bo'yicha filtr (10-sinf,
-        # 11-sinf) hech narsa topmagan.
         grade=c.get("grade") if c.get("grade") is not None else bank_grade,
         difficulty=diff,
         status=status,
@@ -337,7 +269,6 @@ def build(c, langrows, bank_subject, bank_grade):
         media=_media_of(c, langrows),
         tags={"subtopic": c.get("subtopic"), "skill_tags": c.get("skill_tags",[]),
               "concept_tags": c.get("concept_tags",[]), "legacy_id": c.get("legacy_id"),
-              # Keyin SQL bilan topib olish uchun belgi qo'yamiz.
               "risky_answer": risky_answer or None,
               "source_type": src_type if src_type != "mcq" else None},
         grading_spec=grading_spec,
@@ -348,27 +279,19 @@ def build(c, langrows, bank_subject, bank_grade):
     )
     return verdict, obj
 
-
 def discover_banks(paths):
     root = paths[0]
     if os.path.isdir(root) and os.path.exists(os.path.join(root,"core.json")): dirs=[root]
     else: dirs = sorted(os.path.join(root,d) for d in os.listdir(root)
                         if os.path.exists(os.path.join(root,d,"core.json")))
     for bd in dirs:
-        # TUZOQ (2026-08-06): ilgari `bd.rstrip("/")` edi — Windows'da yo'l
-        # oxirida `\` bo'lsa (PowerShell tab-completion HAR DOIM qo'shadi:
-        #   "D:\data_subjects\clean_data\math_g8\"
-        # ) basename BO'SH satr qaytarardi, prefix="" bo'lib qolar va butun
-        # bank "unknown bank prefix -> subject" bilan 786 ta XATO berardi.
-        # `normpath` ikkala ajratuvchini ham, oxiridagi ajratuvchini ham
-        # to'g'rilaydi.
+        #   "C:\banks\math_g8\"
         prefix = os.path.basename(os.path.normpath(bd))
         subj, grade = parse_prefix(prefix)
         core = json.load(open(os.path.join(bd,"core.json"), encoding="utf-8"))
         langs = [json.load(open(os.path.join(bd,lf), encoding="utf-8"))
                  for lf in ("uz.json","ru.json") if os.path.exists(os.path.join(bd,lf))]
         yield prefix, core, langs, subj, grade
-
 
 def plan(paths):
     """Validate everything, return (records[], report). No DB."""
@@ -386,7 +309,6 @@ def plan(paths):
         report.append((label, subj, len(core), load, b["SKIP"], b["ERROR"], skips, errs))
     return records, report, grand
 
-
 def print_report(report, grand):
     for label, subj, rows, load, skip, err, skips, errs in report:
         print(f"[{label:<14}] rows={rows:>5}  load={load:>5}  skip={skip:>4}  ERROR={err:>4}"
@@ -397,7 +319,6 @@ def print_report(report, grand):
     print("="*60)
     print(f"GRAND  load={grand['OK']+grand['WARN']}  skip={grand['SKIP']}  errors={grand['ERROR']}")
 
-
 async def load(records, batch=200):
     """Batched insert with per-batch commit, progress, and loud failures."""
     from sqlalchemy import select, text
@@ -406,9 +327,7 @@ async def load(records, batch=200):
     from app.models import (Option, OptionTranslation, Question, QuestionTranslation,
                             Subject, Topic, TopicTranslation)
 
-    # Hostda `db` -> `127.0.0.1`, konteyner ichida o'zgarishsiz. Batafsili
-    # `app/ingest/dsn.py` da (prodda `db` porti tashqariga ochilmagan, ya'ni
-    # skript faqat konteyner ichida ishlaydi).
+    # On the host `db` resolves to 127.0.0.1; inside the container it stays.
     from app.ingest.dsn import resolve_url
     url = resolve_url()
 
@@ -512,7 +431,6 @@ async def load(records, batch=200):
         await engine.dispose()
     return 0
 
-
 def main(argv):
     dry = "--dry-run" in argv
     paths = [a for a in argv if a != "--dry-run"]
@@ -529,7 +447,6 @@ def main(argv):
     if grand["ERROR"]:
         print(f"NOTE: {grand['ERROR']} error-row(s) excluded from load (see above).")
     return asyncio.run(load(records))
-
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

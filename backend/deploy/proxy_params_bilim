@@ -1,10 +1,5 @@
 # =============================================================================
-#  /etc/nginx/proxy_params_bilim — hamma proxy_pass bloklari uchun umumiy.
 #
-#  MUHIM: X-Forwarded-For ni nginx O'ZI yozadi (qo'shmaydi) — klient bu
-#  header'ni yuborsa ham ustidan yoziladi. Shu sabab ilovada
-#  TRUST_PROXY_HEADERS=true qo'yish xavfsiz. Agar oldinda Cloudflare bo'lsa,
-#  $remote_addr Cloudflare IP'si bo'ladi — u holda real_ip modulini sozla,
 #  aks holda per-IP cheklovlar hammani bitta IP deb hisoblaydi.
 # =============================================================================
 proxy_http_version 1.1;
@@ -15,8 +10,6 @@ proxy_set_header X-Forwarded-For   $remote_addr;
 proxy_set_header X-Forwarded-Proto $scheme;
 proxy_set_header X-Forwarded-Host  $host;
 
-# Klient yuborishi mumkin bo'lgan, lekin ishonch qozonmasligi kerak header'lar.
-# X-Debug-User-Id — dev impersonatsiya yo'li; prod'da klientdan kelmasin.
 proxy_set_header X-Debug-User-Id "";
 
 proxy_connect_timeout 5s;

@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator
 
 _DIGITS = re.compile(r"\d+")
 
-
 def normalize_uz_phone(raw: str) -> str:
     """Accept the messy ways a user might type an Uzbek number and return E.164.
 
@@ -25,7 +24,6 @@ def normalize_uz_phone(raw: str) -> str:
         raise ValueError("phone must be a 9-digit Uzbek number (optionally +998)")
     return "+998" + digits
 
-
 class PhoneIn(BaseModel):
     phone: str
 
@@ -33,7 +31,6 @@ class PhoneIn(BaseModel):
     @classmethod
     def _norm(cls, v: str) -> str:
         return normalize_uz_phone(v)
-
 
 class OtpRequestIn(PhoneIn):
     # 'student' (default) or 'parent'. Admins are provisioned, not self-registered.
@@ -46,14 +43,12 @@ class OtpRequestIn(PhoneIn):
             raise ValueError("role must be student or parent")
         return v
 
-
 class OtpRequestOut(BaseModel):
     # seconds until another code can be requested for this phone
     retry_after_seconds: int
     expires_in_seconds: int
     # populated only when settings.otp_debug_return is true (dev). None in prod.
     debug_code: str | None = None
-
 
 class OtpVerifyIn(PhoneIn):
     code: str = Field(min_length=4, max_length=8)
@@ -62,36 +57,26 @@ class OtpVerifyIn(PhoneIn):
     region_code: str | None = None
     grade: int | None = None
 
-
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int            # access-token lifetime (seconds)
 
-
 class RefreshIn(BaseModel):
     refresh_token: str
-
 
 class UserOut(BaseModel):
     id: str
     role: str
     phone: str | None = None
-    # 022: parol bilan kirish uchun nom. NULL bo'lsa klient profilda
-    # "parol o'rnatish" taklifini ko'rsatadi.
     username: str | None = None
     display_name: str | None = None
     region_code: str | None = None
     grade: int | None = None
     locale: str | None = None
-    # 021: avatar palitrasi indeksi (0..11). NULL = tanlanmagan, klient ism
-    # hash'idan barqaror rang oladi.
     avatar_color: int | None = None
-    # 028: Telegram xabarlari. NULL = tanlanmagan (= yoqilgan). Klient uni
-    # sozlamalardagi kalit tugma holatiga aylantiradi.
     tg_notifications: bool | None = None
-
 
 class ProfileUpdateIn(BaseModel):
     display_name: str | None = None

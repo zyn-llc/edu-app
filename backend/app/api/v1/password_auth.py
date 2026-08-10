@@ -76,8 +76,6 @@ _log = logging.getLogger("bilim.password")
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,20}$")
 
-# Xizmat yo'llari bilan chalkashmasin va boshqa foydalanuvchini aldash uchun
-# ishlatilmasin ("admin" nomi bilan yozib, boshqalarga xabar yozish).
 RESERVED = {
     "admin", "administrator", "root", "topagon", "support", "help",
     "moderator", "system", "bot", "official", "rasmiy", "api", "me",
@@ -87,12 +85,10 @@ RESERVED = {
 _IP_HOURLY = 40
 _NAME_HOURLY = 10
 
-
 def _norm(raw: str | None) -> str:
     """Bo'sh joylarni kesadi. Katta-kichik harf SAQLANADI — foydalanuvchi
     o'zi yozgan shakl profilda ko'rinadi; solishtirish `lower()` bilan."""
     return (raw or "").strip()
-
 
 def _validate_username(raw: str) -> str:
     name = _norm(raw)
@@ -107,7 +103,6 @@ def _validate_username(raw: str) -> str:
                        type_="urn:bilim:auth:username_taken")
     return name
 
-
 def _validate_password(raw: str) -> str:
     pw = raw or ""
     if len(pw) < 6:
@@ -115,23 +110,16 @@ def _validate_password(raw: str) -> str:
                        "parol kamida 6 belgidan iborat bo'lsin",
                        type_="urn:bilim:auth:weak_password")
     if len(pw) > 128:
-        # argon2 uzun satrni ham hazm qiladi, lekin chegara qo'yilmasa
-        # megabaytlik "parol" CPU'ni band qiladi.
         raise AppError(400, "Password too long", "parol juda uzun")
     return pw
-
 
 async def _find_by_username(db: AsyncSession, name: str) -> User | None:
     return (await db.execute(
         select(User).where(func.lower(User.username) == name.lower())
     )).scalar_one_or_none()
 
-
 async def _guard(request: Request, bucket: str, name: str) -> None:
     """IP + foydalanuvchi nomi bo'yicha ikki qatlamli cheklov."""
-    # `fail_closed`: Redis uzilganda bu chegara YO'QOLSA, 6 belgilik minimal
-    # parolga qarshi hech narsa qolmaydi. Uzilish paytida qisqa 429 —
-    # taxmin qilib kirilgan hisobdan arzonroq.
     ip = client_ip(request)
     ok_ip, _ = await ratelimit_hit(f"{bucket}_ip", ip, _IP_HOURLY, 3600,
                                    fail_closed=True)
@@ -141,26 +129,20 @@ async def _guard(request: Request, bucket: str, name: str) -> None:
         raise AppError(429, "Too many attempts",
                        "juda ko'p urinish — bir oz kutib qayta urining")
 
-
-# --------------------------------------------------------------------------- #
 class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=20)
     password: str = Field(min_length=6, max_length=128)
     display_name: str | None = Field(default=None, max_length=40)
     grade: int | None = Field(default=None, ge=1, le=11)
     region_code: str | None = None
-    # Faqat `require_invite_for_password_register=true` bo'lganda majburiy
-    # (yopiq beta). `invites.py` dagi kodlar bilan bir xil jadval.
     invite_code: str | None = Field(default=None, min_length=4, max_length=32)
-    # "Do'stlaringizni taklif qiling" havolasidan (`?ref=<username>`)
-    # kelgan bo'lsa. Ixtiyoriy, mukofotsiz — faqat statistika.
+    # baribir bajariladi. Batafsili `sql/030_challenge_as_invite.sql` da.
+    join_code: str | None = Field(default=None, min_length=4, max_length=16)
     referred_by: str | None = Field(default=None, max_length=20)
-
 
 class LoginIn(BaseModel):
     username: str = Field(min_length=1, max_length=20)
     password: str = Field(min_length=1, max_length=128)
-
 
 class SetPasswordIn(BaseModel):
     """Mavjud hisobga (Telegram yoki taklif kodi bilan yaratilgan) parol
@@ -168,8 +150,6 @@ class SetPasswordIn(BaseModel):
     username: str | None = Field(default=None, max_length=20)
     password: str = Field(min_length=6, max_length=128)
 
-
-# --------------------------------------------------------------------------- #
 @router.get("/username-free")
 async def username_free(
     username: str = Query(min_length=1, max_length=20),
@@ -191,7 +171,6 @@ async def username_free(
     return {"username": name, "free": not taken,
             "reason": "taken" if taken else None}
 
-
 @router.post("/register", response_model=TokenPair)
 async def register(
     body: RegisterIn,
@@ -210,36 +189,57 @@ async def register(
                        "bu nom allaqachon band — boshqasini tanlang",
                        type_="urn:bilim:auth:username_taken")
 
-    # --- Taklif kodi (botlarga qarshi yagona haqiqiy to'siq) ---------------
     #
-    # NEGA SHU YERDA, username tekshiruvidan KEYIN. Kodni band qilish
-    # (used_count++) qaytarib bo'lmaydigan amal — avval arzon tekshiruvlar
-    # (nom shakli, band-emasligi) o'tsin, keyin qimmat/bir martalik resurs
-    # sarflansin. Aks holda "nom band" xatosi kelgan har bir urinish ham
     # birovning taklif kodini behuda yeb qo'yardi.
     invite_row = None
+    challenge_row = None
     if _settings.require_invite_for_password_register:
         code = normalize_code(body.invite_code or "")
-        if not code:
+        join = (body.join_code or "").strip().upper()
+
+        # --- Bellashuv kodi taklif o'rnida -------------------------------
+        #
+        # chaqirgan" sharti bajarilgan — botlarga qarshi to'siqning butun
+        #
+        if not code and join:
+            challenge_row = (await db.execute(text("""
+                UPDATE challenges
+                   SET invite_used_at = now()
+                 WHERE code = :code
+                   AND status = 'open'
+                   AND expires_at > now()
+                   AND invite_used_at IS NULL
+                RETURNING id, grade
+            """), {"code": join})).mappings().first()
+            if challenge_row is None:
+                await db.rollback()
+                raise AppError(
+                    401, "Invalid challenge link",
+                    "bellashuv havolasi eskirgan yoki allaqachon "
+                    "ishlatilgan — taklif kodi bilan urinib ko'ring",
+                    type_="urn:bilim:auth:invite_required")
+
+        if not code and challenge_row is None:
             raise AppError(400, "Invite code required",
                            "ro'yxatdan o'tish uchun taklif kodi kerak",
                            type_="urn:bilim:auth:invite_required")
-        # Atomik: invites.py dagi bilan bir xil SQL, bitta havza.
-        invite_row = (await db.execute(text("""
-            UPDATE invite_codes
-               SET used_count = used_count + 1
-             WHERE code = :code
-               AND is_active
-               AND used_count < max_uses
-               AND (expires_at IS NULL OR expires_at > now())
-            RETURNING code, grade, region_code
-        """), {"code": code})).mappings().first()
-        if invite_row is None:
-            await db.rollback()
-            raise AppError(401, "Invalid code",
-                           "kod noto'g'ri, ishlatilib bo'lingan yoki "
-                           "muddati o'tgan",
-                           type_="urn:bilim:auth:invite_required")
+        # baribir 401 olardi.
+        if code:
+            invite_row = (await db.execute(text("""
+                UPDATE invite_codes
+                   SET used_count = used_count + 1
+                 WHERE code = :code
+                   AND is_active
+                   AND used_count < max_uses
+                   AND (expires_at IS NULL OR expires_at > now())
+                RETURNING code, grade, region_code
+            """), {"code": code})).mappings().first()
+            if invite_row is None:
+                await db.rollback()
+                raise AppError(401, "Invalid code",
+                               "kod noto'g'ri, ishlatilib bo'lingan yoki "
+                               "muddati o'tgan",
+                               type_="urn:bilim:auth:invite_required")
 
     referred_by = await auth_service.resolve_referrer(db, body.referred_by, name)
 
@@ -248,11 +248,10 @@ async def register(
         role="student",
         username=name,
         password_hash=hash_password(pw),
-        # Ism boshqalarga ko'rinadi -> `names` filtri. Yaroqsiz bo'lsa
-        # foydalanuvchi nomi ishlatiladi (u allaqachon tekshirilgan).
         display_name=(names.safe_name(body.display_name) or name),
         grade=body.grade if body.grade is not None
-              else (invite_row["grade"] if invite_row else None),
+              else (invite_row["grade"] if invite_row
+                    else (challenge_row["grade"] if challenge_row else None)),
         region_code=body.region_code or
                     (invite_row["region_code"] if invite_row else None),
         referred_by=referred_by,
@@ -262,11 +261,6 @@ async def register(
     try:
         await db.flush()
     except Exception:
-        # Ikki kishi bir soniyada bir xil nomni yuborsa qismiy noyob indeks
-        # ikkinchisini rad etadi. Bu kutilgan holat, 500 emas.
-        # Taklif kodi BEHUDA KETMAYDI: `UPDATE invite_codes` va bu `flush()`
-        # bitta tranzaksiya ichida, ya'ni `rollback()` ikkalasini ham bekor
-        # qiladi — foydalanuvchi kodni qayta, muvaffaqiyatli urinishda
         # ishlata oladi.
         await db.rollback()
         raise AppError(409, "Username taken", "bu nom allaqachon band",
@@ -278,10 +272,10 @@ async def register(
     await db.flush()
     pair = await auth_service.issue_token_pair(db, user)
     await db.commit()
-    _log.info("password register: user=%s invite=%s", user.id,
-               invite_row["code"] if invite_row else None)
+    _log.info("password register: user=%s invite=%s challenge=%s", user.id,
+              invite_row["code"] if invite_row else None,
+              challenge_row["id"] if challenge_row else None)
     return pair
-
 
 @router.post("/login", response_model=TokenPair)
 async def login(
@@ -294,15 +288,11 @@ async def login(
 
     user = await _find_by_username(db, name) if name else None
 
-    # Vaqt hujumiga qarshi. Foydalanuvchi topilmasa ham argon2 bir marta
-    # ishlatiladi: aks holda "nom yo'q" javobi bir necha millisekundda,
-    # "parol noto'g'ri" esa ~100 ms da qaytardi va shu farq orqali qaysi
-    # nomlar mavjudligini aniqlab olish mumkin bo'lardi.
     stored = user.password_hash if (user and user.password_hash) else None
     if stored:
         ok = verify_password(body.password, stored)
     else:
-        hash_password(body.password)   # natijasi kerak emas, vaqti kerak
+        hash_password(body.password)
         ok = False
 
     if not ok or user is None or not user.is_active:
@@ -313,7 +303,6 @@ async def login(
     pair = await auth_service.issue_token_pair(db, user)
     await db.commit()
     return pair
-
 
 @router.post("/password")
 async def set_password(
@@ -345,22 +334,15 @@ async def set_password(
                            type_="urn:bilim:auth:username_taken")
         user.username = name
     elif body.username and body.username.strip().lower() != user.username.lower():
-        # Nomni almashtirish ataylab yopiq: reyting, bellashuv havolalari va
-        # ota-ona ekranida nom ko'rinadi, uni erkin almashtirish chalkashlik
-        # va o'zgani nomiga kirib olish uchun yo'l ochadi.
         raise AppError(409, "Username locked",
                        "foydalanuvchi nomini o'zgartirib bo'lmaydi",
                        type_="urn:bilim:auth:username_locked")
 
     user.password_hash = hash_password(pw)
 
-    # Parol o'rnatish/almashtirish = "boshqa hamma joydan chiqar". Ilgari eski
     # refresh tokenlar 30 kun yashab qolardi: tokenini o'g'irlatgan odam
     # parolni almashtirib ham hujumchini quva olmasdi, holbuki parolni
-    # almashtirish — odamning aynan shu holatdagi birinchi refleksi.
     #
-    # Chaqiruvchining o'zi ichkarida qoladi: quyida unga YANGI juftlik
-    # beriladi. Klient uni saqlashi SHART, aks holda o'zini chiqarib yuboradi.
     await db.execute(
         update(RefreshToken)
         .where(RefreshToken.user_id == user.id,

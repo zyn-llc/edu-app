@@ -16,7 +16,6 @@ import pytest
 from app.api.v1 import password_auth as pw
 from app.core.errors import AppError
 
-
 # --------------------------------------------------------------------------- #
 #  Nom shakli                                                                 #
 # --------------------------------------------------------------------------- #
@@ -24,13 +23,12 @@ from app.core.errors import AppError
 def test_valid_usernames_accepted(name):
     assert pw._validate_username(name) == name
 
-
 @pytest.mark.parametrize("name", [
     "ab",            # juda qisqa
     "a" * 21,        # juda uzun
-    "zizu 11",       # bo'sh joy
+    "zizu 11",
     "zizu-11",       # chiziqcha
-    "зизу",          # kirill: lotin klaviaturada terib bo'lmaydi
+    "зизу",
     "ali@mail",      # @
     "",
 ])
@@ -38,18 +36,15 @@ def test_invalid_usernames_rejected(name):
     with pytest.raises(AppError):
         pw._validate_username(name)
 
-
 def test_username_is_trimmed_but_case_preserved():
     """Foydalanuvchi yozgan shakl saqlanadi (profilda ko'rinadi), lekin
     solishtirish `lower()` bilan boradi — buni `_find_by_username` bajaradi."""
     assert pw._validate_username("  Zizu  ") == "Zizu"
 
-
 @pytest.mark.parametrize("name", ["admin", "ADMIN", "Support", "topagon", "rasmiy"])
 def test_reserved_usernames_rejected(name):
     with pytest.raises(AppError):
         pw._validate_username(name)
-
 
 # --------------------------------------------------------------------------- #
 #  Parol                                                                      #
@@ -58,17 +53,14 @@ def test_short_password_rejected():
     with pytest.raises(AppError):
         pw._validate_password("12345")
 
-
 def test_six_chars_is_enough():
     assert pw._validate_password("123456") == "123456"
-
 
 def test_absurdly_long_password_rejected():
     """Chegara bo'lmasa megabaytlik satr argon2'ni band qilib, arzon DoS
     yo'lini ochib qo'yardi."""
     with pytest.raises(AppError):
         pw._validate_password("x" * 200)
-
 
 def test_password_regex_matches_db_constraint():
     """`022_username_password.sql` dagi CHECK bilan bir xil bo'lishi shart.
