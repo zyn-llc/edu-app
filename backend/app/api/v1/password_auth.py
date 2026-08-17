@@ -1,51 +1,3 @@
-"""
-Foydalanuvchi nomi + parol bilan kirish.
-
-  POST /v1/auth/register   {username, password, ...}  -> yangi hisob + token
-  POST /v1/auth/login      {username, password}       -> token
-  POST /v1/auth/password   {username?, password}      -> mavjud hisobga parol qo'shish
-  GET  /v1/auth/username-free?username=...            -> nom bo'shmi
-
-NEGA ALOHIDA FAYL. `auth.py` telefon+OTP oqimiga bag'ishlangan va u yerda
-`_require_phone_login()` kabi SMS'ga bog'liq mantiq bor. Parol yo'li SMS'dan
-mutlaqo mustaqil — aralashtirsak, Eskiz yoqilganda ikkalasi bir-biriga
-xalaqit beradi.
-
-XAVFSIZLIK QARORLARI
-
-1. **Parol uzunligi 6 dan boshlanadi, murakkablik talab qilinmaydi.**
-   Foydalanuvchi — 5–11-sinf o'quvchisi. "Kamida bitta katta harf va belgi"
-   talabi amalda ikki narsaga olib keladi: `Parol1!` yoki umuman voz kechish.
-   Kuchni parolga emas, **urinishlar soniga** qo'yamiz (3-band).
-
-2. **Parol tiklash YO'Q.** Elektron pochta ham, SMS ham yo'q — ya'ni
-   "parolni unutdim" oqimini xavfsiz qurishning iloji yo'q. Buning o'rniga
-   klient parol o'rnatgan foydalanuvchini Telegram'ni ham ulashga undaydi:
-   Telegram tiklash yo'li bo'lib xizmat qiladi (`POST /v1/auth/password`
-   bilan yangi parol qo'yiladi).
-
-3. **Urinishlar cheklovi ikki o'lchamda.** IP bo'yicha soatiga 40 ta va
-   FOYDALANUVCHI NOMI bo'yicha soatiga 10 ta. Faqat IP bo'yicha cheklash
-   O'zbekistonda ishlamaydi: maktab Wi-Fi'si va uyali internet NAT ortida,
-   bitta IP ortida o'nlab o'quvchi bo'ladi. Faqat nom bo'yicha cheklash esa
-   nomlarni ketma-ket sinab ko'rishga yo'l ochadi. Ikkalasi birga kerak.
-
-4. **Xato sababi oshkor qilinmaydi.** "Bunday foydalanuvchi yo'q" va "parol
-   noto'g'ri" bir xil javob beradi — aks holda ro'yxatdan o'tganlar ro'yxatini
-   yig'ib olish mumkin bo'lardi. Ro'yxatdan o'tishda esa aksincha: nom band
-   ekani ochiq aytiladi, chunki usiz ro'yxatdan o'tib bo'lmaydi.
-
-5. **Ro'yxatdan o'tish (2026-08-07) taklif kodi talab qiladi** —
-   `settings.require_invite_for_password_register` orqali yoqilgan/
-   o'chirilgan. SABAB: bu yo'l SMS'ga ham, Telegram'ga ham bog'liq emas,
-   ya'ni "haqiqiy odam" ekanini tasdiqlaydigan tashqi qatlam yo'q edi.
-   Yagona to'siq — IP bo'yicha soatiga 40 so'rov — bot uchun jiddiy
-   to'siq emas (proksi bilan aylanib o'tiladi). Yopiq beta davrida kod
-   `invites.py` bilan BIR XIL jadvaldan (`invite_codes`) o'qiladi va
-   xuddi shunday atomik tarzda sarflanadi — ikkita alohida "kirish
-   eshigi" emas, bitta havzaning ikki fasadi. Kirish (LOGIN) bunga
-   bog'liq emas: mavjud hisob doim parol bilan kira oladi.
-"""
 from __future__ import annotations
 
 import logging
@@ -155,13 +107,7 @@ async def username_free(
     username: str = Query(min_length=1, max_length=20),
     db: AsyncSession = Depends(get_db),
 ):
-    """Klient yozayotgan paytda tekshiradi — forma yuborilgach "band" degan
-    xatoni ko'rish yomon tajriba.
-
-    Ataylab hech qanday cheklovsiz va autentifikatsiyasiz: bu yerda oshkor
-    bo'ladigan yagona narsa — nom bandmi yoki yo'q, u esa ro'yxatdan o'tish
-    formasida baribir ma'lum bo'ladi.
-    """
+   
     name = _norm(username)
     if not USERNAME_RE.match(name):
         return {"username": name, "free": False, "reason": "shape"}
@@ -189,18 +135,12 @@ async def register(
                        "bu nom allaqachon band — boshqasini tanlang",
                        type_="urn:bilim:auth:username_taken")
 
-    #
-    # birovning taklif kodini behuda yeb qo'yardi.
     invite_row = None
     challenge_row = None
     if _settings.require_invite_for_password_register:
         code = normalize_code(body.invite_code or "")
         join = (body.join_code or "").strip().upper()
 
-        # --- Bellashuv kodi taklif o'rnida -------------------------------
-        #
-        # chaqirgan" sharti bajarilgan — botlarga qarshi to'siqning butun
-        #
         if not code and join:
             challenge_row = (await db.execute(text("""
                 UPDATE challenges
@@ -223,7 +163,7 @@ async def register(
             raise AppError(400, "Invite code required",
                            "ro'yxatdan o'tish uchun taklif kodi kerak",
                            type_="urn:bilim:auth:invite_required")
-        # baribir 401 olardi.
+       
         if code:
             invite_row = (await db.execute(text("""
                 UPDATE invite_codes
@@ -340,9 +280,6 @@ async def set_password(
 
     user.password_hash = hash_password(pw)
 
-    # refresh tokenlar 30 kun yashab qolardi: tokenini o'g'irlatgan odam
-    # parolni almashtirib ham hujumchini quva olmasdi, holbuki parolni
-    #
     await db.execute(
         update(RefreshToken)
         .where(RefreshToken.user_id == user.id,
