@@ -1,15 +1,3 @@
-"""
-/v1/admin/stats — operational metrics for the founder, zero extra infra.
-
-Auth: `api.deps.require_admin` — X-Admin-Key, constant-time, rate limited, and
-404 on every failure so there is nothing to probe. This is founder tooling, not
-a user-facing surface; when a team exists, replace with role-based admin
-accounts. nginx should ALSO restrict /v1/admin/ by IP (deploy/nginx.conf).
-
-Numbers are computed live with a handful of aggregate queries — fine well past
-100k users. When dashboards/history are needed, point Grafana or Metabase at a
-Postgres read replica instead of growing this endpoint.
-"""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
