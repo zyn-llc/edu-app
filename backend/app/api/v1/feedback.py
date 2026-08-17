@@ -1,13 +1,3 @@
-"""
-/v1/feedback — in-app support/feedback channel.
-
-Submitting works for guests too (a user whose LOGIN is broken is exactly who
-must be able to reach you), so this endpoint is abuse-hardened instead of
-auth-gated: per-IP Redis caps + message length limit. Messages land in the
-feedback table; read them via GET /v1/admin/feedback (X-Admin-Key) or straight
-in psql. Contact field is whatever the user typed (phone/telegram) — never
-auto-filled, their choice to share.
-"""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
