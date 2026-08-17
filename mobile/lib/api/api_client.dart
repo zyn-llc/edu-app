@@ -13,7 +13,7 @@ final apiBaseUrl = _resolveApiBaseUrl();
 
 String _resolveApiBaseUrl() {
   if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;
-  // `flutter build web --release` ni `--dart-define=API_BASE_URL` siz
+  
   if (kReleaseMode && !kMockMode) {
     throw StateError(
       'API_BASE_URL berilmagan. Release build shunday chiqarilishi kerak:\n'
@@ -105,7 +105,6 @@ final dioProvider = Provider<Dio>((ref) {
         return handler.next(err);
       }
 
-      // Try one (shared) refresh, then replay the original request once.
       final ok = await _refreshTokens(ref);
       if (!ok) return handler.next(err);
       try {
@@ -123,5 +122,5 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-/// Resolves a stored R2 key (e.g. "subjects/geografiya.jpg") to a full URL.
+
 String? resolveImage(String? key) => key == null ? null : '$imageBaseUrl/$key';
