@@ -1,18 +1,3 @@
-"""
-/v1/notes — o'quvchining shaxsiy daftari.
-
-Kontrakt Flutter tomonidagi `notes_data.dart` bilan bir xil:
-  GET    /v1/notes?limit&question_id&subject_id  -> {"items": [Note, ...]}
-  POST   /v1/notes                               -> Note
-  PATCH  /v1/notes/{id}                          -> Note
-  DELETE /v1/notes/{id}                          -> 204
-
-Auth majburiy: yozuv akkauntga tegishli. Mehmon (guest) daftar yurita olmaydi —
-guest bitta umumiy user_id ostida ishlaydi, ya'ni yozuvlar aralashib ketardi.
-
-Har bir so'rov `user_id = current_user.id` bo'yicha filtrlanadi, shuning uchun
-begona yozuvni ko'rish/o'zgartirish imkoni yo'q (id topilmasa 404).
-"""
 from __future__ import annotations
 
 import uuid
