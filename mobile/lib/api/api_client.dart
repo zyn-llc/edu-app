@@ -5,14 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/token_store.dart';
 import 'mock_backend.dart';
 
-/// Backend manzili. Build vaqtida almashtiriladi:
-///   web dev:  flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000
-///   qurilma:  flutter run -d <device> --dart-define=API_BASE_URL=http://<wifi-ip>:8000
-///   prod:     flutter build web --release --dart-define=API_BASE_URL=https://api.topagon.uz
+
 const _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
-///   - Android emulyatori host mashinaga `10.0.2.2` orqali chiqadi;
-///
+
 final apiBaseUrl = _resolveApiBaseUrl();
 
 String _resolveApiBaseUrl() {
@@ -34,12 +30,10 @@ const imageBaseUrl = String.fromEnvironment('IMAGE_BASE_URL',
 
 const _guestUserId = '00000000-0000-0000-0000-000000000001';
 
-/// Language sent to the backend (uz-Latn or ru), kept in sync with the app locale
-/// so questions/catalog come back in the right language.
+
 final localeCodeProvider = StateProvider<String>((_) => 'uz-Latn');
 
-/// Bare Dio with NO auth interceptor. Used for the auth endpoints themselves and
-/// for the refresh call (so a 401 on refresh can't recurse into another refresh).
+
 final rawDioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
     baseUrl: apiBaseUrl,
@@ -50,19 +44,11 @@ final rawDioProvider = Provider<Dio>((ref) {
     options.headers['Accept-Language'] = ref.read(localeCodeProvider);
     handler.next(options);
   }));
-  // Zanjirning OXIRIDA: undan oldingi interceptorlar sarlavhalarni qo'yib
   if (kMockMode) dio.interceptors.add(MockInterceptor());
   return dio;
 });
 
-/// Authenticated Dio: attaches the Bearer token when logged in, falls back to the
-/// guest header otherwise, and transparently refreshes on a 401.
-///
-/// Refresh is SINGLE-FLIGHT: the backend rotates refresh tokens (one-time use),
-/// so if several requests 401ed at the same moment and each fired its own refresh,
-/// only the first would win — the rest would present the already-rotated token,
-/// fail, and wrongly log the user out. All concurrent 401s share one in-flight
-/// refresh Future instead.
+
 Future<bool>? _refreshInFlight;
 
 Future<bool> _refreshTokens(Ref ref) {
