@@ -16,8 +16,6 @@ class PrefKeys {
   static const accessToken = 'auth.access';
   static const refreshToken = 'auth.refresh';
 
-  ///
-  /// chiqadi, o'quvchi esa parolni ayblaydi.
-  ///
+
   static const lastUsername = 'auth.lastUsername';
 }
