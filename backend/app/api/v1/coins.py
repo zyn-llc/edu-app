@@ -1,12 +1,3 @@
-"""
-/v1/me/coins — balance, history, and the rewarded-ad top-up.
-
-Ad reward: the client calls this after AdMob reports a completed rewarded view.
-MVP trusts the client but caps abuse hard (N per day, Redis). Before launch,
-switch to AdMob Server-Side Verification: Google signs a callback to YOUR server
-with a nonce; only then credit. The endpoint shape already anticipates that —
-`ad_id` becomes the SSV transaction id, and the unique ref stops double-credits.
-"""
 from __future__ import annotations
 
 import uuid
