@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_settings.dart';
 
-/// Ovoz effektlari.
-///
-///
-///
 class SoundService {
   final Ref ref;
   final AudioPlayer _fx = AudioPlayer();
@@ -32,12 +28,10 @@ class SoundService {
 
   void wrong() => _play(_fx, 'wrong.wav', volume: 0.75);
 
-  /// Mashq tugadi — uch notali kichik fanfar.
-  ///
+  
   void complete() => _play(_ui, 'complete.wav');
 
-  /// Variant tanlandi — juda qisqa klik.
-  ///
+
   void tap() => _play(_ui, 'tap.wav', volume: 0.4);
 
   bool get isUnlocked => _unlocked;
