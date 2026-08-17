@@ -1,21 +1,3 @@
-"""
-POST /v1/auth/invite — taklif kodi bilan telefonsiz kirish.
-
-Nega bor: SMS shlyuzi (Eskiz) moderatsiyada turganda ham yopiq beta ishlashi
-kerak. Kod kiritilganda telefonsiz akkaunt yaratiladi va odatdagi token juftligi
-qaytariladi — undan keyin ilova uchun bu oddiy foydalanuvchi, hech qanday farq
-yo'q. Eskiz kelganda bu yo'l o'chirilmaydi ham: kod bilan kirgan o'quvchi keyin
-profilida telefon qo'shishi mumkin.
-
-Xavfsizlik:
-  * Kod 8 belgi, chalkash harflarsiz -> ~1.1 trln kombinatsiya. Bir IP'dan
-    soatiga INVITE_IP_HOURLY_CAP urinish (standart 10) — brute-force amalda
-    imkonsiz.
-  * used_count atomik oshiriladi (UPDATE ... WHERE used_count < max_uses
-    RETURNING). Ikki kishi bir vaqtda bitta oxirgi joyni olsa, faqat bittasi
-    yutadi — race yo'q, LOCK ham kerak emas.
-  * Kod javobda hech qachon qaytmaydi.
-"""
 from __future__ import annotations
 
 import logging
