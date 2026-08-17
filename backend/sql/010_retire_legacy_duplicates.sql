@@ -1,11 +1,3 @@
--- =============================================================================
---  010_retire_legacy_duplicates.sql
---  canonical yuklama esa zero-padded ('geo_g10_q0836'). source_ref mos
---
---
---    docker compose exec -T db psql -U edu -d edu < sql/010_retire_legacy_duplicates.sql
--- =============================================================================
-
 SELECT count(*) AS "retire bo'ladigan legacy dublikatlar"
 FROM questions q
 WHERE q.status = 'active'
@@ -47,7 +39,7 @@ WHERE q.status = 'active'
 
 COMMIT;
 
--- ---- 4) Natija -------------------------------------------------------------
+
 SELECT status, count(*) FROM questions GROUP BY status ORDER BY 2 DESC;
 
 SELECT s.code AS subject, q.grade, count(*) AS active_savol
