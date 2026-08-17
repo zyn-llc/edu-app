@@ -1,16 +1,3 @@
-"""
-Auth endpoints — phone + OTP -> JWT.
-
-  POST /v1/auth/otp/request   {phone, role}        -> sends (or dev-returns) a code
-  POST /v1/auth/otp/verify    {phone, code, ...}   -> creates/loads user, token pair
-  POST /v1/auth/refresh       {refresh_token}      -> rotates, new token pair
-  POST /v1/auth/logout        {refresh_token}      -> revokes the refresh token
-  GET  /v1/auth/me                                 -> current user profile
-  PATCH/v1/auth/me            {display_name,...}    -> update own profile
-
-Handlers stay thin: OTP logic in services/otp.py, user+token logic in
-services/auth.py. The endpoint only decides dev-vs-prod code delivery.
-"""
 from __future__ import annotations
 
 import logging
