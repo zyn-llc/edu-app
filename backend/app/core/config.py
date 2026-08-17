@@ -15,63 +15,43 @@ class Settings(BaseSettings):
     jwt_refresh_ttl_seconds: int = 30 * 24 * 3600
 
     default_lang: str = "uz-Latn"
-
-    # CORS — origins allowed to call the API from a browser (Flutter Web, landing
-    # page). Comma-separated in env. Dev default is permissive for localhost; prod
-    # MUST list explicit origins (see validate_runtime).
     cors_origins: str = "*"
 
-    # --- OTP (phone auth) ---------------------------------------------------
     otp_ttl_seconds: int = 5 * 60          # code lifetime
     otp_length: int = 6
-    otp_max_attempts: int = 5              # wrong tries before the code is burned
-    otp_request_cooldown_seconds: int = 60  # min gap between code requests per phone
-    otp_request_daily_cap: int = 20        # max code requests per phone per rolling day
-    # Per-IP caps — SMS-pumping / enumeration protection. An attacker who rotates
-    # phone numbers bypasses the per-phone caps entirely; every accepted request
-    # costs real money at the SMS gateway. These bound the damage per source IP.
-    otp_ip_hourly_cap: int = 15            # max code requests per IP per hour
-    otp_ip_daily_cap: int = 60             # max code requests per IP per rolling day
-    # Set true only when the API runs behind a trusted reverse proxy (nginx/
-    # Cloudflare) that overwrites X-Forwarded-For. If false, the header is ignored
-    # (a direct client could spoof it to dodge the IP caps).
+    otp_max_attempts: int = 5             
+    otp_request_cooldown_seconds: int = 60 
+    otp_request_daily_cap: int = 20      
+    otp_ip_hourly_cap: int = 15            
+    otp_ip_daily_cap: int = 60            
     trust_proxy_headers: bool = False
-    # In dev there is no SMS gateway, so the code is returned in the API response
-    # (and logged). MUST be false in prod — overridden by env.
     otp_debug_return: bool = True
 
-    # --- SMS gateway --------------------------------------------------------
-    #   taklif kodi va/yoki Telegram orqali kiriladi).
     sms_provider: str = "console"
     otp_message_template: str = "Topag'on tasdiqlash kodi: {code}"
     eskiz_base_url: str = "https://notify.eskiz.uz/api"
     eskiz_email: str = ""
     eskiz_password: str = ""
-    eskiz_from: str = "4546"               # Eskiz test sender; replace once approved
+    eskiz_from: str = "4546"              
 
-    # --- Gamification / ranking --------------------------------------------
-    xp_per_point: int = 10                 # xp awarded = score * this
-    xp_per_level: int = 100                # level = 1 + xp // xp_per_level
-    coins_per_correct: int = 5             # coins minted on first correct answer
-    # --- coin economy v2 (gentle by design) ---
-    coins_per_wrong_penalty: int = 1       # deducted per wrong answer, floored at 0
-    coins_daily_login: int = 10            # first activity of the day
-    coins_per_ad: int = 15                 # per rewarded-ad view
-    ads_per_day_cap: int = 3               # max rewarded ads credited per day
-    # Dev stub: /ad-reward credits coins on the client's word (no ad shown).
-    # Prod boot REFUSES while true — flip only after AdMob SSV is implemented.
+   #gamification
+    xp_per_point: int = 10                 
+    xp_per_level: int = 100                
+    coins_per_correct: int = 5            
+    coins_per_wrong_penalty: int = 1       
+    coins_daily_login: int = 10           
+    coins_per_ad: int = 15                
+    ads_per_day_cap: int = 3              
     allow_client_ad_rewards: bool = True
-    # Admin stats endpoint auth. Empty = endpoint disabled (404).
+
     admin_api_key: str = ""
-    # --- challenges (friend bets in coins) ---
-    challenge_ttl_hours: int = 24          # open/unfinished challenges expire+refund
+    challenge_ttl_hours: int = 24         
     challenge_max_stake: int = 500
     challenge_max_questions: int = 20
-    # Guest user (pre-auth practice) — excluded from leaderboards.
     guest_user_id: str = "00000000-0000-0000-0000-000000000001"
 
     invite_login_enabled: bool = True
-    invite_ip_hourly_cap: int = 10         # bir IP'dan soatiga kod urinishi
+    invite_ip_hourly_cap: int = 10         
 
     require_invite_for_password_register: bool = True
     telegram_login_enabled: bool = False
@@ -83,7 +63,7 @@ class Settings(BaseSettings):
     #   curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
     telegram_admin_chat_id: int = 0
 
-    # --- Parent linking -----------------------------------------------------
+   #parent linking
     link_code_ttl_seconds: int = 10 * 60
 
     @property
@@ -95,13 +75,6 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     def validate_runtime(self) -> list[str]:
-        """Refuse to run with insecure config in prod. Returns a list of fatal
-        problems (empty == ok). Called at startup; see app.main.lifespan.
-
-        These are deploy-time foot-guns the Security/DevOps standard says we must
-        not ship: a guessable/short signing key, or OTP codes leaking in API
-        responses. In dev they're warnings; in prod they're hard failures.
-        """
         problems: list[str] = []
         if self.is_prod:
             if self.jwt_secret == "change-me-in-prod" or len(self.jwt_secret) < 32:
