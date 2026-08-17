@@ -1,17 +1,3 @@
-"""
-/v1/announcements — server-driven yangiliklar tasmasi.
-
-Yangi xabar chiqarish = bitta INSERT. Ilova relizi kerak emas — bu texnik
-ishlar (maintenance) haqida xabar berishning yagona real yo'li.
-
-Auth YO'Q: "server ta'mirlanmoqda" xabari faqat login qilganlarga ko'rinsa,
-foydasi yo'q. Faqat `is_active` + allaqachon `published_at` + muddati o'tmagan
-satrlar qaytadi, ya'ni jadvalda turgan qoralama tashqariga chiqmaydi.
-
-Til: `?lang=uz|ru`. Tarjima yo'q bo'lsa `uz` ga, u ham bo'lmasa mavjud
-birinchi tilga tushadi — xabar ko'rsatilmagandan ko'ra boshqa tilda ko'ringani
-yaxshi.
-"""
 from __future__ import annotations
 
 from datetime import datetime, timezone
