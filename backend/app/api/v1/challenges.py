@@ -1,10 +1,3 @@
-"""
-/v1/challenges — async 1v1 friend challenges with coin stakes.
-
-All endpoints require auth (guests can't bet). The question list endpoint serves
-the PUBLIC projection only — during a bet no correctness info leaves the server
-until the player's whole sheet is submitted (see services/challenges.py).
-"""
 from __future__ import annotations
 
 import uuid
