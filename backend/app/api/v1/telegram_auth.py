@@ -1,21 +1,3 @@
-"""
-Telegram kirish endpointlari.
-
-  POST /v1/auth/telegram/start   {}          -> {nonce, deep_link, expires_in_seconds}
-  POST /v1/auth/telegram/poll    {nonce}     -> {status: pending} yoki TokenPair
-  POST /v1/telegram/webhook                  -> Telegram chaqiradi (odam emas)
-
-Kirish IKKI QADAMLI: `start` tasdiq kodini ham beradi, bot esa aynan o'sha
-kodni ko'rsatib tugma so'raydi. Sabab va hujum stsenariysi —
-`app/services/telegram.py` bosh izohida.
-
-Webhook himoyasi: Telegram har so'rovga `X-Telegram-Bot-Api-Secret-Token`
-header'ini qo'yadi (setWebhook'da berilgan qiymat). Mos kelmasa 404 — URL'ni
-topgan odam soxta login yasay olmaydi.
-
-Webhook HAR DOIM 200 qaytaradi (ichkarida xato bo'lsa ham). Telegram 200 dan
-boshqa javobga o'sha update'ni qayta-qayta yuboraveradi va navbat tiqilib qoladi.
-"""
 from __future__ import annotations
 
 import hmac
