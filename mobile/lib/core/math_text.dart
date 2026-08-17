@@ -48,11 +48,6 @@ const _symbols = <String, String>{
   r'\scriptscriptstyle': '', r'\limits': '', r'\nolimits': '',
 };
 
-/// Funksiya nomlari. LaTeX'da ular `\log`, `\sin` deb yoziladi.
-///
-/// pastdagi `_functionSpacing()` ga qarang.
-///
-/// `arcsin` ning boshi oddiy `sin` sifatida yeyilib qoladi.
 const _functionNames = <String, String>{
   r'\arcsin': 'arcsin', r'\arccos': 'arccos', r'\arctan': 'arctan',
   r'\sinh': 'sinh', r'\cosh': 'cosh', r'\tanh': 'tanh',
@@ -89,12 +84,7 @@ String _toScript(String body, Map<String, String> table) {
   return buf.toString();
 }
 
-///
-/// `\frac{1}{5}` -> `\uE000 1 \uE001 5 \uE002`
-///
-/// qo'yadi, `MathText` vidjeti esa uni topib, ustma-ust chizadi.
-///
-/// (`km/soat`, `2017/2018`) tegilmaydi — aks holda "km/soat" ham kasr
+
 const fracOpen = '\uE000';
 const fracMid = '\uE001';
 const fracClose = '\uE002';
@@ -173,7 +163,6 @@ String renderMathText(String? input) {
     s = s.replaceAllMapped(
         RegExp(r'\\sqrt\s*(\w)'), (m) => '√${m.group(1)}');
 
-    //    belgi (U+0305) shriftlarda ishonchsiz. Mazmuni saqlanadi: "AB".
     s = s.replaceAllMapped(
         RegExp(r'\\(?:text|mathrm|mathbf|mathit|mathsf|mathbb|mathcal'
                r'|operatorname|overline|underline|overbrace|underbrace)'
@@ -188,12 +177,6 @@ String renderMathText(String? input) {
       s = s.replaceAll(k, _symbols[k]!);
     }
 
-    //
-    // `\mathbb`, `\underbrace` ham bor. Bittasini nomma-nom tuzatish
-    //
-    //
-    //
-    //
     s = s.replaceAllMapped(RegExp(r'\\([a-zA-Z]{1,2})(?![a-zA-Z])'),
         (m) => m.group(1)!);
     s = s.replaceAll(RegExp(r'\\[a-zA-Z]+'), '');
