@@ -1,26 +1,3 @@
-"""
-/v1/admin/analytics — mahsulot sog'lig'ini o'lchaydigan to'rtta raqam.
-
-Auth: `api.deps.require_admin` — `admin.py` bilan AYNAN bir xil qo'riqchi
-(ilgari bu yerda uning nusxasi turardi). Har qanday muvaffaqiyatsizlikda 404.
-
-Nimaga aynan shu to'rttasi:
-
-  retention        — d1 eng muhim raqam. 20%+ yaxshi start; 5% bo'lsa mahsulot
-                     emas, quyilgan chelak. Kohort = ro'yxatdan o'tgan kun;
-                     "qaytdi" = ertasi kuni kamida bitta javob yubordi.
-  timeseries       — o'sish haqiqiymi yoki bir martalik spike'mi.
-  subjects         — qaysi fanga talab bor. Kontent kuchini shunga yo'nalt.
-  suspect_questions— 20+ urinish, <15% to'g'ri. Bular odatda qiyin savol emas,
-                     BUZUQ savol: noto'g'ri kalit yoki rasmsiz rasmli savol.
-
-Hammasi live agregat — 100k foydalanuvchidan keyin ham yetarli. Dashboard va
-tarix kerak bo'lganda Metabase'ni read replica'ga ulang, bu endpointni
-o'stirmang.
-
-Guest submission'lari (bitta umumiy user_id) hamma joyda chiqarib tashlangan —
-aks holda DAU va retention yolg'on chiqadi.
-"""
 from __future__ import annotations
 
 import uuid
@@ -44,9 +21,7 @@ async def _rows(db: AsyncSession, sql: str, **params) -> list[dict]:
     res = await db.execute(text(sql), params)
     return [dict(r) for r in res.mappings().all()]
 
-# --------------------------------------------------------------------------- #
-#  Retention                                                                   #
-# --------------------------------------------------------------------------- #
+
 _RETENTION_SQL = """
 WITH cohorts AS (
     SELECT u.id, date_trunc('day', u.created_at) AS cohort_day
