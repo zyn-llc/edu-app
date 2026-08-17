@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../l10n/app_localizations.dart';
 
-/// Turns a raw exception into a short, human, localized message. A connection
-/// a DioException dump on the dashboard.
+
 String humanError(Object error, L10n l) {
   if (error is DioException) {
     switch (error.type) {
