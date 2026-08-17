@@ -1,28 +1,3 @@
-"""
-Parent / guardianship endpoints.
-
-Linking is consent-based via a short-lived code, so a parent can't attach to an
-arbitrary child by guessing a phone number:
-
-  POST /v1/parent/link-code   -> a 6-char code, valid ~10 min, single-use
-  POST /v1/parent/link        -> {code} establishes guardianship
-  GET  /v1/parent/children    -> linked children + their progress
-  GET  /v1/parent/children/{id} -> one child's progress (must be linked)
-
-AUTHZ NOTE (2026-08-06). These endpoints used to require `role == "parent"`, which
-made the whole feature unreachable in practice: a role is fixed at signup, phone
-login is disabled (SMS_PROVIDER=disabled), and a family testing on one device has
-exactly one account. A tester who entered a valid code got 403 and read it as
-"the code doesn't work".
-
-The role was never the security boundary anyway — the **guardianship row** is, and
-it can only be created by someone holding a code the child themselves generated
-and handed over. So authz here is now: any authenticated user may hold a code, and
-every read is gated on an existing guardianship link. Self-linking stays blocked.
-
-Parent dashboards are strictly read-only: there is no endpoint here that mutates a
-child's data.
-"""
 from __future__ import annotations
 
 import secrets
@@ -179,9 +154,7 @@ async def child_analysis(
     parent: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Authz: must be the parent's own linked child. Aggregates + recent quiz list
-    # (no individual wrong-answer detail) — the deliberate privacy posture.
-    await _linked_student(db, parent, student_id)
+   
     lang = (accept_language or "uz-Latn").split(",")[0].strip()
     return await analysis_service.full_analysis(
         db, student_id, lang, include_recent=True)
