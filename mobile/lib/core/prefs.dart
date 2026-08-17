@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Holds the [SharedPreferences] instance. Overridden in main() once it has been
-/// loaded, so the rest of the app can read it synchronously. Works on mobile and
-/// web (web backs it with localStorage).
+
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('sharedPreferencesProvider not overridden'),
 );
