@@ -1,14 +1,3 @@
-"""
-Request-scoped auth dependencies.
-
-  get_current_user          -> 401 if no valid Bearer token
-  get_current_user_optional -> None if no/invalid token (for endpoints that work
-                               for guests too, like practice submissions)
-  require_role(*roles)      -> dependency factory, 403 if the user's role isn't allowed
-
-The access token is self-contained (sub + role), so the common path does NOT hit
-the DB. We only load the User row when an endpoint needs profile fields.
-"""
 from __future__ import annotations
 
 import hmac
@@ -92,9 +81,6 @@ def require_role(*roles: str):
     return _dep
 
 
-# --------------------------------------------------------------------------- #
-#  Admin (founder tooling)                                                     #
-# --------------------------------------------------------------------------- #
 _ADMIN_TRIES_PER_HOUR = 20
 
 
@@ -102,22 +88,7 @@ async def require_admin(
     request: Request,
     x_admin_key: str | None = Header(None),
 ) -> None:
-    """X-Admin-Key gate for /v1/admin/*.
-
-    Three deliberate properties, all of which were missing before:
-
-    * **Always 404, never 403.** The module always claimed to be
-      "indistinguishable from not existing", but answering 403 on a bad key told
-      a prober both that the endpoint is real and that a key is configured.
-    * **Constant-time compare.** `!=` on a secret leaks its prefix through
-      response timing to anyone patient enough to measure.
-    * **Rate limited, fail-closed.** nginx's admin IP allowlist is the real
-      first line; this is the layer that still holds when someone forgets to
-      uncomment it. 20 tries/hour makes online guessing pointless.
-
-    Lives here, not in admin.py, because analytics.py and feedback.py need the
-    same gate and used to carry their own copies.
-    """
+    
     if not _settings.admin_api_key:
         raise AppError(404, "Not Found")
 
