@@ -1,25 +1,3 @@
-"""
-Phase-1 content + submission endpoints — the reference implementation pattern
-every other module copies.
-
-Flow:
-  GET  /v1/subjects                      -> list subjects (localized)
-  GET  /v1/subjects/{id}/catalog         -> metadata-driven nav (grades/topics/
-                                            exam_contexts that actually have Qs)
-  GET  /v1/questions                     -> PUBLIC projection only (no keys)
-  POST /v1/submissions                   -> server grades, stores, returns result
-
-Handlers are thin: they fetch, delegate to services, and serialize. No grading
-logic lives here — it lives in services/grading.py.
-
-Abuse controls:
-  * /questions   — per-identity burst cap + distinct-question breadth tracking,
-                   plus a fixed sample of the bank for anonymous callers.
-  * /submissions — flood cap on BOTH paths (guest by IP, user by account id),
-                   the answer key released only on a correct answer, and
-                   questions frozen into an unfinished challenge refused
-                   outright so the key cannot be harvested before the bet.
-"""
 from __future__ import annotations
 import logging
 import random
@@ -54,43 +32,19 @@ _log = logging.getLogger("bilim.submissions")
 router = APIRouter(prefix="/v1")
 _settings = get_settings()
 
-# Guest = a single shared account, so it cannot be limited per user — limit per
-# IP. A real student answers maybe 1-2 questions/minute; 120/hour leaves huge
-# headroom while stopping a script from farming the bank through the guest path.
-_GUEST_SUBMIT_PER_HOUR = 120
-# Logged-in users used to have NO submit limit at all — the guest cap sat inside
-# an `if current_user is None` branch. That made an authenticated account the
-# cheapest way to hammer the grader. A 20-question drill takes ~5 minutes, so
-# 300/hour is fifteen back-to-back drills: unreachable by a human, immediate for
-# a script.
+
 _USER_SUBMIT_PER_HOUR = 300
 
 def _lang(accept_language: str | None) -> str:
     return accept_language or _settings.default_lang
 
-# --------------------------------------------------------------------------- #
-#  Subjects + metadata-driven catalog                                         #
-# --------------------------------------------------------------------------- #
 @router.get("/subjects")
 async def list_subjects(
     db: AsyncSession = Depends(get_db),
     accept_language: str | None = Header(None),
     user: User | None = Depends(get_current_user_optional),
 ):
-    """Fanlar ro'yxati + kartochka uchun kerak bo'ladigan hamma raqam.
-
-    Nega bir endpointda: fan kartochkasida "2 345 ta savol · 12 bo'lim ·
-    siz 124 tasini yechgansiz" ko'rsatish uchun klient aks holda har fan
-    uchun alohida `/catalog` so'rovi yuborishi kerak bo'lardi — 7 ta fan =
-    7 ta qo'shimcha so'rov, mobil tarmoqda sezilarli kechikish.
-
-    `answered`/`correct` DISTINCT savol bo'yicha hisoblanadi: bitta savolni
-    o'n marta yechish progressni o'nga ko'paytirmaydi.
-
-    Login qilmagan foydalanuvchi uchun shaxsiy maydonlar 0 bo'ladi —
-    endpoint mehmonga ham ochiq, chunki fanlar ro'yxati kirishdan oldin ham
-    ko'rinishi kerak.
-    """
+   
     lang = _lang(accept_language)
     rows = (await db.execute(
         select(Subject).where(Subject.is_active.is_(True))
@@ -126,7 +80,7 @@ async def list_subjects(
             )).all()
         }
 
-    # --- shaxsiy progress -------------------------------------------------
+    # progress
     mine: dict = {}
     if user is not None and str(user.id) != _settings.guest_user_id:
         mine = {
@@ -176,25 +130,7 @@ async def subject_catalog(
     db: AsyncSession = Depends(get_db),
     accept_language: str | None = Header(None),
 ):
-    """Returns the grades / topics / exam_contexts that actually have active
-    questions for this subject, each with a count. The client renders a
-    responsive grid from this — no hardcoded screens. Math (many topics) and a
-    sparse subject use the same screen.
-
-    `grade` BERILGANDA bo'limlar va imtihon konteksti SHU SINF bo'yicha
-    filtrlanadi.
-
-    NEGA QO'SHILDI (2026-08-06, sinovda topilgan xato). Ilgari bo'limlar
-    butun fan bo'yicha qaytarilardi. Klientda esa sinf va bo'lim ketma-ket,
-    lekin MUSTAQIL tanlanardi. Natijada foydalanuvchi «11-sinf» ni tanlab,
-    ro'yxatdan 5-sinf bo'limini tanlashi mumkin edi — server esa
-    `grade=11 AND topic=<5-sinf bo'limi>` bo'yicha NOL savol topardi va
-    ekranda «Bu bo'lim uchun savollar topilmadi» chiqardi. Foydalanuvchi
-    buni ilova buzuq deb tushunardi, aslida shunchaki mos savol yo'q edi.
-
-    `grades` ATAYLAB filtrlanmaydi: u tanlash ro'yxatining o'zi, ya'ni har
-    doim to'liq bo'lishi kerak.
-    """
+   
     active = (Question.subject_id == subject_id) & (Question.status == "active")
 
     grade_rows = (await db.execute(
@@ -241,28 +177,8 @@ async def subject_catalog(
         "topics": topics,
     }
 
-# --------------------------------------------------------------------------- #
-#  Public questions (no answer keys, ever)                                    #
-# --------------------------------------------------------------------------- #
 def _mix_by_difficulty(pool: list[Question], limit: int) -> list[Question]:
-    """Qiyinlik bo'yicha aralash to'plam qaytaradi.
-
-    NEGA KERAK. `ORDER BY random()` bankning qiyinlik taqsimotini
-    ko'chiradi: geografiyada 1-daraja savollar ko'p, ya'ni tasodifiy 20 ta
-    savolning 15 tasi oson chiqadi. O'quvchi "juda oson" deb qiziqishini
-    yo'qotadi; teskarisi ham xuddi shunday zararli.
-
-    QANDAY. Pool qiyinlik bo'yicha guruhlanadi, keyin guruhlardan NAVBAT
-    BILAN olinadi (1, 2, 3, 1, 2, 3, ...). Guruh tugasa navbatdan chiqadi —
-    ya'ni faqat oson savoli bor bo'limda ham `limit` ta savol qaytadi.
-
-    Oxirida tartib ARALASHTIRILADI: aks holda har uchinchi savol qiyin
-    bo'lib, o'quvchi naqshni sezib qolardi.
-
-    Qiyinligi ko'rsatilmagan savol (`None`) alohida guruh emas — u o'rta
-    (2) deb hisoblanadi, aks holda `NULL` li fanlar bitta guruhga tushib
-    aralashtirish ma'nosiz bo'lardi.
-    """
+   
     if len(pool) <= limit:
         random.shuffle(pool)
         return pool
@@ -386,13 +302,7 @@ async def submit(
     if q is None or q.status != "active":
         raise AppError(404, "Question not found")
 
-    # ---- challenge key protection -------------------------------------------
-    # /v1/challenges/{id}/questions hands a participant the frozen question ids —
-    # it has to, they need to play. But those same ids could be pushed through
-    # THIS endpoint as ordinary practice, and the grade response would hand back
-    # the key; the player then filled in a perfect challenge sheet. Every staked
-    # bet was winnable that way. A question locks only while the caller still
-    # owes a result: once their sheet is in, it returns to normal practice.
+ 
     if current_user is not None:
         locked = await db.scalar(text("""
             SELECT 1 FROM challenges c
@@ -413,20 +323,9 @@ async def submit(
     try:
         result = grading.grade(gq, body)     # server decides — always trustworthy
     except Exception:
-        # A malformed grading_spec (e.g. an mcq with two correct options) or a
-        # type with no grader yet must not become a 500 in the middle of a drill.
-        # services/challenges.py already made this call for the batch path; both
-        # paths now behave identically: graded wrong, logged, never a crash.
         _log.exception("grading failed question_id=%s type=%s", q.id, q.type)
         result = GradeResult(question_id=str(q.id), is_correct=False,
                              score=0, max_score=q.max_score)
-
-    # The key and the explanation are released ONLY on a correct answer.
-    #
-    # Returning them on a wrong answer opened a free farm: answer anything, read
-    # correct_option_ids out of the response, resubmit. That cost one coin and
-    # paid 10 XP + 5 coins + leaderboard points, on every question in the bank.
-    # The explanation is withheld for the same reason — most of them name the
     if result.is_correct:
         result.correct_option_ids = list(
             (q.grading_spec or {}).get("correct_option_ids", []))
@@ -436,14 +335,7 @@ async def submit(
         if tr is not None:
             result.explanation = tr.explanation
 
-    # Who answered: the JWT user if present, else the guest. The guest is a real
-    # row so practice still persists, but it is kept off the leaderboards/progress.
-    #
-    # SECURITY: X-Debug-User-Id is NOT an identity mechanism. Without a valid JWT
-    # the only identity an unauthenticated caller can have is the guest user —
-    # accepting an arbitrary UUID here would let anyone write submissions, streaks,
-    # XP/coins and leaderboard points into any victim's account. So the header is
-    # accepted only when it names the guest UUID; anything else is treated as guest.
+    
     if current_user is not None:
         user_id = current_user.id
     else:
@@ -453,12 +345,7 @@ async def submit(
         user_id = uuid.UUID(_settings.guest_user_id)
     is_guest = (str(user_id) == _settings.guest_user_id)
 
-    # Persist BEST-EFFORT for the GUEST practice path only: a missing guest row
-    # must never turn a correct answer into a wrong one. For AUTHENTICATED users a
-    # persistence failure is a real error — we log it with context (never silently),
-    # but still return the already-computed grade so the learner isn't penalized for
-    # our storage problem. Submission + derived progress share one transaction so
-    # XP/streak can't drift from the submission log.
+ 
     persisted = True
     awarded = False   # True only when this is the FIRST correct answer to this q
     xp_awarded = 0
@@ -480,27 +367,14 @@ async def submit(
             response_ms=body.response_ms,
         ))
         if not is_guest:
-            # ALL reward bookkeeping lives in a SAVEPOINT: if any of it fails
-            # (constraint drift, race, future bug), only the rewards roll back —
-            # the student's graded answer still commits and the response is
-            # unaffected. Lesson from a live bug: a coin CHECK-constraint
-            # violation here used to abort the whole transaction and turn a
-            # correct answer into "Yuborilmadi" (HTTP 500).
             try:
                 async with db.begin_nested():
-                    # Streak advances on every answer (showing up counts).
                     prog = await progress_service.touch_activity(db, user_id)
-                    # Daily login bonus rides on the same "first activity today"
-                    # moment — a wiped-out balance recovers every day.
                     await coins.try_award_daily_login(
                         db, user_id,
                         datetime.now(timezone.utc).date().isoformat(),
                         _settings.coins_daily_login,
                     )
-                    # XP + coins are minted once per question, and only on a
-                    # correct answer. The coin ledger's unique guard is the
-                    # source of truth for "first time", so re-answering a
-                    # question can't farm XP or coins.
                     if result.is_correct:
                         awarded = await coins.try_award_quiz(
                             db, user_id, str(q.id), _settings.coins_per_correct)
@@ -513,8 +387,6 @@ async def submit(
                         else:
                             reward_reason = "repeat"
                     else:
-                        # Gentle penalty: small, floored at 0 (never negative);
-                        # coins never gate practice — only challenge stakes.
                         taken = await coins.apply_wrong_penalty(
                             db, user_id, str(q.id),
                             _settings.coins_per_wrong_penalty)
@@ -542,10 +414,6 @@ async def submit(
                 "submission persist FAILED user_id=%s question_id=%s",
                 user_id, q_id_str,
             )
-
-    # Ranking lives in Redis, outside the DB transaction. Credit it only on the
-    # first correct answer that actually persisted — same gate as XP, so the board
-    # can't be farmed and can't credit an answer we failed to record.
     if persisted and awarded and not is_guest:
         try:
             subj = (await db.execute(
