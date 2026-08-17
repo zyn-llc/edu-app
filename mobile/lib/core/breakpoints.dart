@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 
-///
-///
-/// Chegaralar M3 spetsifikatsiyasidan (dp):
-///   compact     < 600   telefon, portret
-///   medium      600–839 katta telefon landshaft, kichik planshet
-///   expanded    840–1199 planshet landshaft, kichik brauzer oynasi
-///   large       1200–1599 desktop
-///   extraLarge  >= 1600  keng monitor
 enum WindowSize {
   compact,
   medium,
