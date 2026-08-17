@@ -1,14 +1,3 @@
-///
-///
-/// `math_text.dart` LaTeX'ni Unicode'ga o'giradi va kasrni `1/5` shaklida
-/// (`(2x+1)/(x-3)`) qavslar tufayli o'qish butunlay qiyinlashadi.
-///
-///
-///
-/// ## Qanday ishlaydi
-///
-/// oddiy `/` (`km/soat`, `2017/2018`) tegilmaydi.
-///
 library;
 
 import 'package:flutter/material.dart';
