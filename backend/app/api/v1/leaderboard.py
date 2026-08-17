@@ -1,13 +1,3 @@
-"""
-Leaderboard + self endpoints.
-
-  GET /v1/leaderboard?scope=total|subject|region&key=<code>&limit=50
-        -> top N for the board + the caller's own standing (even if off-page)
-  GET /v1/me        -> profile + progress (xp/level/streak/accuracy) + total rank
-
-Ranking numbers come from Redis (services/ranking); Postgres is touched only to put
-names on the rows being returned.
-"""
 from __future__ import annotations
 
 import uuid
@@ -110,9 +100,7 @@ async def my_analysis(
     lang = (accept_language or "uz-Latn").split(",")[0].strip()
     return await analysis_service.full_analysis(db, user.id, lang)
 
-# /me/coins moved to app/api/v1/coins.py (richer payload: economy numbers +
-# rewarded-ad state). Keeping one canonical route avoids the duplicate-route
-# shadowing that broke the challenge tab's coin bar.
+
 
 @router.get("/regions")
 async def regions():
