@@ -250,16 +250,7 @@ async def set_password(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Kirgan foydalanuvchi o'ziga parol o'rnatadi yoki almashtiradi.
-
-    Telegram bilan kirgan o'quvchi shu yerda nom+parol qo'yadi va keyingi
-    safar Telegram'siz kira oladi. Teskarisi ham to'g'ri: parol bilan
-    ro'yxatdan o'tgan o'quvchi Telegram'ni ulab, uni tiklash yo'li sifatida
-    ishlatadi.
-
-    Eski parolni so'ramaymiz, chunki bu yerga faqat amaldagi access token
-    bilan kirib bo'ladi — ya'ni sessiya allaqachon isbotlangan.
-    """
+ 
     pw = _validate_password(body.password)
 
     if not user.username:
