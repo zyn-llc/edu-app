@@ -1,10 +1,4 @@
-///
-///
-/// o'ylaydi.
-///
-///
-/// qoladi — ular kamchilikni tashkil etadi va `\` belgisi ularni ajratib
-///
+
 library;
 
 const _superscript = {
