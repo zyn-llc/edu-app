@@ -1,48 +1,23 @@
--- =============================================================================
---  Education Competition Platform — canonical schema  (v1)
--- =============================================================================
---  CORE PRINCIPLE (do not violate):
---    Answer keys live ONLY in questions.grading_spec and option correctness is
---    NEVER stored on a renderable row. The "options" table has no is_correct
---    column on purpose, so it is *structurally impossible* to leak a key by
---
---  EXTENSIBILITY (built in from day one, even though only MCQ exists now):
---    - question.type is text (app-validated), so adding 'matching', 'numeric',
---      'open_keyword', etc. is a data change, never a migration.
---    - All type-specific answer data lives in grading_spec JSONB — one shape per
---    - Multilingual via *_translations tables (uz-Latn, uz-Cyrl, ru, en, ...).
---      The "core" row is language-independent; text is in translations.
--- =============================================================================
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy text (search, dedup)
--- PostGIS is enabled on the Islamic platform; not required here. Region is a code.
-
--- ---------------------------------------------------------------------------
---  Reference / lookup
--- ---------------------------------------------------------------------------
-
--- Supported UI/content languages. Seeded, app reads this list.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;      
 CREATE TABLE languages (
-    code        text PRIMARY KEY,           -- 'uz-Latn','uz-Cyrl','ru','en'
+    code        text PRIMARY KEY,           
     name        text NOT NULL,
     is_active   boolean NOT NULL DEFAULT true
 );
 
--- Regions drive one ranking dimension (rank by region).
+
 CREATE TABLE regions (
-    code        text PRIMARY KEY,           -- 'tashkent','samarkand',...
+    code        text PRIMARY KEY,           
     name        text NOT NULL
 );
 
--- ---------------------------------------------------------------------------
---  Subjects  (geografiya, jahon tarixi, ... — 10 at launch)
--- ---------------------------------------------------------------------------
+
 CREATE TABLE subjects (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    code        text NOT NULL UNIQUE,       -- stable slug: 'geografiya'
-    icon        text,                        -- asset key (small icon, optional)
-    image_url   text,                        -- cover image (R2 key) for the grid tile
+    code        text NOT NULL UNIQUE,       
+    icon        text,                        
+    image_url   text,                        
     sort_order  int  NOT NULL DEFAULT 0,
     is_active   boolean NOT NULL DEFAULT true
 );
@@ -54,12 +29,6 @@ CREATE TABLE subject_translations (
     PRIMARY KEY (subject_id, lang)
 );
 
--- ---------------------------------------------------------------------------
---  Topics  (hierarchical: a subject -> topics; topics can nest)
---  Navigation (subject -> grade/topic/entrance) is METADATA-DRIVEN. The client
---  asks "what exists for this subject?" and renders a responsive grid from the
---  answer. Math has many topics, another subject few — same screen, no hardcode.
--- ---------------------------------------------------------------------------
 CREATE TABLE topics (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     subject_id  uuid NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
@@ -77,41 +46,21 @@ CREATE TABLE topic_translations (
     PRIMARY KEY (topic_id, lang)
 );
 
--- ---------------------------------------------------------------------------
---  Questions  (the heart — extensible to every future type)
--- ---------------------------------------------------------------------------
---  Allowed type values (validated in the app layer, NOT a DB enum, so new
---  types ship without a migration):
---      'mcq'          single correct option
---      'multi_select' several correct options (exact set)
---      'numeric'      numeric answer with tolerance
---      'open_keyword' free text matched against accepted answers (Uzbek-aware)
---      'matching'     match left items to right items
---      'ordering'     put items in correct order
---      'open_text'    AI-graded essay/short answer  (rubric)   <-- later
---
---      mcq/multi_select : {"correct_option_ids": ["..."]}
---      numeric          : {"value": 3.14, "tolerance": 0.01, "unit": "km"}
---      open_keyword     : {"accepted": ["..."], "match": "any"}
---      matching         : {"pairs": [["L1","R1"], ["L2","R2"]]}
---      ordering         : {"order": ["A","B","C"]}
---      open_text        : {"rubric": "...", "max_points": 5}
--- ---------------------------------------------------------------------------
 CREATE TABLE questions (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     subject_id      uuid NOT NULL REFERENCES subjects(id),
     topic_id        uuid REFERENCES topics(id),
-    grade           smallint,                       -- 8, 9, 10, 11 ... nullable
-    exam_context    text[],                          -- {'school','entrance'} — multi-value
+    grade           smallint,                       
+    exam_context    text[],                          
     type            text NOT NULL DEFAULT 'mcq',
-    difficulty      smallint NOT NULL DEFAULT 2,     -- 1..5, feeds adaptive picking
+    difficulty      smallint NOT NULL DEFAULT 2,     
     max_score       int  NOT NULL DEFAULT 1,
-    status          text NOT NULL DEFAULT 'active',  -- 'draft'|'active'|'retired'
+    status          text NOT NULL DEFAULT 'active',  
     schema_version  int  NOT NULL DEFAULT 1,
-    grading_spec    jsonb NOT NULL,                  -- *** SERVER ONLY ***
-    media           jsonb,                           -- {"image_url": "...", ...} for image questions (later)
-    tags            jsonb,                           -- {"skill_tags":[...],"concept_tags":[...],"subtopic":"..."}
-    source_ref      text,                            -- 'geo-g10, p.143, Mavzu 4'
+    grading_spec    jsonb NOT NULL,                 
+    media           jsonb,                           
+    tags            jsonb,                           
+    source_ref      text,                          
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now()
 );
@@ -125,21 +74,16 @@ CREATE TABLE question_translations (
     question_id uuid NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
     lang        text NOT NULL REFERENCES languages(code),
     stem        text NOT NULL,
-    explanation text,                                -- shown after answering
+    explanation text,                                
     PRIMARY KEY (question_id, lang)
 );
 
--- ---------------------------------------------------------------------------
---  Options  (renderable choices for mcq / multi_select / matching / ordering)
---  *** NOTE: there is deliberately NO is_correct column. ***
---  Correctness is exclusively in questions.grading_spec, keyed by option_key.
--- ---------------------------------------------------------------------------
 CREATE TABLE options (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     question_id uuid NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    option_key  text NOT NULL,               -- stable id used by grading_spec: 'a','b'.. or 'L1','R1'
+    option_key  text NOT NULL,               
     position    int  NOT NULL DEFAULT 0,
-    side        text,                          -- matching: 'left'|'right'; else null
+    side        text,                          
     media_url   text,
     UNIQUE (question_id, option_key)
 );
@@ -151,30 +95,27 @@ CREATE TABLE option_translations (
     PRIMARY KEY (option_id, lang)
 );
 
--- ---------------------------------------------------------------------------
---  Users  (one table, role enum: student | parent | admin)
--- ---------------------------------------------------------------------------
+
 CREATE TABLE users (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    role            text NOT NULL DEFAULT 'student',  -- 'student'|'parent'|'admin'
-    phone           text UNIQUE,                       -- phone+OTP auth (UZ)
+    role            text NOT NULL DEFAULT 'student',  
+    phone           text UNIQUE,                       
     display_name    text,
     region_code     text REFERENCES regions(code),
     grade           smallint,
     locale          text REFERENCES languages(code) DEFAULT 'uz-Latn',
-    password_hash   text,                              -- argon2, admins only
+    password_hash   text,                             
     is_active       boolean NOT NULL DEFAULT true,
     created_at      timestamptz NOT NULL DEFAULT now()
 );
 
--- Parent <-> student link (read-only parent dashboards).
 CREATE TABLE guardianship (
     parent_id   uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     student_id  uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (parent_id, student_id)
 );
 
--- Rotating refresh tokens (hashed, revocable).
+
 CREATE TABLE refresh_tokens (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id     uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -188,19 +129,17 @@ CREATE TABLE submissions (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     question_id     uuid NOT NULL REFERENCES questions(id),
-    competition_id  uuid,                            -- FK added after competitions (see end)
-    payload         jsonb NOT NULL,           -- what the student submitted
+    competition_id  uuid,                            
+    payload         jsonb NOT NULL,           
     score           int  NOT NULL,
     max_score       int  NOT NULL,
     is_correct      boolean NOT NULL,
-    response_ms     int,                       -- server-measured timing (anti-cheat)
+    response_ms     int,                       
     created_at      timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_submissions_user_q ON submissions (user_id, question_id);
 
--- ---------------------------------------------------------------------------
---  Competitions  (scheduled live events — phase 3, defined now for stability)
--- ---------------------------------------------------------------------------
+
 CREATE TABLE competitions (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     subject_id      uuid REFERENCES subjects(id),
@@ -210,38 +149,32 @@ CREATE TABLE competitions (
     ends_at         timestamptz NOT NULL,
     entry_fee_uzs   int  NOT NULL DEFAULT 0,
     prize_pool_uzs  int  NOT NULL DEFAULT 0,
-    status          text NOT NULL DEFAULT 'scheduled', -- scheduled|open|running|grading|finished
-    config          jsonb,                          -- {question_count, per_question_seconds, ...}
+    status          text NOT NULL DEFAULT 'scheduled', d
+    config          jsonb,                          
     created_at      timestamptz NOT NULL DEFAULT now()
 );
 
--- Snapshot of standings for history (Redis sorted sets are the live source).
+
 CREATE TABLE leaderboard_history (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    board_key   text NOT NULL,                  -- 'lb:subject:geografiya' etc.
+    board_key   text NOT NULL,                  
     captured_at timestamptz NOT NULL DEFAULT now(),
-    standings   jsonb NOT NULL                  -- [{user_id, score, rank}, ...]
+    standings   jsonb NOT NULL                 
 );
 
--- ---------------------------------------------------------------------------
---  Payments ledger  (Payme / Click — phase 3; client NEVER asserts payment)
--- ---------------------------------------------------------------------------
 CREATE TABLE transactions (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         uuid NOT NULL REFERENCES users(id),
     competition_id  uuid REFERENCES competitions(id),
-    provider        text NOT NULL,              -- 'payme'|'click'
-    provider_ref    text,                       -- provider transaction id (idempotency)
+    provider        text NOT NULL,             
+    provider_ref    text,                       
     amount_uzs      int  NOT NULL,
-    state           text NOT NULL DEFAULT 'created', -- created|pending|paid|refunded|failed
+    state           text NOT NULL DEFAULT 'created',
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (provider, provider_ref)              -- replayed webhook can't double-credit
+    UNIQUE (provider, provider_ref)             
 );
 
--- ---------------------------------------------------------------------------
---  Social: friendships + async challenges  (phase 2)
--- ---------------------------------------------------------------------------
 CREATE TABLE friendships (
     requester_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     addressee_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -254,8 +187,8 @@ CREATE TABLE challenges (
     id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     challenger_id uuid NOT NULL REFERENCES users(id),
     challengee_id uuid NOT NULL REFERENCES users(id),
-    question_ids  uuid[] NOT NULL,               -- frozen set: both play identical Qs
-    status        text NOT NULL DEFAULT 'pending', -- pending|active|completed|expired
+    question_ids  uuid[] NOT NULL,               
+    status        text NOT NULL DEFAULT 'pending', 
     challenger_score int,
     challengee_score int,
     expires_at    timestamptz,
@@ -272,8 +205,8 @@ CREATE TABLE user_progress (
 );
 
 CREATE TABLE badges (
-    code        text PRIMARY KEY,               -- 'streak_7','first_win',...
-    criteria    jsonb NOT NULL                  -- evaluated server-side
+    code        text PRIMARY KEY,              
+    criteria    jsonb NOT NULL                  
 );
 
 CREATE TABLE user_badges (
