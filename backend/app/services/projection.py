@@ -1,12 +1,3 @@
-"""Map ORM rows to projections, resolving one language.
-
-This is the only place ORM Question becomes either:
-  - PublicQuestion  (safe to return)
-  - GradingQuestion (server-only, carries grading_spec)
-
-Keeping the mapping in one place means the leak-proof guarantee has exactly one
-choke point to audit.
-"""
 from __future__ import annotations
 
 from app.models import Question as QuestionORM
