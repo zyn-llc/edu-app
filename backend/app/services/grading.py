@@ -1,19 +1,3 @@
-"""
-GradingService — the single server-authoritative judge.
-
-Dispatches on question.type. Adding a future type = add one branch + register it;
-no change to callers, no change to the schema. MCQ is the type you ship today; the
-others are implemented here too (they are cheap and prove the architecture handles
-"later" types — matching, numeric, keyword — without a rewrite). open_text/AI-rubric
-is the one genuine stub, because it needs an LLM call.
-
-The grader reads GradingQuestion (server-only) and the student's payload, and returns
-a GradeResult. It NEVER puts the correct answer in that result.
-
-The key IS released — but only by the caller, only on a correct answer, and only in
-one place: api/v1/content.submit. That single `if result.is_correct:` is the whole
-disclosure policy; if you need to change it, change it there, not here.
-"""
 from __future__ import annotations
 import ast
 import math
@@ -29,7 +13,7 @@ from app.schemas.question import (
 from app.services.normalizer import normalize
 
 class GradingError(Exception):
-    """Malformed submission or grading_spec."""
+    
 
 # Registry: type -> grader(question, payload) -> bool(correct)
 _GRADERS: dict[QuestionType, Callable[[GradingQuestion, dict], bool]] = {}
@@ -40,9 +24,7 @@ def _register(qtype: QuestionType):
         return fn
     return deco
 
-# --------------------------------------------------------------------------- #
-#  Implemented today                                                          #
-# --------------------------------------------------------------------------- #
+
 @_register(QuestionType.mcq)
 def _grade_mcq(q: GradingQuestion, payload: dict) -> bool:
     correct = set(q.grading_spec.get("correct_option_ids", []))
@@ -64,7 +46,7 @@ _ALLOWED_NODES = (
 _ALLOWED_NAMES = {"pi": math.pi}
 _ALLOWED_CALLS = {"sqrt": math.sqrt}
 
-# — serverni osishning eng arzon yo'li.
+
 _MAX_EXPONENT = 100
 _MAX_NODES = 60
 _MAX_LEN = 120
@@ -143,9 +125,7 @@ def _eval_math_expression(s: str) -> float:
             if new == expr:
                 break
             expr = new
-    #
-    # aylanadi. `tests/test_grading.py` dagi "garbage is wrong, not 500"
-    # aynan shuni ushladi.
+    
     try:
         tree = ast.parse(expr, mode="eval")
         if sum(1 for _ in ast.walk(tree)) > _MAX_NODES:
@@ -161,27 +141,6 @@ def _eval_math_expression(s: str) -> float:
     return value
 
 def _parse_student_number(raw) -> float:
-    """Parse a student's numeric answer the way they actually type it.
-
-    Handles: plain numbers (int/float payloads pass through), comma decimals
-    ("0,5" — the Uzbek/Russian convention), simple fractions ("1/3", "-16/3"),
-    Unicode minus ("−2"), and stray whitespace.
-
-    Beyond that it evaluates the small set of expressions the answer field's
-    OWN BUTTONS produce: π, √, powers and parentheses ("π/2", "√2", "2^3").
-    Those buttons shipped long before the grader understood them, so pressing
-    one turned a correct answer into a wrong one.
-
-    ORDERING MATTERS. The plain-number and fraction paths run FIRST and are
-    unchanged, so every input that graded correctly before still takes the
-    same code path and returns the same float. The evaluator only ever sees
-    strings that previously raised ValueError — it can add correct answers,
-    it cannot take any away.
-
-    Still NOT a general calculator: no `eval`, no functions beyond sqrt, no
-    names beyond pi. Anything else raises ValueError (graded as wrong
-    upstream, never a 500).
-    """
     if isinstance(raw, (int, float)) and not isinstance(raw, bool):
         return float(raw)
     s = str(raw).strip().replace("\u2212", "-").replace(" ", "")
@@ -217,7 +176,6 @@ def _grade_keyword(q: GradingQuestion, payload: dict) -> bool:
     given = normalize(payload.get("text", ""))
     if not given:
         return False
-    # 'any' (default): student answer matches at least one accepted form.
     return given in accepted
 
 @_register(QuestionType.matching)
@@ -232,15 +190,7 @@ def _grade_ordering(q: GradingQuestion, payload: dict) -> bool:
     submitted = list(payload.get("order", []))
     return submitted == correct and len(correct) > 0
 
-# NOTE: `open_text` has NO grader and is not registered here. It needs an LLM
-# rubric call, which does not exist yet. A registered function that only raises
-# would make this registry look complete when it is not — `grade()` below
-# already reports an unregistered type clearly, and `ingest/audit_grading.py`
-# refuses to publish such questions in the first place.
 
-# --------------------------------------------------------------------------- #
-#  Public entrypoint                                                          #
-# --------------------------------------------------------------------------- #
 def grade(question: GradingQuestion, submission: SubmissionIn) -> GradeResult:
     grader = _GRADERS.get(question.type)
     if grader is None:
