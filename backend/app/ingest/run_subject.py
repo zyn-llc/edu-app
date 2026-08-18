@@ -1,26 +1,3 @@
-#!/usr/bin/env python3
-"""
-run_subject.py - hardened, canonical-format loader for Bilim banks.
-Drop into backend/app/ingest/ . Supersedes run_geography.py.
-
-  # dry-run one bank (NO DB, counts only) - do this first, per your rule:
-  PYTHONPATH=. python -m app.ingest.run_subject --dry-run clean_data/hist_g11/
-
-  # dry-run everything:
-  PYTHONPATH=. python -m app.ingest.run_subject --dry-run clean_data/
-
-  # real load one bank (writes; idempotent on source_ref):
-  PYTHONPATH=. python -m app.ingest.run_subject clean_data/hist_g11/
-
-Guarantees (the things run_geography did NOT):
-  * answer key normalized (strip 'opt_'), cross-checked vs `answer`, and verified
-    to be a real option id -> NEVER loads a question that would grade everything wrong.
-  * non-mcq / inactive / invalid rows are SKIPPED and reported, never force-inserted.
-  * stem read from `text`; join on `id`; subject from bank prefix.
-  * difficulty, status, exam_context, media, tags(subtopic/legacy_id/...) carried.
-  * idempotent: existing source_ref is skipped (re-run safe).
-Validation logic here is identical to preflight.py by construction.
-"""
 from __future__ import annotations
 import asyncio, json, os, re, sys
 from dataclasses import dataclass, field
@@ -39,39 +16,24 @@ PREFIX_SUBJECT_MAP = {
 }
 LOADABLE_TYPES = {"mcq", "text_open"}
 
-# --------------------------------------------------------------------------- #
-#  text_open ko'prigi                                                         #
-#                                                                              #
-#
-# --------------------------------------------------------------------------- #
+
 
 from app.services.grading import _parse_student_number  # noqa: E402
 from app.services.normalizer import normalize as _normalize  # noqa: E402
 
 NUMERIC_REL_TOLERANCE = 1e-3
 
-# turlicha yaxlitlangan shakli deb qaraladi ("2,333" va "2.333333" — ikkalasi
+
 ROUNDING_SPREAD = 5e-3
 
 RISKY_KEYWORD_AS_DRAFT = True
 _RISKY_ANSWER_RE = re.compile(r"[ ,;=()\[\]{}/]")
 
-# Image questions: the uz layer carries has_image/image_ref, but there is no
-# image hosting and the Flutter client renders no images yet. Serving "which
-# organ is shown in the diagram?" WITHOUT the diagram is worse than not serving
-# it — the student blames themselves for an unanswerable question. So they load
-# as status='draft' (content API only serves 'active') and become visible the
-# moment the image pipeline exists, with no re-ingest.
-IMAGE_QUESTIONS_AS_DRAFT = True
 
-# Strips a leading textbook section number from a topic title ("12 - §").
-# Deliberately narrow: a title like "1991-2017-yillarda ..." carries a real
-# year range that a looser pattern would eat.
 _TOPIC_NUMBER_RE = re.compile(r"^\d+(\.\d+)*\s*-\s*(§|bo['‘’ʻʼ]lim)\.?\s*")
 _WRAPPED_RE = re.compile(r"^\(([^()]*)\)$")
 
 def topic_title(code: str) -> str:
-    """Bo'lim kodidan o'quvchiga ko'rsatiladigan sarlavha."""
     t = code.replace("_", " ").strip()
     t = _TOPIC_NUMBER_RE.sub("", t).strip()
     m = _WRAPPED_RE.match(t)
@@ -129,12 +91,7 @@ class IngestQuestion:
     qtype: str = "mcq"
 
 def _media_of(c, langrows):
-    """Carry the image reference through instead of dropping it.
-
-    The uz layer holds image_ref; core may hold a media object. Store a plain
-    key (not a full URL) so the CDN host can change without a data migration —
-    the client composes the URL from its configured image base.
-    """
+    
     media = c.get("media")
     if media:
         return media
@@ -145,19 +102,9 @@ def _media_of(c, langrows):
     return None
 
 def text_open_spec(c):
-    """`text_open` -> (qtype, grading_spec, risky, error).
+    
 
-    Normalizator javobni `grading_spec.accepted_forms` ro'yxatida saqlaydi va
-    son bilan matnni ajratmaydi. Bu yerda ajratamiz:
-
-      * hamma variant BITTA songa yechilsa -> `numeric` (+ tolerantlik).
-        Grader kasrni, vergulli o'nlikni va Unicode minusni tushunadi, ya'ni
-        o'quvchi qanday yozsa ham to'g'ri baholanadi.
-
-      * aks holda -> `open_keyword` (aynan moslik). Javobda bo'sh joy, vergul
-        yoki `=` bo'lsa `risky` bayrog'i qo'yiladi — bunday savol `draft`
-        bo'lib yuklanadi.
-    """
+   
     spec = c.get("grading_spec") or {}
     forms = spec.get("accepted_forms") or spec.get("accepted") or []
     if isinstance(forms, str):
@@ -183,8 +130,7 @@ def text_open_spec(c):
             tol = 0.0 if float(v).is_integer() else abs(v) * NUMERIC_REL_TOLERANCE
             return "numeric", {"value": v, "tolerance": tol}, False, None
 
-        #     ["2,333", "2.333333"]  ->  7/3
-        #     ["-7,469136", "-7,469"]
+       
         if scale > 0 and spread <= scale * ROUNDING_SPREAD:
             v = (lo + hi) / 2.0
             tol = max(spread / 2.0, abs(v) * NUMERIC_REL_TOLERANCE)
@@ -241,8 +187,7 @@ def build(c, langrows, bank_subject, bank_grade):
         qtype, grading_spec, risky_answer, terr = text_open_spec(c)
         if terr: return "ERROR", terr
 
-    # Any layer flagging an image, or a core-level media object, makes this an
-    # image question.
+    
     has_image = bool(c.get("media")) or any(
         r.get("has_image") or r.get("image_ref") for r in langrows.values())
     status = c.get("status", "active")
@@ -250,8 +195,6 @@ def build(c, langrows, bank_subject, bank_grade):
         status = "draft"
         verdict = "WARN"
     if risky_answer and RISKY_KEYWORD_AS_DRAFT and status == "active":
-        #   UPDATE questions SET status='active'
-        #    WHERE type='open_keyword' AND tags->>'risky_answer' = 'true' AND ...;
         status = "draft"
         verdict = "WARN"
 
@@ -285,7 +228,7 @@ def discover_banks(paths):
     else: dirs = sorted(os.path.join(root,d) for d in os.listdir(root)
                         if os.path.exists(os.path.join(root,d,"core.json")))
     for bd in dirs:
-        #   "C:\banks\math_g8\"
+    
         prefix = os.path.basename(os.path.normpath(bd))
         subj, grade = parse_prefix(prefix)
         core = json.load(open(os.path.join(bd,"core.json"), encoding="utf-8"))
@@ -294,7 +237,7 @@ def discover_banks(paths):
         yield prefix, core, langs, subj, grade
 
 def plan(paths):
-    """Validate everything, return (records[], report). No DB."""
+   
     records, report = [], []
     grand = defaultdict(int)
     for label, core, langs, subj, grade in discover_banks(paths):
@@ -320,14 +263,13 @@ def print_report(report, grand):
     print(f"GRAND  load={grand['OK']+grand['WARN']}  skip={grand['SKIP']}  errors={grand['ERROR']}")
 
 async def load(records, batch=200):
-    """Batched insert with per-batch commit, progress, and loud failures."""
     from sqlalchemy import select, text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
     from app.core.config import get_settings
     from app.models import (Option, OptionTranslation, Question, QuestionTranslation,
                             Subject, Topic, TopicTranslation)
 
-    # On the host `db` resolves to 127.0.0.1; inside the container it stays.
+  
     from app.ingest.dsn import resolve_url
     url = resolve_url()
 
@@ -437,9 +379,6 @@ def main(argv):
     if not paths: print(__doc__); return 2
     records, report, grand = plan(paths)
     print_report(report, grand)
-    # Per your rule: errored rows are REPORTED and SKIPPED (excluded from `records`),
-    # never force-loaded. Valid rows still load. A high error count usually means a
-    # systematic shape bug worth fixing first -- the dry-run count tells you which.
     if dry:
         print(f"DRY-RUN: {len(records)} question(s) would be inserted, "
               f"{grand['ERROR']} error-row(s) skipped. Nothing written.")
