@@ -1,5 +1,3 @@
-"""Auth DTOs. Phone numbers are normalized to E.164 (+998XXXXXXXXX) on the way in
-so the unique constraint on users.phone always sees one canonical form."""
 from __future__ import annotations
 
 import re
@@ -9,12 +7,6 @@ from pydantic import BaseModel, Field, field_validator
 _DIGITS = re.compile(r"\d+")
 
 def normalize_uz_phone(raw: str) -> str:
-    """Accept the messy ways a user might type an Uzbek number and return E.164.
-
-    Accepts: '+998 90 123 45 67', '998901234567', '901234567', '0901234567'.
-    Returns: '+998901234567'. Raises ValueError if it can't be made into a valid
-    9-digit national number.
-    """
     digits = "".join(_DIGITS.findall(raw or ""))
     if digits.startswith("998"):
         digits = digits[3:]
