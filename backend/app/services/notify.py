@@ -1,33 +1,3 @@
-"""
-Qaytarish xabarlari — Telegram orqali.
-
-Nima yuboriladi va NEGA aynan shu to'rttasi:
-
-  challenge_invite    Do'sting seni chorladi. Yagona haqiqiy viral halqa, va u
-                      xabarsiz umuman ishlamaydi: chorlangan odam ilovani o'zi
-                      ochmasa, chaqiruv 24 soatdan keyin jim yonib ketadi.
-  challenge_result    Raqib o'ynadi. Natijani ko'rish — qaytishning eng arzon
-                      sababi, chunki qiziqish allaqachon bor.
-  challenge_expiring  Muddat tugayapti. Bu YO'QOTISH xabari, ya'ni eng kuchlisi:
-                      tikilgan noncoin qaytib ketishi mumkin.
-  streak_at_risk      Seriya bugun uziladi. Faqat seriyasi 3+ bo'lganlarga —
-                      2 kunlik seriya uchun xabar yuborish spam, chunki
-                      foydalanuvchi hali unga bog'lanmagan.
-
-QAT'IY QOIDALAR (ular buzilsa botni o'chirishadi):
-
-  1. Bitta xabar — bir marta. `notifications` jadvalining birlamchi kaliti
-     (user_id, kind, ref_id) shuni ta'minlaydi, skript emas.
-  2. Kuniga ko'pi bilan `MAX_PER_DAY` ta xabar. Bir kunda uchta bellashuv
-     kelsa ham uchta xabar ketmaydi.
-  3. `users.tg_notifications = false` bo'lsa — hech narsa yuborilmaydi.
-  4. Telegram'siz hisoblar (telefon/taklif kodi bilan kirganlar) chetlab
-     o'tiladi: `telegram_id IS NULL`.
-
-Ishga tushirish (VPS'da, kuniga bir marta):
-    docker compose -f docker-compose.prod.yml exec -T api \\
-        python -m app.services.notify
-"""
 from __future__ import annotations
 
 import asyncio
@@ -137,13 +107,6 @@ async def _already_sent_today(db: AsyncSession, telegram_ids: list[int]) -> set[
     return set(rows)
 
 async def _claim(db: AsyncSession, telegram_id: int, kind: str, ref_id: str) -> bool:
-    """Xabarni "band qilish". `False` — allaqachon yuborilgan.
-
-    INSERT ... ON CONFLICT DO NOTHING: takrorlanmaslik kafolati birlamchi
-    kalitda, ya'ni skript ikki marta ishga tushsa ham ikkinchi xabar ketmaydi.
-    Yozuv yuborishdan OLDIN qo'yiladi — Telegram javob bermay qolsa bitta
-    xabar yo'qoladi, bu takroriy spamdan yaxshiroq.
-    """
     row = (await db.execute(text("""
         INSERT INTO notifications (user_id, kind, ref_id)
         SELECT u.id, :kind, :ref FROM users u WHERE u.telegram_id = :tg
