@@ -1,32 +1,3 @@
-"""
-Telegram orqali kirish — bot mantiqining o'zi.
-
-Oqim:
-  1. Ilova  POST /v1/auth/telegram/start  -> nonce + deep link + TASDIQ KODI
-     Redis:  tg:login:<nonce> = "pending:<KOD>"  (TTL 10 daqiqa)
-     Ilova KODNI EKRANDA ko'rsatadi.
-  2. Foydalanuvchi havolani bosadi -> bot ochiladi -> "Start"
-     Telegram bizga  /start <nonce>  yuboradi.
-  3. Bot HISOBNI HALI BOG'LAMAYDI. U aynan o'sha kodni ko'rsatib so'raydi:
-     «Kirishni tasdiqlaysizmi? Kod: A7K2» [Ha] [Bekor qilish]
-  4. Foydalanuvchi [Ha] bosadi -> callback_query keladi -> shundagina
-     telegram_id bo'yicha foydalanuvchi yaratiladi/topiladi va Redis'ga
-     user_id yoziladi.
-  5. Ilova  POST /v1/auth/telegram/poll  -> token juftligi.
-
-NEGA 3-QADAM BOR (2026-08-09 auditi). Usiz bu oqim bir bosishda hisob
-o'g'irlash edi: hujumchi o'zi `start` chaqirib, `t.me/bot?start=<nonce>`
-havolasini qurbonga yuborardi ("bosing, sovg'a bor"). Qurbon «Start» bosgan
-zahoti Redis'ga UNING user_id si yozilardi, hujumchining `poll` chaqiruvi esa
-qurbon hisobiga to'liq token juftligini olardi. Endi qurbon botda o'zi
-so'ramagan kirish so'rovini ko'radi va uni tasdiqlamaydi — kod esa faqat
-HAQIQIY kirayotgan odamning ekranida turadi.
-
-Nega SMS emas: shablon moderatsiyasi yo'q, xarajat yo'q, O'zbekistonda
-o'quvchilarda Telegram deyarli 100%. Eskiz kelganda ikkalasi yonma-yon turadi.
-
-Nonce `secrets.token_urlsafe(24)` — taxmin qilib bo'lmaydi va bir martalik.
-"""
 from __future__ import annotations
 
 import logging
@@ -62,13 +33,6 @@ _SUPPORT_HINT = (
 )
 
 async def notify_admin(text: str) -> None:
-    """Murojaatni administrator chatiga yuboradi.
-
-    BEST-EFFORT: yuborilmasa hech narsa buzilmaydi — xabar bazada allaqachon
-    saqlangan. Shuning uchun chaqiruvchi tomon xatoni ushlamasligi ham mumkin,
-    lekin biz baribir ushlaymiz: murojaat yuborish oqimini Telegram uzilishi
-    to'xtatib qo'ymasligi kerak.
-    """
     chat_id = _settings.telegram_admin_chat_id
     if not chat_id or not _settings.telegram_bot_token:
         return
@@ -84,14 +48,12 @@ def new_nonce() -> str:
     return secrets.token_urlsafe(24)
 
 def new_confirm_code() -> str:
-    """Ilova ekranida ham, bot xabarida ham ko'rinadigan 4 belgili kod."""
     return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(4))
 
 def pending_value(code: str) -> str:
     return _PENDING_PREFIX + code
 
 def pending_code(value: str | None) -> str | None:
-    """Redis qiymatidan tasdiq kodini ajratadi; kutish holatida bo'lmasa None."""
     if value and value.startswith(_PENDING_PREFIX):
         return value[len(_PENDING_PREFIX):]
     return None
@@ -100,15 +62,10 @@ def deep_link(nonce: str) -> str:
     username = _settings.telegram_bot_username.strip().lstrip("@")
     return f"https://t.me/{username}?start={nonce}"
 
-# --------------------------------------------------------------------------- #
-#  Bot API                                                                     #
-# --------------------------------------------------------------------------- #
-async def _call(method: str, payload: dict) -> None:
-    """Bot API chaqiruvi. Xato oqimni to'xtatmaydi — faqat log.
+#  Bot API                                                                    
 
-    Token URL YO'LIDA turadi, shuning uchun bu yerda hech qachon `url` ni
-    logga yozma (`app/main.py` httpx logini shu sabab WARNING ga tushirgan).
-    """
+async def _call(method: str, payload: dict) -> None:
+  
     if not _settings.telegram_bot_token:
         return
     url = (f"{_settings.telegram_api_base}"
@@ -121,17 +78,13 @@ async def _call(method: str, payload: dict) -> None:
 
 async def send_message(chat_id: int, text: str,
                        reply_markup: dict | None = None) -> None:
-    """Botdan xabar. Yuborilmasa oqim buzilmaydi — foydalanuvchi baribir
-    ilovaga qaytganda ichkarida bo'ladi, shuning uchun faqat log."""
+
     payload: dict = {"chat_id": chat_id, "text": text}
     if reply_markup is not None:
         payload["reply_markup"] = reply_markup
     await _call("sendMessage", payload)
 
 async def answer_callback(callback_id: str, text: str = "") -> None:
-    """Tugma bosilganda Telegram'dagi kutish aylanasini to'xtatadi. Chaqirilmasa
-    foydalanuvchi bir necha soniya "yuklanyapti" ni ko'radi va tugmani qayta
-    bosadi."""
     await _call("answerCallbackQuery",
                 {"callback_query_id": callback_id, "text": text})
 
@@ -174,14 +127,9 @@ async def get_or_create_by_telegram(
     await db.flush()
     return user
 
-# --------------------------------------------------------------------------- #
-#  Update ishlovchisi — webhook ham, dev long-polling ham shuni chaqiradi      #
-# --------------------------------------------------------------------------- #
+
 def _display_name(sender: dict) -> str | None:
-    """Telegram ismi tashqi manba — emoji ham, CJK ham bo'lishi mumkin.
-    `safe_name` xato ko'tarmaydi: ism yaroqsiz bo'lsa shunchaki olinmaydi va
-    foydalanuvchi uni profilda o'zi kiritadi. Kirishni bloklash nomutanosib
-    javob bo'lardi."""
+    
     raw = " ".join(x for x in [sender.get("first_name"),
                                sender.get("last_name")] if x)
     return names.safe_name(raw) or None
