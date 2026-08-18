@@ -1,16 +1,3 @@
--- =============================================================================
---  qaytarish.
---
---    Get-Content sql/017_restore_false_positives.sql | docker compose exec -T db psql -U edu -d edu
---
---  MUAMMO: 016 da naqsh `rasm` edi. U "rasmiy", "rasman", "rasmiylashtirish"
---
---  rasmda/rasmdagi/rasmga/rasmni/rasmlar/sxema/chizma/grafik.
---  Sinovdan o'tgan:
---     "Rasmda tasvirlangan..."      -> rasm            ✓
--- =============================================================================
-
-\echo '--- QAYTARILADIGANLAR (namuna) ---'
 SELECT q.source_ref, left(qt.stem, 75) AS matn
 FROM questions q
 JOIN question_translations qt ON qt.question_id = q.id AND qt.lang = 'uz-Latn'
