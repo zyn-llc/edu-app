@@ -1,22 +1,3 @@
-"""
-Math ingest adapter — numeric open-type questions in Zizu's two-layer format.
-
-Differences from the geography layers (verified against real math_11 samples):
-  * core rows carry the grading key inline: type "numeric", `value`, `tolerance`
-    (geography carried `correct_option_id` instead)
-  * the uz layer is keyed by `id` (geography's uz layer used `question_id`) and
-    has NO `lang` field and NO options — just question_text + explanation
-  * `max_score` is explicit in core
-
-Produces the same IngestQuestion the geography writer consumes, so run_math.py
-is a thin runner over the shared upsert. LaTeX in stems ($...$) is stored
-verbatim — rendering is the client's job (flutter_math_fork), the DB stays
-presentation-agnostic.
-
-Key hygiene (mirrors the digitization conventions): grading keys are copied
-authentically from core — value/tolerance are NEVER inferred or "fixed" here.
-A core row missing `value` is a defect: it is reported and skipped, not guessed.
-"""
 from __future__ import annotations
 
 from app.ingest.geography_adapter import IngestQuestion
@@ -28,8 +9,7 @@ SUBJECT_CODE_MAP = {
 
 
 def join_math_layers(core: list[dict], uz: list[dict]) -> tuple[list[IngestQuestion], list[str]]:
-    """Join core[] and uz[] on id. Returns (items, defects). Defects are ids
-    that cannot be ingested truthfully (missing key / missing uz text)."""
+
     uz_by_id = {row["id"]: row for row in uz}
 
     items: list[IngestQuestion] = []
