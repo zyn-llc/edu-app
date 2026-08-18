@@ -1,21 +1,3 @@
-"""
-Progress service — server-authoritative XP, level, and daily streak.
-
-The streak/level arithmetic is pure (no DB) so it can be unit-tested directly;
-`touch_activity` loads the row and applies it. XP is the same number that feeds the
-leaderboard, so "rank" and "level" can never disagree.
-
-`touch_activity` and `award_xp` are deliberately SEPARATE: the streak advances on
-every answer (showing up counts), while XP is minted only on a question's first
-correct answer — gated by the coin ledger's unique index, see services/coins.py.
-
-Streak rule: answering on a new calendar day continues the streak if the previous
-active day was exactly yesterday, otherwise it resets to 1.
-
-Calendar day is the LOCAL (UTC+5) day — see app/core/localtime.py for why. The
-same offset is applied on the SQL side so Python and Postgres never disagree
-about which day a submission belongs to.
-"""
 from __future__ import annotations
 
 import logging
@@ -40,10 +22,10 @@ def xp_for_score(score: int) -> int:
 
 def next_streak(prev_streak: int, last_active: date | None, today: date) -> int:
     if last_active == today:
-        return max(prev_streak, 1)            # already counted today
+        return max(prev_streak, 1)            
     if last_active is not None and (today - last_active).days == 1:
-        return prev_streak + 1                # consecutive day
-    return 1                                  # first ever, or a gap broke it
+        return prev_streak + 1               
+    return 1                                  
 
 async def touch_activity(
     db: AsyncSession,
@@ -51,10 +33,7 @@ async def touch_activity(
     *,
     today: date | None = None,
 ) -> UserProgress:
-    """Record that the user was active today (advances/holds the streak). Runs on
-    EVERY answer, right or wrong, repeat or not — showing up is what the streak
-    rewards. Returns the row (not committed). XP is handled separately so it can be
-    gated on first-correct."""
+  
     today = today or local_today()
     prog = (await db.execute(
         select(UserProgress).where(UserProgress.user_id == user_id)
@@ -67,28 +46,11 @@ async def touch_activity(
     return prog
 
 def award_xp(prog: UserProgress, score: int) -> None:
-    """Add XP for a score and recompute level. Call ONLY on a first-correct answer
-    (gated by the coin ledger's one-reward-per-question guard) so XP can't be farmed
-    by re-answering."""
     prog.xp = (prog.xp or 0) + xp_for_score(score)
     prog.level = level_for_xp(prog.xp)
+    
 
 async def parent_signals(db: AsyncSession, user_id: uuid.UUID) -> dict:
-    """Ota-ona uchun MA'NOLI ko'rsatkichlar.
-
-    NEGA ALOHIDA (2026-08-06, sinovda aytilgan e'tiroz). Ota-ona paneli
-    bolaning o'zi ko'radigan raqamlarni takrorlardi: XP, daraja, seriya,
-    aniqlik. Ota-onaga bularning ma'nosi yo'q — u XP nima ekanini bilmaydi.
-    Ota-ona bilmoqchi bo'lgan narsa boshqacha:
-
-      * bola ODATDA shug'ullanadimi  -> oxirgi mashq qachon bo'lgan,
-                                         shu haftada nechta savol,
-                                         nechta kun faol bo'lgan;
-      * qayerda qiynalyapti          -> so'nggi 7 kundagi aniqlik
-                                         (umr bo'yi emas — u eskirgan).
-
-    Hammasi `submissions` dan hisoblanadi, qo'shimcha jadval kerak emas.
-    """
     now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
 
