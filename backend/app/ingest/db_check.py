@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-db_check.py - DB ulanishini diagnostika qiladi (Windows/asyncpg SSL muammosi uchun).
-  PYTHONPATH=. python -m app.ingest.db_check
-Bir nechta URL variantini navbat bilan sinaydi va qaysi biri ishlashini aytadi.
-"""
 import asyncio, os
 
 CANDIDATES = [
