@@ -1,12 +1,3 @@
-"""
-Tier-1 analysis — pure SQL aggregation over submissions. No ML, no LLM. Powers the
-student's own dashboard and (for linked children) the parent view.
-
-Mastery is computed over DISTINCT questions, not raw attempts, so re-answering a
-question can't inflate it: a topic's accuracy is (distinct questions ever answered
-correctly) / (distinct questions attempted). This is the honest, farm-resistant
-proxy for "how well does this student know this topic".
-"""
 from __future__ import annotations
 
 import uuid
