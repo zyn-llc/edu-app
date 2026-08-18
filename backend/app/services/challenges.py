@@ -1,27 +1,3 @@
-"""
-Challenge service — async 1v1 friend challenges with a coin stake.
-
-Lifecycle (status):
-  open      creator staked, waiting for an opponent (invite code)
-  active    opponent joined + staked; both play the SAME frozen question set
-  done      both results in -> settled (winner takes pot; draw refunds both)
-  cancelled creator cancelled while open -> stake refunded
-  expired   TTL passed -> all paid stakes refunded (applied lazily on read)
-
-Money safety properties:
-  * Stakes are ESCROWED through the coin ledger (challenge_stake, negative) the
-    moment each player commits — no side balance, no trust in the client.
-  * Settlement writes challenge_win (pot) or challenge_refund rows; every path
-    (win / draw / cancel / expiry) conserves coins exactly. Closed loop holds:
-    coins never leave the ledger, they only move between the two players. The
-    "exactly once" half of that is enforced by uq_coin_challenge_settle
-    (sql/026), not by application flow — see _lazy_expire.
-  * The question set is frozen in challenges.question_ids at creation, so it
-    can't be re-rolled for easier questions, and both players get identical Qs.
-  * One result row per player (PK challenge_id+user_id) — a bet can't be retried.
-  * Challenge answers do NOT mint XP/quiz coins and do NOT touch the public
-    leaderboard: challenges must not become a farming loop.
-"""
 from __future__ import annotations
 
 import secrets
@@ -54,9 +30,7 @@ def _gen_code() -> str:
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
-# --------------------------------------------------------------------------- #
-#  Create / join / cancel                                                     #
-# --------------------------------------------------------------------------- #
+
 async def create(
     db: AsyncSession,
     creator_id: uuid.UUID,
@@ -97,9 +71,9 @@ async def create(
     )
     db.add(ch)
 
-    # Escrow the creator's stake immediately.
+   
     if stake > 0:
-        await db.flush()   # need ch.id for the ledger ref
+        await db.flush()   
         ok = await coins.spend(db, creator_id, stake, "challenge_stake",
                                ref_type="challenge", ref_id=str(ch.id))
         if not ok:
@@ -144,23 +118,14 @@ async def cancel(db: AsyncSession, user_id: uuid.UUID, challenge_id: uuid.UUID) 
                            ref_type="challenge", ref_id=str(ch.id))
     return ch
 
-# --------------------------------------------------------------------------- #
-#  Play                                                                       #
-# --------------------------------------------------------------------------- #
+
 async def submit_result(
     db: AsyncSession,
     user_id: uuid.UUID,
     challenge_id: uuid.UUID,
-    answers: list[dict],           # [{question_id, payload}]
+    answers: list[dict],           
 ) -> dict:
-    """Grade a player's full answer sheet server-side, store their result, and
-    settle the challenge if both players are now done.
-
-    Batch (one call, all answers) rather than per-question on purpose: during a
-    bet the client gets NO per-question feedback, so a player can't harvest the
-    key set mid-game or relay answers to the opponent. Corrections come back only
-    in this response, after the sheet is locked in.
-    """
+   
     ch = await _get(db, challenge_id, lock=True)
     await _lazy_expire(db, ch)
     if ch.status != "active":
@@ -176,7 +141,6 @@ async def submit_result(
     if existing is not None:
         raise ChallengeError(409, "Already submitted", "a bet can't be retried")
 
-    # Answers must cover exactly the frozen set (missing = wrong, extras rejected).
     frozen = {str(q) for q in ch.question_ids}
     by_qid = {}
     for a in answers:
@@ -204,7 +168,7 @@ async def submit_result(
                 )
                 correct = res.is_correct
             except Exception:
-                correct = False        # malformed answer = wrong, never a 500
+                correct = False        
         if correct:
             score += q.max_score
         detail.append({"question_id": str(q.id), "is_correct": correct})
@@ -232,8 +196,7 @@ async def submit_result(
     }
 
 async def _settle(db: AsyncSession, ch: Challenge) -> dict:
-    """Both results in: winner takes the pot; draw refunds both. Conserves coins
-    exactly (pot = 2*stake in every branch)."""
+    exactly (pot = 2*stake in every branch).
     ch.status = "done"
     pot = ch.stake * 2
     if ch.creator_score > ch.opponent_score:
@@ -254,17 +217,10 @@ async def _settle(db: AsyncSession, ch: Challenge) -> dict:
                                ref_type="challenge", ref_id=str(ch.id))
     return {"winner_id": str(ch.winner_id) if ch.winner_id else None, "pot": pot}
 
-# --------------------------------------------------------------------------- #
-#  Read + expiry                                                              #
-# --------------------------------------------------------------------------- #
+
 async def _get(db: AsyncSession, challenge_id: uuid.UUID, *, lock: bool = False) -> Challenge:
     stmt = select(Challenge).where(Challenge.id == challenge_id)
     if lock:
-        # Mutating paths lock the row: without it, two players joining the same
-        # open challenge (or join+cancel) both read status='open', both escrow a
-        # stake, and the second commit silently overwrites the first opponent —
-        # losing their coins. FOR UPDATE makes the second waiter re-read 'active'
-        # and fail cleanly on the status check.
         stmt = stmt.with_for_update()
     ch = (await db.execute(stmt)).scalar_one_or_none()
     if ch is None:
@@ -272,17 +228,7 @@ async def _get(db: AsyncSession, challenge_id: uuid.UUID, *, lock: bool = False)
     return ch
 
 async def _lazy_expire(db: AsyncSession, ch: Challenge) -> None:
-    """Expiry is applied on read (no cron needed yet). Every escrowed stake is
-    refunded; a player who already submitted into a challenge the other abandoned
-    gets their stake back too.
-
-    CONCURRENCY. This runs from READ endpoints too (`GET /v1/challenges`), which
-    do not hold a row lock, so two parallel requests can both see the same
-    open-and-expired challenge and both try to refund. The guarantee that this
-    pays out exactly once is NOT the lock — it is `uq_coin_challenge_settle`
-    (sql/026): `coins.credit` returns False on the duplicate instead of writing
-    a second row. Setting `status` twice is harmless; paying twice was not.
-    """
+   
     if ch.status not in ("open", "active") or ch.expires_at > _now():
         return
     ch.status = "expired"
