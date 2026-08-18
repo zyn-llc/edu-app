@@ -1,17 +1,3 @@
-"""
-Security primitives — the trust boundary lives here.
-
-  * JWT access tokens: short-lived (15 min), stateless, carry sub=user_id + role.
-  * Refresh tokens: long-lived, OPAQUE random strings. We never store the raw
-    token — only its SHA-256 hash in refresh_tokens. Rotation revokes the old row
-    and issues a new one, so a leaked refresh token is usable for one rotation at
-    most before the user's next refresh invalidates it.
-  * argon2 for the handful of password-bearing accounts (admins). Students/parents
-    auth by phone+OTP and never have a password.
-
-Pure functions only — no DB, no Redis, no FastAPI. Trivially unit-testable, which
-is the point for code that sits on the trust boundary.
-"""
 from __future__ import annotations
 
 import hashlib
@@ -32,9 +18,6 @@ _ph = PasswordHasher()
 ALGO = "HS256"
 
 
-# --------------------------------------------------------------------------- #
-#  Passwords (admin accounts only)                                            #
-# --------------------------------------------------------------------------- #
 def hash_password(password: str) -> str:
     return _ph.hash(password)
 
@@ -46,9 +29,7 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-# --------------------------------------------------------------------------- #
-#  Access tokens (JWT, stateless)                                             #
-# --------------------------------------------------------------------------- #
+
 def create_access_token(
     user_id: str | uuid.UUID,
     role: str,
@@ -81,9 +62,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
     return claims
 
 
-# --------------------------------------------------------------------------- #
-#  Refresh tokens (opaque, stored hashed)                                     #
-# --------------------------------------------------------------------------- #
+
 def new_refresh_token() -> str:
     """A high-entropy opaque string handed to the client. Never persisted raw."""
     return secrets.token_urlsafe(48)
