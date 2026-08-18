@@ -1,28 +1,3 @@
-#!/usr/bin/env python3
-"""
-rebuild_leaderboard.py — Redis leaderboard'larini Postgres'dan qayta quradi.
-
-    PYTHONPATH=. python -m app.ingest.rebuild_leaderboard --dry-run
-    PYTHONPATH=. python -m app.ingest.rebuild_leaderboard
-
-Leaderboard'lar Redis sorted set'larida yashaydi (lb:total, lb:subject:*,
-lb:region:*) va `ranking.award()` ularni inkremental yangilaydi. Redis
-flush qilinsa, persistence'siz qayta ishga tushsa yoki drift bo'lsa — reyting
-noto'g'ri bo'ladi va buni SEZISHNING YO'LI YO'Q. Bu skript hammasini
-`submissions` jadvalidan qayta hisoblaydi.
-
-Mehmon (guest) yuborishlari CHIQARIB TASHLANADI — mehmon umumiy akkaunt,
-u reytingda ko'rinmasligi kerak (submit handler ham shunday qiladi).
-
-Almashtirish har bir board uchun ATOMAR: avval `lb:*:rebuild` quriladi, keyin
-RENAME bilan tirik kalit ustiga qo'yiladi — o'quvchi hech qachon yarim
-to'ldirilgan reytingni ko'rmaydi.
-
-DIQQAT: bu fayl ilgari xato joyda — `app/api/v1/` da yotgan edi. U yerda
-router emas, CLI skript turishi mantiqsiz (`main.py` uni import qilmaydi,
-lekin papka ko'rgan odam router deb o'ylaydi). Eski nusxani o'chir:
-    Remove-Item "D:\\platform edu\\backend\\app\\api\\v1\\rebuild_leaderboard.py"
-"""
 from __future__ import annotations
 
 import asyncio
@@ -32,16 +7,7 @@ import sys
 from collections import defaultdict
 
 def resolve_url() -> str:
-    """`.env` dagi manzilni HOST mashinadan ishlaydigan shaklga keltiradi.
-
-    `DATABASE_URL` da host `db:5432` turadi — bu konteyner ichida to'g'ri,
-    lekin skript Windows host'dan ishga tushirilsa `getaddrinfo failed`
-    beradi. `localhost` ham ishlamaydi: Windows uni IPv6 `::1` ga hal qiladi,
-    Docker esa IPv4'da tinglaydi.
-
-    Konteyner ICHIDA esa aksincha — almashtirish kerak emas, chunki u yerda
-    `127.0.0.1` konteynerning o'zi. Shu farqni `app/ingest/dsn.py` hal qiladi.
-    """
+    
     from app.ingest.dsn import resolve_url as _resolve
     return _resolve()
 
