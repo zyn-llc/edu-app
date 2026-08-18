@@ -1,18 +1,3 @@
-"""
-The public / grading projection split — the structural guarantee that answer keys
-cannot leak.
-
-  * PublicOption / PublicQuestion  -> what a client may ever see. There is NO field
-    on these models that can hold correctness. Serializing them cannot leak a key.
-
-  * GradingQuestion                -> server-only. Carries grading_spec. It is never
-    used as a response model anywhere in the API. Anything that loads it lives behind
-    the trust boundary.
-
-If you ever need to return question data to a client, you return PublicQuestion.
-Because the public model has no answer field, leaking is impossible by construction,
-not by remembering to strip a field.
-"""
 from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
@@ -27,14 +12,12 @@ class QuestionType(str, Enum):
     ordering = "ordering"
     open_text = "open_text"
 
-# --------------------------------------------------------------------------- #
-#  PUBLIC projection — safe to serialize to any client                         #
-# --------------------------------------------------------------------------- #
+
 class PublicOption(BaseModel):
     option_key: str
     position: int = 0
-    side: str | None = None          # 'left'/'right' for matching
-    text: str | None = None          # resolved for the requested language
+    side: str | None = None          
+    text: str | None = None          
     media_url: str | None = None
     # NOTE: intentionally no `is_correct`. The model cannot carry a key.
 
@@ -47,22 +30,20 @@ class PublicQuestion(BaseModel):
     exam_context: list[str] = Field(default_factory=list)
     difficulty: int = 2
     max_score: int = 1
-    stem: str                        # resolved for requested language
+    stem: str                       
     media: dict[str, Any] | None = None
     options: list[PublicOption] = Field(default_factory=list)
-    # NOTE: no explanation, no grading_spec, no correct flag — ever.
+   
 
 class GradingQuestion(BaseModel):
     id: str
     type: QuestionType
     max_score: int = 1
-    grading_spec: dict[str, Any]     # *** answer key lives here, server-side ***
+    grading_spec: dict[str, Any]    
 
-# --------------------------------------------------------------------------- #
-#  Submission + result                                                         #
-# --------------------------------------------------------------------------- #
+
 class SubmissionIn(BaseModel):
-    """Whatever the student sends. Shape depends on question type.
+ 
 
     mcq          : {"option_ids": ["a"]}
     multi_select : {"option_ids": ["a","c"]}
@@ -80,8 +61,7 @@ class GradeResult(BaseModel):
     is_correct: bool
     score: int
     max_score: int
-    # Returned ONLY after the student submits (in the grade response), so they can
-    # see the right answer and the explanation. Never present on PublicQuestion.
+   
     correct_option_ids: list[str] = Field(default_factory=list)
     explanation: str | None = None
     xp_awarded: int = 0
