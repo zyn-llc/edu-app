@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""
-audit_grading.py - read-only integrity audit of loaded questions.
-
-Catches: grading_spec.correct_option_ids that do NOT match the real option_key
-values (e.g. old loader stored 'opt_a' while options are keyed 'a') -> such a
-question marks every attempt wrong.
-
-  PYTHONPATH=. python -m app.ingest.audit_grading
-
-Connection: uses DATABASE_URL if set, else app settings. Rewrites the docker
-service host 'db' -> 127.0.0.1 when running from the host, and disables SSL for
-local connections (Windows/Docker port-proxy drops asyncpg's SSL negotiation).
-Exit 0 if clean, 1 if any problem. Writes nothing.
-"""
 from __future__ import annotations
 import asyncio, os, re
 from collections import defaultdict
