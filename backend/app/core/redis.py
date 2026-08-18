@@ -1,14 +1,3 @@
-"""
-Async Redis client — one lazily-created connection pool for the whole app.
-
-Used for:
-  * OTP storage + rate limiting (this phase)
-  * Leaderboard sorted sets (this phase)
-  * WebSocket pub/sub backplane (phase 3)
-
-Importing this module does not connect; the pool is created on first use, so unit
-tests that never touch Redis don't need a server running.
-"""
 from __future__ import annotations
 
 from redis.asyncio import Redis, from_url
