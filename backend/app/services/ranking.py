@@ -1,20 +1,3 @@
-"""
-Ranking service — leaderboards as Redis sorted sets.
-
-Three board scopes, each a sorted set of user_id -> cumulative score:
-  lb:total
-  lb:subject:{subject_code}
-  lb:region:{region_code}
-
-Reads never touch Postgres for the ranking itself (ZREVRANGE / ZREVRANK / ZSCORE);
-Postgres is consulted only to hydrate display names for the page being shown. This
-is why ranking stays O(log N) and cheap at millions of users — the doc's "10M is a
-config change, not a rewrite" claim depends on this staying in Redis.
-
-`award` is additive (ZINCRBY) and idempotent-friendly: it's called once per graded
-submission from the submit handler, inside the same request that already wrote the
-submission row.
-"""
 from __future__ import annotations
 
 from redis.asyncio import Redis
