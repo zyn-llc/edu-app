@@ -1,10 +1,3 @@
-"""ORM models.
-
-Every table the API actually reads or writes is mapped here. Tables that exist in
-sql/ but have no model are not "not mapped yet" — they were dropped (see
-sql/027_drop_unused_tables.sql) precisely so that this file and the schema stay
-the same shape.
-"""
 from __future__ import annotations
 import uuid
 from datetime import date, datetime
@@ -121,10 +114,7 @@ class Submission(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-# --------------------------------------------------------------------------- #
-#  Phase 2 — auth, gamification, parent link                                  #
-#  (tables already exist in sql/001_init.sql; mapped here as each lands)       #
-# --------------------------------------------------------------------------- #
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -235,9 +225,7 @@ class Feedback(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  server_default=func.now())
 
-# --------------------------------------------------------------------------- #
-#  009 — daftar (notes) + yangiliklar (announcements)                          #
-# --------------------------------------------------------------------------- #
+
 class Note(Base):
     __tablename__ = "notes"
     id: Mapped[uuid.UUID] = _uuid_pk()
