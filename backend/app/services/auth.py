@@ -1,14 +1,3 @@
-"""
-Auth service — turns a verified phone into a user + a token pair, and rotates
-refresh tokens.
-
-Refresh rotation is the security-critical bit: on every refresh we (1) look up the
-presented token by its hash, (2) reject it if missing / revoked / expired, (3)
-revoke that exact row, and (4) issue a brand-new refresh token. So a refresh token
-is good for exactly one use; replaying a stolen one fails because the legitimate
-client already rotated it (or, if the attacker rotates first, the legitimate
-client's next refresh fails and the theft surfaces).
-"""
 from __future__ import annotations
 
 import uuid
@@ -26,19 +15,7 @@ _settings = get_settings()
 
 async def resolve_referrer(db: AsyncSession, raw: str | None,
                            new_username: str | None = None) -> str | None:
-    """`?ref=<username>` orqali kelgan taklif havolasi — kim taklif qilgan.
-
-    NEGA ALOHIDA FUNKSIYA, `password_auth.py` YOKI `invites.py` ICHIDA
-    EMAS. Ikkalasi ham yangi hisob yaratadi va ikkalasiga ham referral
-    kerak, lekin `password_auth.py` allaqachon `invites.py` dan import
-    qiladi (`normalize_code`) — agar bu funksiya o'sha ikkitadan birida
-    tursa, ikkinchisi uni import qilishga uringanda AYLANMA IMPORT
-    (circular import) hosil bo'lardi. `services/` neytral qatlam.
-
-    Topilmasa yoki o'z-o'ziga taklif bo'lsa `None` qaytaradi — ro'yxatdan
-    o'tishni HECH QACHON to'xtatmaydi, chunki bu shunchaki statistika,
-    invite_code kabi majburiy to'siq emas.
-    """
+   
     name = (raw or "").strip()
     if not name or len(name) > 20:
         return None
@@ -58,7 +35,7 @@ async def get_or_create_user(
     region_code: str | None = None,
     grade: int | None = None,
 ) -> User:
-    # kirishni bloklamaydi, shunchaki olinmaydi.
+ 
     display_name = names.safe_name(display_name) or None
 
     user = (await db.execute(
@@ -128,7 +105,6 @@ async def rotate_refresh_token(db: AsyncSession, raw_refresh: str) -> TokenPair:
     return pair
 
 async def revoke_refresh_token(db: AsyncSession, raw_refresh: str) -> None:
-    """Logout: best-effort revoke. A token that isn't found is already gone."""
     token_hash = security.hash_token(raw_refresh)
     row = (await db.execute(
         select(RefreshToken).where(RefreshToken.token_hash == token_hash)
