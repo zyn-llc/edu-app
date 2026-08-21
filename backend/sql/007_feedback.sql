@@ -1,7 +1,3 @@
--- =============================================================================
---  007_feedback.sql — in-app user feedback / support messages.
---    docker compose exec -T db psql -U edu -d edu < sql/007_feedback.sql
--- =============================================================================
 CREATE TABLE IF NOT EXISTS feedback (
     id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id      uuid REFERENCES users(id) ON DELETE SET NULL,  -- NULL = guest
