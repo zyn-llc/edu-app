@@ -1,0 +1,66 @@
+name: topagon
+description: "Topag'on — maktab o'quvchilari uchun quiz va musobaqa ilovasi (O'zbekiston)."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
+  # state management
+  flutter_riverpod: ^2.5.1
+
+  # networking (typed client against the OpenAPI contract)
+  dio: ^5.4.0
+
+  # navigation
+  go_router: ^14.0.0
+
+  # local persistence (settings) — works on mobile and web
+  shared_preferences: ^2.3.0
+
+  # auth tokens in Android Keystore / iOS Keychain (not plaintext prefs)
+  flutter_secure_storage: ^9.2.2
+
+  # opens the support Telegram link from Settings
+  url_launcher: ^6.3.0
+
+  # type family that covers Uzbek Latin/Cyrillic + Russian
+  google_fonts: ^6.2.1
+
+  # animations / game-feel (mascot + celebrations)
+  rive: ^0.13.1
+  lottie: ^3.1.0
+
+  # Deklarativ mikro-animatsiyalar: ro'yxatlarga ketma-ket (staggered) kirish,
+  # fade/slide/shimmer. Qo'lda `AnimationController` yozishdan ko'ra ancha kam
+  # kod va har bir ekranda bir xil ritm beradi.
+  flutter_animate: ^4.5.0
+
+  # sound effects (reward / error)
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true # enables gen-l10n from l10n.yaml
+
+  # DIQQAT: bu yerda sanalgan har bir papka diskda MAVJUD bo'lishi shart,
+  # aks holda `flutter pub get` "unable to find directory entry" bilan yiqiladi.
+  # `assets/subjects/` shu sababli olib tashlandi — fan rasmlari CDN'dan
+  # (`resolveImage`) keladi, lokal asset emas.
+  assets:
+    - assets/logo.png
+    - assets/mascot/
+    - assets/sounds/

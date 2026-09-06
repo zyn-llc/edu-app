@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="theme-color" content="#F8721C">
+  <meta property="og:title" content="Topag‘on">
+  <meta property="og:description" content="5–11-sinf o‘quvchilari uchun bilim musobaqasi.">
+  <meta property="og:type" content="website">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Topag‘on — O‘zbekiston maktab o‘quvchilari uchun bilim musobaqasi. 5–11-sinf, 17 000+ savol.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Topag‘on">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Topag‘on — bilim musobaqasi</title>
+  <link rel="manifest" href="manifest.json">
+<style>
+    /* Yuklanish ekrani.
+       Flutter `main.dart.js` ni yuklab, ishga tushirguncha 1–3 soniya
+       o'tadi. Usiz foydalanuvchi BO'SH OQ EKRANNI ko'radi va sekin
+       tarmoqda ilova ochilmadi deb o'ylaydi. Bu ekran brend rangida va
+       Flutter belgisi umuman yo'q. */
+    html, body { margin: 0; height: 100%; background: #F8F9FA; }
+    #boot {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      background: #F8F9FA;
+      font-family: system-ui, -apple-system, sans-serif;
+      transition: opacity .3s ease;
+    }
+    #boot.gone { opacity: 0; pointer-events: none; }
+    #boot .mark {
+      width: 72px; height: 72px; border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #boot .mark img { width: 100%; height: 100%; object-fit: cover; }
+    #boot .name {
+      font-size: 15px; letter-spacing: .12em; text-transform: uppercase;
+      color: #6B7280;
+    }
+    #boot .bar {
+      width: 120px; height: 3px; border-radius: 2px;
+      background: #E7EAEE; overflow: hidden;
+    }
+    #boot .bar i {
+      display: block; width: 40%; height: 100%; background: #F8721C;
+      animation: slide 1.1s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #boot .bar i { animation: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <!-- Flutter yuklanguncha statik rasm ko'rsatiladi (JS'ga bog'liq
+         emas) — shuning uchun `icons/Icon-192.png`, Flutter asset bundle
+         emas: bu ekran Flutter ishga tushishidan OLDIN chiziladi. -->
+    <div class="mark"><img src="icons/Icon-192.png" alt="Topag'on" width="72" height="72"></div>
+    <div class="name">Topag&#8216;on</div>
+    <div class="bar"><i></i></div>
+  </div>
+
+  <!-- DIQQAT: build `--pwa-strategy=none` bilan qilinadi, ya'ni bu skript
+       service worker'ni ro'yxatdan O'TKAZMAYDI. Sabab va tafsilotlar:
+       `web/flutter_service_worker.js` faylining boshidagi izohda. -->
+  <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // Flutter birinchi kadrni chizganda `flt-glass-pane` (yoki `flutter-view`)
+    // paydo bo'ladi. Shuni kuzatib, yuklanish ekranini olib tashlaymiz.
+    // Vaqt bo'yicha o'chirish ishonchsiz: sekin tarmoqda erta ketadi.
+    (function () {
+      var boot = document.getElementById('boot');
+      if (!boot) return;
+      function hide() {
+        boot.classList.add('gone');
+        setTimeout(function () { boot.remove(); }, 350);
+      }
+      var obs = new MutationObserver(function () {
+        if (document.querySelector('flt-glass-pane, flutter-view')) {
+          obs.disconnect();
+          hide();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+      // Zaxira: 15 soniyadan keyin baribir olib tashlaymiz, aks holda
+      // ilova ishga tushmasa ekran abadiy qolib ketadi.
+      setTimeout(function () { obs.disconnect(); hide(); }, 15000);
+    })();
+  </script>
+</body>
+</html>

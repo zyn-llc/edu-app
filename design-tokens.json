@@ -1,0 +1,52 @@
+{
+  "$description": "Design tokens for the edu-platform app. Import into Figma via Tokens Studio; the Flutter theme in lib/theme mirrors these exactly. Two modes: light and dark. Subject colors are ACCENT only (covers, chips, progress) — never UI chrome.",
+  "brand": {
+    "primary":        { "$type": "color", "light": "#F8721C", "dark": "#FF8A3D" },
+    "primaryPressed": { "$type": "color", "light": "#E0590A", "dark": "#E9762B" },
+    "primaryTint":    { "$type": "color", "light": "#FFF1E6", "dark": "#33241A" },
+    "onPrimary":      { "$type": "color", "light": "#FFFFFF", "dark": "#1A1206" }
+  },
+  "neutral": {
+    "background": { "$type": "color", "light": "#FBF7F2", "dark": "#131110" },
+    "surface":    { "$type": "color", "light": "#FFFFFF", "dark": "#1E1A17" },
+    "surfaceAlt": { "$type": "color", "light": "#F6EFE6", "dark": "#262019" },
+    "hairline":   { "$type": "color", "light": "#F0E7DC", "dark": "#312A24" },
+    "ink":        { "$type": "color", "light": "#1C1A17", "dark": "#F3EEE7" },
+    "muted":      { "$type": "color", "light": "#8A837A", "dark": "#A39A8E" },
+    "faint":      { "$type": "color", "light": "#B8AEA2", "dark": "#5E564C" }
+  },
+  "subject": {
+    "$description": "accent per subject — used on covers, identity chips, progress fill only",
+    "geografiya":        { "$type": "color", "light": "#2FA36B", "dark": "#37B97D" },
+    "jahon_tarixi":      { "$type": "color", "light": "#D9962A", "dark": "#E8A53B" },
+    "ozbekiston_tarixi": { "$type": "color", "light": "#C0492F", "dark": "#D55A3F" },
+    "matematika":        { "$type": "color", "light": "#2F6FB0", "dark": "#4A8BD0" },
+    "geometriya":        { "$type": "color", "light": "#6A53C7", "dark": "#8470DE" },
+    "fizika":            { "$type": "color", "light": "#1E9E8F", "dark": "#2BB6A6" },
+    "kimyo":             { "$type": "color", "light": "#C7508A", "dark": "#DC66A0" },
+    "ona_tili":          { "$type": "color", "light": "#E0653B", "dark": "#F07A50" },
+    "biologiya":         { "$type": "color", "light": "#5AA02C", "dark": "#6FB83E" },
+    "huquq":             { "$type": "color", "light": "#3E5168", "dark": "#56697F" }
+  },
+  "radius": {
+    "chip":   { "$type": "dimension", "$value": "12" },
+    "icon":   { "$type": "dimension", "$value": "13" },
+    "tile":   { "$type": "dimension", "$value": "18" },
+    "button": { "$type": "dimension", "$value": "16" },
+    "sheet":  { "$type": "dimension", "$value": "26" }
+  },
+  "space": {
+    "xs": { "$type": "dimension", "$value": "8" },
+    "sm": { "$type": "dimension", "$value": "12" },
+    "md": { "$type": "dimension", "$value": "16" },
+    "lg": { "$type": "dimension", "$value": "20" }
+  },
+  "type": {
+    "family": { "$type": "fontFamily", "$value": "Manrope" },
+    "h1":   { "$type": "typography", "size": 22, "weight": 600 },
+    "h2":   { "$type": "typography", "size": 18, "weight": 500 },
+    "body": { "$type": "typography", "size": 14, "weight": 400 },
+    "label":{ "$type": "typography", "size": 13, "weight": 500 },
+    "caption": { "$type": "typography", "size": 12, "weight": 400 }
+  }
+}
