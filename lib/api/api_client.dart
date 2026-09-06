@@ -16,10 +16,15 @@ String _resolveApiBaseUrl() {
   
   if (kReleaseMode && !kMockMode) {
     throw StateError(
+      // `app.topagon.uz` bu yerda 2026-09-06 gacha turgan edi — o'sha
+      // subdomen endi MAVJUD EMAS (A-yozuvi yo'q). Ilova
+      // `https://topagon.uz/app/` da. `--base-href=/app/` ham shart, aks
+      // holda brauzer `main.dart.js` ni ildizdan qidiradi va oq ekran
+      // chiqadi.
       'API_BASE_URL berilmagan. Release build shunday chiqarilishi kerak:\n'
-      '  flutter build web --release '
+      '  flutter build web --release --base-href=/app/ '
       '--dart-define=API_BASE_URL=https://api.topagon.uz '
-      '--dart-define=WEB_BASE_URL=https://app.topagon.uz',
+      '--dart-define=WEB_BASE_URL=https://topagon.uz/app',
     );
   }
   return kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';

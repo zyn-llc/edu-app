@@ -8,16 +8,21 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/spacing.dart';
 
-const webBaseUrl = String.fromEnvironment('WEB_BASE_URL',
-    defaultValue: 'https://topagon.uz');
-
-//
-// shakli bor:
-//
-//
-
-/// Bellashuvga qo'shilish havolasi: `https://topagon.uz/?join=ABC123`.
+/// Ilovaning veb manzili — taklif havolalari SHU YERDAN quriladi.
 ///
+/// `/app` QISMI MAJBURIY. Ilova `https://topagon.uz/app/` da xizmat qiladi;
+/// `https://topagon.uz/` esa reklama sahifasi (landing). Bu yerda domen
+/// ildizi turgani uchun har bir taklif havolasi odamni landing'ga olib
+/// borardi — `pendingJoinCodeFromUrl()` u yerda umuman ishga tushmaydi,
+/// ya'ni `?join=` kodi jimgina yo'qolardi.
+///
+/// DIQQAT: `deploy.sh` bu qiymatni `--dart-define=WEB_BASE_URL` bilan
+/// USTIDAN YOZADI. Bittasini o'zgartirsang, ikkinchisini ham — aks holda
+/// bu yerdagi standart qiymat ishlab chiqarish build'iga umuman tushmaydi.
+const webBaseUrl = String.fromEnvironment('WEB_BASE_URL',
+    defaultValue: 'https://topagon.uz/app');
+
+/// Bellashuvga qo'shilish havolasi: `https://topagon.uz/app/?join=ABC123`.
 String challengeJoinLink(String code) => '$webBaseUrl/?join=$code';
 
 String challengeShareMessage(L10n l, String code) =>

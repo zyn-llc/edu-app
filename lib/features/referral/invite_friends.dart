@@ -11,8 +11,11 @@ import '../../theme/app_colors.dart';
 import '../../theme/spacing.dart';
 import '../challenges/challenge_invite.dart' show webBaseUrl;
 
-/// `https://topagon.uz/?ref=<username>`.
+/// `https://topagon.uz/app/?ref=<username>`.
 ///
+/// `webBaseUrl` ilovaning `/app/` manzilini beradi (`challenge_invite.dart`).
+/// Ilgari u domen ildiziga ishora qilardi va bu havola ham, bellashuv
+/// havolasi ham landing sahifasiga tushib, `?ref=` jimgina yo'qolardi.
 String friendInviteLink(String? username) =>
     (username != null && username.isNotEmpty)
         ? '$webBaseUrl/?ref=$username'
