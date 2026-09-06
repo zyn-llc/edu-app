@@ -16,10 +16,13 @@ import '../challenges/challenge_invite.dart' show webBaseUrl;
 /// `webBaseUrl` ilovaning `/app/` manzilini beradi (`challenge_invite.dart`).
 /// Ilgari u domen ildiziga ishora qilardi va bu havola ham, bellashuv
 /// havolasi ham landing sahifasiga tushib, `?ref=` jimgina yo'qolardi.
+/// Oxiridagi `/` MAJBURIY: `https://topagon.uz/app` (slashsiz) nginx'da
+/// 404 qaytaradi va `/app/` ga yo'naltirmaydi. Foydalanuvchi nomi yo'q
+/// bo'lganda ilgari shu yalang'och manzil qaytarilardi.
 String friendInviteLink(String? username) =>
     (username != null && username.isNotEmpty)
         ? '$webBaseUrl/?ref=$username'
-        : webBaseUrl;
+        : '$webBaseUrl/';
 
 ///
 /// xuddi `pendingJoinCodeFromUrl()` kabi.
