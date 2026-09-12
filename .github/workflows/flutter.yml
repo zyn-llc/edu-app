@@ -1,0 +1,46 @@
+# Analyze + test the Flutter app on every push.
+#
+# Why this exists: there is no Flutter SDK on the machine this branch is
+# edited from, so changes were landing unverified. `deploy.sh app` does run
+# `flutter analyze` and aborts the deploy on error, but that is far too late
+# — it fails in front of a deploy instead of on the commit that broke it.
+#
+# This branch (`mobile-current`) has the app at the repository root. On
+# `main` the app lives under `mobile/`, so this workflow deliberately does
+# not run there.
+name: flutter
+
+on:
+  push:
+    branches: [mobile-current]
+  pull_request:
+    branches: [mobile-current]
+  workflow_dispatch:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # `channel: stable` on purpose, not a pinned version: the code already
+      # uses APIs that only exist in recent Flutter (for example
+      # `DropdownButtonFormField.initialValue`), so an old pin would fail for
+      # reasons unrelated to the change under test.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+
+      - run: flutter pub get
+
+      # `lib/l10n/app_localizations*.dart` is generated and gitignored, so it
+      # must be produced before analyze, or every `L10n.of(context)` call is
+      # an undefined reference.
+      - run: flutter gen-l10n
+
+      - run: flutter analyze
+
+      - run: flutter test
