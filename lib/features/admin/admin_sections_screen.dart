@@ -2,91 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../api/api_client.dart';
 import '../../auth/auth_controller.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/geo_picker.dart';
-import '../geo/geo_data.dart';
+import 'admin_section_detail_screen.dart';
+import 'admin_sections_data.dart';
 
 /// Admin: live sections list + the "Yangi sinov" creation modal.
 ///
-/// Scope is deliberately narrow — enough to create a section with an optional
-/// fixed school, which is what migration 040 added. Blocks, preview, publish
-/// and the participation report belong to the live-sections rebuild
-/// (MOBILE_ARCHITECTURE.md §8).
+/// Creating a section is only the first step — it lands as a `draft` and
+/// cannot be joined until it has at least one block and has been published.
+/// That happens on [AdminSectionDetailScreen], which a row opens.
 ///
 /// Uzbek-only strings: staff screen, same as the rest of the admin surface.
-
-class AdminSection {
-  final String id;
-  final String title;
-  final String status;
-  final DateTime startAt;
-  final DateTime endAt;
-  final String? schoolId;
-  final GeoSchool? school;
-
-  const AdminSection({
-    required this.id,
-    required this.title,
-    required this.status,
-    required this.startAt,
-    required this.endAt,
-    required this.schoolId,
-    required this.school,
-  });
-
-  factory AdminSection.fromJson(Map<String, dynamic> j) => AdminSection(
-        id: j['id'] as String,
-        title: j['title'] as String,
-        status: j['status'] as String? ?? 'draft',
-        startAt: DateTime.parse(j['start_at'] as String).toLocal(),
-        endAt: DateTime.parse(j['end_at'] as String).toLocal(),
-        schoolId: j['school_id'] as String?,
-        school: j['school'] == null
-            ? null
-            : GeoSchool.fromJson(j['school'] as Map<String, dynamic>),
-      );
-}
-
-class AdminSectionsRepository {
-  final Ref ref;
-  AdminSectionsRepository(this.ref);
-
-  Future<List<AdminSection>> list() async {
-    final res = await ref.read(dioProvider).get('/v1/admin/live-sections');
-    final items = (res.data as Map<String, dynamic>)['items'] as List;
-    return [
-      for (final e in items) AdminSection.fromJson(e as Map<String, dynamic>)
-    ];
-  }
-
-  /// `schoolId == null` -> open to every school. §8: omit or send null.
-  Future<AdminSection> create({
-    required String title,
-    required DateTime startAt,
-    required DateTime endAt,
-    String? schoolId,
-  }) async {
-    final res = await ref.read(dioProvider).post('/v1/admin/live-sections', data: {
-      'title': title,
-      'start_at': startAt.toUtc().toIso8601String(),
-      'end_at': endAt.toUtc().toIso8601String(),
-      if (schoolId != null) 'school_id': schoolId,
-    });
-    return AdminSection.fromJson(res.data as Map<String, dynamic>);
-  }
-}
-
-final adminSectionsRepositoryProvider =
-    Provider<AdminSectionsRepository>((ref) => AdminSectionsRepository(ref));
-
-final adminSectionsProvider = FutureProvider<List<AdminSection>>((ref) async {
-  ref.watch(authControllerProvider);
-  return ref.read(adminSectionsRepositoryProvider).list();
-});
-
 class AdminSectionsScreen extends ConsumerWidget {
   const AdminSectionsScreen({super.key});
 
@@ -98,8 +27,19 @@ class AdminSectionsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Jonli sinovlar')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final created = await NewSectionSheet.show(context);
-          if (created == true) ref.invalidate(adminSectionsProvider);
+          final createdId = await NewSectionSheet.show(context);
+          if (createdId == null) return;
+          ref.invalidate(adminSectionsProvider);
+          if (!context.mounted) return;
+          // Straight into the detail screen: a section with no blocks cannot
+          // be published, so leaving the admin on the list would look like
+          // the job was finished when it was not.
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminSectionDetailScreen(sectionId: createdId),
+            ),
+          );
         },
         icon: const Icon(Icons.add),
         label: const Text('Yangi sinov'),
@@ -123,26 +63,34 @@ class AdminSectionsScreen extends ConsumerWidget {
                   message: '«Yangi sinov» tugmasi bilan birinchisini yarating.',
                 ),
               )
-            : ListView.builder(
-                padding: Spacing.page(context),
-                itemCount: rows.length,
-                itemBuilder: (_, i) {
-                  final s = rows[i];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: Spacing.sm),
-                    child: ListTile(
-                      title: Text(s.title),
-                      subtitle: Text(
-                        s.school == null
-                            ? '${s.status} · barcha maktablar'
-                            : '${s.status} · ${s.school!.label}',
+            : RefreshIndicator(
+                onRefresh: () async => ref.invalidate(adminSectionsProvider),
+                child: ListView.builder(
+                  padding: Spacing.page(context),
+                  itemCount: rows.length,
+                  itemBuilder: (_, i) {
+                    final s = rows[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: Spacing.sm),
+                      child: ListTile(
+                        title: Text(s.title),
+                        subtitle: Text(
+                          s.school == null
+                              ? '${s.status} · barcha maktablar'
+                              : '${s.status} · ${s.school!.label}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AdminSectionDetailScreen(sectionId: s.id),
+                          ),
+                        ),
                       ),
-                      trailing: s.school == null
-                          ? null
-                          : const Icon(Icons.school_outlined),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
       ),
     );
@@ -155,8 +103,9 @@ class AdminSectionsScreen extends ConsumerWidget {
 class NewSectionSheet extends ConsumerStatefulWidget {
   const NewSectionSheet({super.key});
 
-  static Future<bool?> show(BuildContext context) =>
-      showModalBottomSheet<bool>(
+  /// Returns the new section's id, or null when cancelled.
+  static Future<String?> show(BuildContext context) =>
+      showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
@@ -212,13 +161,13 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
       _error = null;
     });
     try {
-      await ref.read(adminSectionsRepositoryProvider).create(
+      final created = await ref.read(adminSectionsRepositoryProvider).create(
             title: _titleCtrl.text.trim(),
             startAt: _start!,
             endAt: _end!,
             schoolId: _schoolId, // null -> open to every school
           );
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, created.id);
     } on DioException catch (e) {
       final data = e.response?.data;
       setState(() => _error = data is Map && data['detail'] is String
@@ -276,8 +225,8 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
             // Left empty = open competition, exactly as before this change.
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Maktab (ixtiyoriy)',
-                  style: theme.textTheme.labelLarge),
+              child:
+                  Text('Maktab (ixtiyoriy)', style: theme.textTheme.labelLarge),
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -300,7 +249,8 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: _busy ? null : () => setState(() => _schoolId = null),
+                  onPressed:
+                      _busy ? null : () => setState(() => _schoolId = null),
                   icon: const Icon(Icons.clear, size: 16),
                   label: const Text('Maktabni olib tashlash'),
                 ),
@@ -319,6 +269,12 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
                       width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Yaratish'),
+            ),
+            const Gap.sm(),
+            Text(
+              'Yaratilgandan keyin blok qo\'shib, e\'lon qilish kerak — '
+              'shundagina o\'quvchilar ro\'yxatdan o\'ta oladi.',
+              style: theme.textTheme.bodySmall,
             ),
           ],
         ),
