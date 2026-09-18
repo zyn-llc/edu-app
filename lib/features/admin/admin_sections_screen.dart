@@ -24,7 +24,10 @@ class AdminSectionsScreen extends ConsumerWidget {
     final async = ref.watch(adminSectionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Jonli sinovlar')),
+      // "(boshqaruv)" ATAYLAB: o'quvchi ekrani ham "Jonli sinovlar" deb
+      // nomlanadi va ikkalasi skrinshotda ajralmasdi — admin o'quvchi
+      // ro'yxatiga qarab "o'chirish tugmasi yo'q" deb o'ylagan edi.
+      appBar: AppBar(title: const Text('Jonli sinovlar (boshqaruv)')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final createdId = await NewSectionSheet.show(context);
