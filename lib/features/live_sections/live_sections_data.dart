@@ -159,15 +159,31 @@ class LiveSectionDetail {
 //  Join gating — PURE. Unit-tested in test/live_section_join_test.dart.        //
 // --------------------------------------------------------------------------- //
 
+/// Collapse whitespace the same way the server's `normalize_geo_name` does,
+/// so what the student sees is what gets stored and matched.
+String normalizeGeoName(String? raw) => (raw ?? '').trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+
 /// Which fields the join form must collect for one section.
 ///
-/// The rule (§8): mahalla is always required; school is required only when
-/// the section has no fixed school. When it does, the server writes its own
-/// school and ignores anything the client sends — so the client must not
-/// send one at all.
+/// TYPED, NOT PICKED (2026-09-19). This used to collect `school_id` and
+/// `mahalla_id` from cascading pickers. The reference tables turned out to
+/// be empty in production — 14 regions, zero districts, zero mahallas, zero
+/// schools — so the cascade dead-ended on "Bu viloyat uchun tumanlar hali
+/// kiritilmagan" and nobody could register for anything at all.
+///
+/// The student now types the district, the mahalla and the school number.
+/// The server turns that text into reference rows (find-or-create, matched
+/// case-insensitively) and still stores IDs on the registration, so the
+/// hokimiyat report keeps working.
+///
+/// The region stays a dropdown: all 14 exist, and free-typing a region
+/// would fracture the top level of the report for no gain.
 class JoinRequirements {
-  final bool needsSchool;
-  final bool needsMahalla;
+  /// The section has no fixed school, so the student must say which school.
+  final bool needsSchoolNumber;
 
   /// 041. True when the section limits itself to named classes — then the
   /// class is required and must come from that list. Without a limit it
@@ -175,8 +191,7 @@ class JoinRequirements {
   final bool needsClass;
 
   const JoinRequirements({
-    required this.needsSchool,
-    required this.needsMahalla,
+    required this.needsSchoolNumber,
     this.needsClass = false,
   });
 
@@ -185,30 +200,43 @@ class JoinRequirements {
     bool classRestricted = false,
   }) =>
       JoinRequirements(
-        needsSchool: !schoolFixed,
-        needsMahalla: true,
+        needsSchoolNumber: !schoolFixed,
         needsClass: classRestricted,
       );
 
-  bool isComplete({String? schoolId, String? mahallaId, String? classLabel}) =>
+  bool isComplete({
+    String? regionCode,
+    String? districtName,
+    String? mahallaName,
+    int? schoolNumber,
+    String? classLabel,
+  }) =>
       missing(
-        schoolId: schoolId,
-        mahallaId: mahallaId,
+        regionCode: regionCode,
+        districtName: districtName,
+        mahallaName: mahallaName,
+        schoolNumber: schoolNumber,
         classLabel: classLabel,
       ).isEmpty;
 
   /// Field names in form order — the same order the server reports them in
   /// `missing_fields`, so the highlighting lines up.
   List<String> missing({
-    String? schoolId,
-    String? mahallaId,
+    String? regionCode,
+    String? districtName,
+    String? mahallaName,
+    int? schoolNumber,
     String? classLabel,
   }) =>
       [
-        if (needsSchool && (schoolId == null || schoolId.isEmpty)) 'school_id',
-        if (needsMahalla && (mahallaId == null || mahallaId.isEmpty))
-          'mahalla_id',
-        // Same order the server reports them in, so the highlighting lines up.
+        if ((regionCode ?? '').trim().isEmpty) 'region_code',
+        // Two characters is the server's own CHECK; a one-letter "district"
+        // would just fill the reference tables with rubbish.
+        if (normalizeGeoName(districtName).length < 2) 'district_name',
+        if (normalizeGeoName(mahallaName).length < 2) 'mahalla_name',
+        if (needsSchoolNumber &&
+            !(schoolNumber != null && schoolNumber >= 1 && schoolNumber <= 9999))
+          'school_number',
         if (needsClass && (classLabel == null || classLabel.trim().isEmpty))
           'class_label',
       ];
@@ -216,20 +244,25 @@ class JoinRequirements {
 
 /// Request body for `POST /v1/live-sections/{id}/register`.
 ///
-/// `school_id` is omitted when the section has a fixed school: sending it
-/// would be ignored server-side anyway, and leaving it out keeps the client
-/// honest about who owns that value.
+/// `school_number` is omitted when the section has a fixed school: the
+/// server writes its own school and ignores anything sent here, so leaving
+/// it out keeps the client honest about who owns that value.
 Map<String, dynamic> buildRegisterBody({
   required bool schoolFixed,
-  String? schoolId,
-  String? mahallaId,
+  String? regionCode,
+  String? districtName,
+  String? mahallaName,
+  int? schoolNumber,
   String? classLabel,
 }) {
   final label = classLabel?.trim() ?? '';
+  final district = normalizeGeoName(districtName);
+  final mahalla = normalizeGeoName(mahallaName);
   return {
-    if (!schoolFixed && schoolId != null && schoolId.isNotEmpty)
-      'school_id': schoolId,
-    if (mahallaId != null && mahallaId.isNotEmpty) 'mahalla_id': mahallaId,
+    if ((regionCode ?? '').isNotEmpty) 'region_code': regionCode,
+    if (district.isNotEmpty) 'district_name': district,
+    if (mahalla.isNotEmpty) 'mahalla_name': mahalla,
+    if (!schoolFixed && schoolNumber != null) 'school_number': schoolNumber,
     if (label.isNotEmpty) 'class_label': label.toUpperCase(),
   };
 }
@@ -324,16 +357,20 @@ class LiveSectionRepository {
   Future<RegisterResult> register(
     String id, {
     required bool schoolFixed,
-    String? schoolId,
-    String? mahallaId,
+    String? regionCode,
+    String? districtName,
+    String? mahallaName,
+    int? schoolNumber,
     String? classLabel,
   }) async {
     final res = await ref.read(dioProvider).post(
           '/v1/live-sections/$id/register',
           data: buildRegisterBody(
             schoolFixed: schoolFixed,
-            schoolId: schoolId,
-            mahallaId: mahallaId,
+            regionCode: regionCode,
+            districtName: districtName,
+            mahallaName: mahallaName,
+            schoolNumber: schoolNumber,
             classLabel: classLabel,
           ),
         );

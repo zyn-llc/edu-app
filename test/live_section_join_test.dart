@@ -1,11 +1,18 @@
-// Join-flow gating for live sections (backend migration 040).
+// Join-flow gating for live sections.
 //
-// The branch this locks down: a section with a FIXED school must not ask the
-// student for one, and must not send `school_id` — the server ignores it and
-// files the result under its own school. A section without one must ask, and
-// must block the button until both ids are chosen. Getting this wrong fails
-// silently: the student still joins, but under the wrong school, and it only
-// surfaces in the hokimiyat report.
+// Three rules are locked down here, each of which broke production once:
+//
+//   1. (040) A section with a FIXED school must not ask the student for one
+//      and must not send one — the server files the result under its own
+//      school. Getting this wrong fails silently: the student still joins,
+//      but under the wrong school, and it only surfaces in the hokimiyat
+//      report.
+//   2. (041) A section may limit itself to named classes. Then the class is
+//      required and must come from that list, so the form offers a dropdown
+//      rather than a text box that can only produce a 422.
+//   3. (2026-09-19) District, mahalla and school number are TYPED, not
+//      picked. The reference tables were empty in production, so the old
+//      cascade dead-ended and nobody could register at all.
 //
 // Ishga tushirish:
 //     flutter test test/live_section_join_test.dart
@@ -29,36 +36,77 @@ import 'package:topagon/theme/app_theme.dart';
 // --------------------------------------------------------------------------- //
 void main() {
   group('JoinRequirements', () {
-    test('fixed school: only mahalla is required', () {
-      final r = JoinRequirements.forSection(schoolFixed: true);
-      expect(r.needsSchool, isFalse);
-      expect(r.needsMahalla, isTrue);
-      expect(r.missing(mahallaId: 'm1'), isEmpty);
-      expect(r.isComplete(mahallaId: 'm1'), isTrue);
-    });
+    const full = (
+      region: 'toshkent_shahri',
+      district: 'Chilonzor',
+      mahalla: 'Qatortol',
+    );
 
-    test('fixed school: a missing mahalla is still reported', () {
-      final r = JoinRequirements.forSection(schoolFixed: true);
-      expect(r.missing(), ['mahalla_id']);
-      expect(r.isComplete(), isFalse);
-    });
-
-    test('fixed school: no school never counts as missing', () {
-      final r = JoinRequirements.forSection(schoolFixed: true);
-      expect(r.missing(schoolId: null, mahallaId: 'm1'), isEmpty);
-    });
-
-    test('open section: both are required, in form order', () {
+    test('open section: every field including the school number', () {
       final r = JoinRequirements.forSection(schoolFixed: false);
-      expect(r.missing(), ['school_id', 'mahalla_id']);
-      expect(r.isComplete(schoolId: 's1'), isFalse);
-      expect(r.isComplete(mahallaId: 'm1'), isFalse);
-      expect(r.isComplete(schoolId: 's1', mahallaId: 'm1'), isTrue);
+      expect(r.needsSchoolNumber, isTrue);
+      expect(r.missing(), [
+        'region_code',
+        'district_name',
+        'mahalla_name',
+        'school_number',
+      ]);
+      expect(
+        r.isComplete(
+            regionCode: full.region,
+            districtName: full.district,
+            mahallaName: full.mahalla,
+            schoolNumber: 5),
+        isTrue,
+      );
     });
 
-    test('empty strings count as unselected', () {
+    test('fixed school: the school number is never asked for', () {
+      final r = JoinRequirements.forSection(schoolFixed: true);
+      expect(r.needsSchoolNumber, isFalse);
+      expect(r.missing(), ['region_code', 'district_name', 'mahalla_name']);
+      expect(
+        r.isComplete(
+            regionCode: full.region,
+            districtName: full.district,
+            mahallaName: full.mahalla),
+        isTrue,
+      );
+    });
+
+    test('whitespace-only names do not count', () {
+      final r = JoinRequirements.forSection(schoolFixed: true);
+      expect(
+        r.missing(
+            regionCode: full.region, districtName: '   ', mahallaName: '  '),
+        ['district_name', 'mahalla_name'],
+      );
+    });
+
+    test('a one-letter district is rejected before it reaches the server', () {
+      // Two characters is the server's own CHECK; anything shorter would
+      // just fill the reference tables with rubbish.
+      final r = JoinRequirements.forSection(schoolFixed: true);
+      expect(
+        r.missing(
+            regionCode: full.region, districtName: 'C', mahallaName: 'Qq'),
+        ['district_name'],
+      );
+    });
+
+    test('school numbers outside the database CHECK are rejected', () {
       final r = JoinRequirements.forSection(schoolFixed: false);
-      expect(r.isComplete(schoolId: '', mahallaId: ''), isFalse);
+      for (final n in [0, -3, 10000]) {
+        expect(
+          r.missing(
+              regionCode: full.region,
+              districtName: full.district,
+              mahallaName: full.mahalla,
+              schoolNumber: n),
+          ['school_number'],
+          reason: 'school number $n is impossible',
+        );
+      }
     });
 
     // 041 -------------------------------------------------------------- //
@@ -66,8 +114,13 @@ void main() {
     test('no class limit: the class stays optional', () {
       final r = JoinRequirements.forSection(schoolFixed: true);
       expect(r.needsClass, isFalse);
-      expect(r.missing(mahallaId: 'm1'), isEmpty);
-      expect(r.isComplete(mahallaId: 'm1'), isTrue);
+      expect(
+        r.isComplete(
+            regionCode: full.region,
+            districtName: full.district,
+            mahallaName: full.mahalla),
+        isTrue,
+      );
     });
 
     test('class-restricted: the class is required, reported last', () {
@@ -75,52 +128,89 @@ void main() {
           schoolFixed: false, classRestricted: true);
       expect(r.needsClass, isTrue);
       // Same order as the server's missing_fields, so highlighting lines up.
-      expect(r.missing(), ['school_id', 'mahalla_id', 'class_label']);
-      expect(r.isComplete(schoolId: 's1', mahallaId: 'm1'), isFalse);
+      expect(r.missing(), [
+        'region_code',
+        'district_name',
+        'mahalla_name',
+        'school_number',
+        'class_label',
+      ]);
       expect(
-          r.isComplete(schoolId: 's1', mahallaId: 'm1', classLabel: '9-A'),
-          isTrue);
+        r.isComplete(
+            regionCode: full.region,
+            districtName: full.district,
+            mahallaName: full.mahalla,
+            schoolNumber: 5),
+        isFalse,
+      );
+      expect(
+        r.isComplete(
+            regionCode: full.region,
+            districtName: full.district,
+            mahallaName: full.mahalla,
+            schoolNumber: 5,
+            classLabel: '9-A'),
+        isTrue,
+      );
     });
+  });
 
-    test('class-restricted: whitespace is not a class', () {
-      final r = JoinRequirements.forSection(
-          schoolFixed: true, classRestricted: true);
-      expect(r.isComplete(mahallaId: 'm1', classLabel: '  '), isFalse);
+  group('normalizeGeoName', () {
+    test('collapses whitespace but keeps the display case', () {
+      // The server stores the display form and dedupes on lower(name), so
+      // the client must not lower-case it here.
+      expect(normalizeGeoName('  Chilonzor   5 '), 'Chilonzor 5');
+      expect(normalizeGeoName(null), '');
     });
   });
 
   group('buildRegisterBody', () {
-    test('fixed school: school_id is NOT sent even if the client has one', () {
+    test('fixed school: no school_number is sent even if one was typed', () {
       final body = buildRegisterBody(
-          schoolFixed: true, schoolId: 's-other', mahallaId: 'm1');
-      expect(body.containsKey('school_id'), isFalse);
-      expect(body['mahalla_id'], 'm1');
+          schoolFixed: true,
+          regionCode: 'toshkent_shahri',
+          districtName: 'Chilonzor',
+          mahallaName: 'Qatortol',
+          schoolNumber: 7);
+      expect(body.containsKey('school_number'), isFalse);
+      expect(body['district_name'], 'Chilonzor');
+      expect(body['mahalla_name'], 'Qatortol');
     });
 
-    test('open section: school_id is sent', () {
-      final body =
-          buildRegisterBody(schoolFixed: false, schoolId: 's1', mahallaId: 'm1');
-      expect(body['school_id'], 's1');
-      expect(body['mahalla_id'], 'm1');
+    test('open section: the school number is sent', () {
+      final body = buildRegisterBody(
+          schoolFixed: false,
+          regionCode: 'toshkent_shahri',
+          districtName: 'Chilonzor',
+          mahallaName: 'Qatortol',
+          schoolNumber: 5);
+      expect(body['school_number'], 5);
+      expect(body['region_code'], 'toshkent_shahri');
+    });
+
+    test('names are whitespace-normalised, not lower-cased', () {
+      final body = buildRegisterBody(
+          schoolFixed: true,
+          regionCode: 'toshkent_shahri',
+          districtName: '  Chilonzor   tumani ',
+          mahallaName: ' Qatortol  ');
+      expect(body['district_name'], 'Chilonzor tumani');
+      expect(body['mahalla_name'], 'Qatortol');
     });
 
     test('class label is trimmed, upper-cased, and dropped when blank', () {
       expect(
-        buildRegisterBody(
-            schoolFixed: true, mahallaId: 'm1', classLabel: ' 9a ')['class_label'],
+        buildRegisterBody(schoolFixed: true, classLabel: ' 9a ')['class_label'],
         '9A',
       );
       expect(
-        buildRegisterBody(
-            schoolFixed: true, mahallaId: 'm1', classLabel: '   '),
+        buildRegisterBody(schoolFixed: true, classLabel: '   '),
         isNot(contains('class_label')),
       );
     });
 
     test('no empty-string keys are ever sent', () {
-      final body =
-          buildRegisterBody(schoolFixed: false, schoolId: '', mahallaId: '');
-      expect(body, isEmpty);
+      expect(buildRegisterBody(schoolFixed: false), isEmpty);
     });
   });
 
@@ -136,25 +226,26 @@ void main() {
     test('parses missing_fields from a 422', () {
       final e = RegisterFieldError.fromDio(dio(422, {
         'title': 'Missing fields',
-        'missing_fields': ['school_id', 'mahalla_id'],
+        'missing_fields': ['district_name', 'mahalla_name'],
       }))!;
-      expect(e.isMissing('school_id'), isTrue);
-      expect(e.isMissing('mahalla_id'), isTrue);
+      expect(e.isMissing('district_name'), isTrue);
+      expect(e.isMissing('mahalla_name'), isTrue);
       expect(e.isStale, isFalse);
     });
 
-    test('invalid_fields marks the cache stale', () {
+    test('invalid_fields marks the value unusable', () {
       final e = RegisterFieldError.fromDio(dio(422, {
         'title': 'Invalid fields',
-        'invalid_fields': ['mahalla_id'],
+        'invalid_fields': ['region_code'],
       }))!;
-      expect(e.isInvalid('mahalla_id'), isTrue);
-      expect(e.isMissing('mahalla_id'), isFalse);
+      expect(e.isInvalid('region_code'), isTrue);
+      expect(e.isMissing('region_code'), isFalse);
       expect(e.isStale, isTrue);
     });
 
     test('other statuses are not field errors', () {
-      expect(RegisterFieldError.fromDio(dio(409, {'title': 'Registration closed'})),
+      expect(
+          RegisterFieldError.fromDio(dio(409, {'title': 'Registration closed'})),
           isNull);
       expect(RegisterFieldError.fromDio(dio(500, 'boom')), isNull);
     });
@@ -166,7 +257,7 @@ void main() {
   });
 
   // ------------------------------------------------------------------------- //
-  //  Widget: which pickers appear                                              //
+  //  Widget: which fields appear                                               //
   // ------------------------------------------------------------------------- //
   group('JoinSheet', () {
     LiveSectionDetail detail({
@@ -198,13 +289,15 @@ void main() {
           blocks: const [],
         );
 
-    Widget wrap(Widget child) => ProviderScope(
+    Widget wrap(Widget child, {List<GeoDistrict> districts = const []}) =>
+        ProviderScope(
           overrides: [
-            // The geo lists are overridden, so nothing touches the network or
-            // the auth/SharedPreferences chain.
-            regionsProvider.overrideWith(
-                (ref) => [Region('toshkent_shahri', 'Toshkent shahri', 'Ташкент')]),
-            districtsProvider.overrideWith((ref, arg) => const <GeoDistrict>[]),
+            // Nothing touches the network or the auth/SharedPreferences
+            // chain. `districts` is empty by default — that is exactly the
+            // production state this redesign exists for.
+            regionsProvider.overrideWith((ref) =>
+                [Region('toshkent_shahri', 'Toshkent shahri', 'Ташкент')]),
+            districtsProvider.overrideWith((ref, arg) => districts),
             mahallasProvider.overrideWith((ref, arg) => const <GeoMahalla>[]),
             schoolsProvider.overrideWith((ref, arg) => const <GeoSchool>[]),
           ],
@@ -222,46 +315,120 @@ void main() {
           ),
         );
 
-    testWidgets('fixed school: no school picker, mahalla picker shown',
+    testWidgets('open section: district, mahalla and school number are typed',
         (tester) async {
-      await tester.pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: true))));
-      await tester.pump();
-
-      expect(find.byKey(const Key('join-school-picker')), findsNothing);
-      expect(find.byKey(const Key('join-fixed-school')), findsOneWidget);
-      expect(find.byKey(const Key('join-mahalla-picker')), findsOneWidget);
-    });
-
-    testWidgets('fixed school: the school is shown read-only', (tester) async {
-      await tester.pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: true))));
-      await tester.pump();
-
-      expect(find.text('5-maktab'), findsOneWidget);
-      // No editable field carries it — it is a ListTile, not an input.
-      expect(find.widgetWithText(TextField, '5-maktab'), findsNothing);
-    });
-
-    testWidgets('open section: both pickers are shown', (tester) async {
       await tester
           .pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: false))));
       await tester.pump();
 
-      expect(find.byKey(const Key('join-school-picker')), findsOneWidget);
-      expect(find.byKey(const Key('join-mahalla-picker')), findsOneWidget);
+      expect(find.byKey(const Key('join-region')), findsOneWidget);
+      expect(find.byKey(const Key('join-district')), findsOneWidget);
+      expect(find.byKey(const Key('join-mahalla')), findsOneWidget);
+      expect(find.byKey(const Key('join-school-number')), findsOneWidget);
       expect(find.byKey(const Key('join-fixed-school')), findsNothing);
     });
 
-    testWidgets('join stays disabled until the required ids are chosen',
+    testWidgets('fixed school: shown read-only, no school number asked',
         (tester) async {
-      for (final fixed in [true, false]) {
-        await tester.pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: fixed))));
-        await tester.pump();
+      await tester
+          .pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: true))));
+      await tester.pump();
 
-        final button = tester
-            .widget<FilledButton>(find.byKey(const Key('join-submit')));
-        expect(button.onPressed, isNull,
-            reason: 'nothing selected yet (schoolFixed=$fixed)');
-      }
+      expect(find.byKey(const Key('join-fixed-school')), findsOneWidget);
+      expect(find.byKey(const Key('join-school-number')), findsNothing);
+      expect(find.text('5-maktab'), findsOneWidget);
+      // It is a ListTile, not an input — nothing editable carries it.
+      expect(find.widgetWithText(TextField, '5-maktab'), findsNothing);
+    });
+
+    testWidgets('an empty reference list still lets the form be filled in',
+        (tester) async {
+      // The regression this whole redesign is about: with zero districts the
+      // old cascade offered nothing and the button could never enable.
+      await tester.pumpWidget(wrap(
+        JoinSheet(
+          detail: detail(schoolFixed: true),
+          initialRegionCode: 'toshkent_shahri',
+        ),
+      ));
+      await tester.pump();
+
+      FilledButton submit() =>
+          tester.widget<FilledButton>(find.byKey(const Key('join-submit')));
+      expect(submit().onPressed, isNull);
+
+      await tester.enterText(find.byKey(const Key('join-district')), 'Chilonzor');
+      await tester.pump();
+      expect(submit().onPressed, isNull, reason: 'mahalla still empty');
+
+      await tester.enterText(find.byKey(const Key('join-mahalla')), 'Qatortol');
+      await tester.pump();
+
+      expect(submit().onPressed, isNotNull,
+          reason: 'typing alone must be enough to register');
+    });
+
+    testWidgets('open section: join stays blocked until a school number is in',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        JoinSheet(
+          detail: detail(schoolFixed: false),
+          initialRegionCode: 'toshkent_shahri',
+        ),
+      ));
+      await tester.pump();
+
+      FilledButton submit() =>
+          tester.widget<FilledButton>(find.byKey(const Key('join-submit')));
+
+      await tester.enterText(find.byKey(const Key('join-district')), 'Chilonzor');
+      await tester.enterText(find.byKey(const Key('join-mahalla')), 'Qatortol');
+      await tester.pump();
+      expect(submit().onPressed, isNull);
+
+      await tester.enterText(find.byKey(const Key('join-school-number')), '5');
+      await tester.pump();
+      expect(submit().onPressed, isNotNull);
+    });
+
+    testWidgets('known districts are offered as chips so spellings converge',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        JoinSheet(
+          detail: detail(schoolFixed: true),
+          initialRegionCode: 'toshkent_shahri',
+        ),
+        districts: const [
+          GeoDistrict(
+              id: 'd1', regionCode: 'toshkent_shahri', name: 'Chilonzor'),
+        ],
+      ));
+      await tester.pump();
+
+      final chip = find.widgetWithText(ActionChip, 'Chilonzor');
+      expect(chip, findsOneWidget);
+
+      await tester.tap(chip);
+      await tester.pump();
+
+      expect(
+        tester.widget<TextField>(find.byKey(const Key('join-district'))).controller!.text,
+        'Chilonzor',
+      );
+    });
+
+    testWidgets('no chips are shown when the reference list is empty',
+        (tester) async {
+      await tester.pumpWidget(wrap(
+        JoinSheet(
+          detail: detail(schoolFixed: true),
+          initialRegionCode: 'toshkent_shahri',
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.byKey(const Key('join-district-suggestions')), findsNothing);
+      expect(find.byType(ActionChip), findsNothing);
     });
 
     // 041 -------------------------------------------------------------- //
@@ -304,16 +471,14 @@ void main() {
       expect(find.text('10-A'), findsNothing);
     });
 
-    testWidgets('class-restricted: picking a class does not unlock join on '
-        'its own', (tester) async {
+    testWidgets('class-restricted: the class is one more gate, not a '
+        'replacement', (tester) async {
       await tester.pumpWidget(wrap(JoinSheet(
           detail: detail(schoolFixed: true, classes: const ['9-A']))));
       await tester.pump();
 
-      FilledButton submit() => tester
-          .widget<FilledButton>(find.byKey(const Key('join-submit')));
-
-      expect(submit().onPressed, isNull);
+      FilledButton submit() =>
+          tester.widget<FilledButton>(find.byKey(const Key('join-submit')));
 
       final picker = find.byKey(const Key('join-class-picker'));
       await tester.ensureVisible(picker);
@@ -322,8 +487,7 @@ void main() {
       await tester.tap(find.text('9-A').last);
       await tester.pumpAndSettle();
 
-      // The mahalla is still missing, so the button stays disabled — the
-      // class is simply one more gate, not a replacement for the others.
+      // Region, district and mahalla are still missing.
       expect(submit().onPressed, isNull);
     });
   });

@@ -519,5 +519,6 @@
   "liveSectionsSignInTitle": "Нужен вход",
   "liveSectionsSignInBody": "Чтобы участвовать в живом испытании, войдите в аккаунт.",
   "liveSectionTopics": "Темы",
+  "joinSchoolNumber": "Номер школы",
   "joinClassRequiredLabel": "Класс"
 }
