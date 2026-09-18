@@ -46,12 +46,22 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
   final _classCtrl = TextEditingController();
   String? _schoolId;
   String? _mahallaId;
+
+  /// Chosen from the dropdown when the section limits classes; the free-text
+  /// controller is used only when it does not.
+  String? _classPick;
   bool _busy = false;
   RegisterFieldError? _fieldError;
   String? _formError;
 
-  late final JoinRequirements _req =
-      JoinRequirements.forSection(schoolFixed: widget.detail.schoolFixed);
+  late final JoinRequirements _req = JoinRequirements.forSection(
+        schoolFixed: widget.detail.schoolFixed,
+        classRestricted: widget.detail.classes.isNotEmpty,
+      );
+
+  /// What actually goes to the server as `class_label`.
+  String? get _classLabel =>
+      widget.detail.classes.isNotEmpty ? _classPick : _classCtrl.text;
 
   @override
   void dispose() {
@@ -60,7 +70,12 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
   }
 
   bool get _canSubmit =>
-      !_busy && _req.isComplete(schoolId: _schoolId, mahallaId: _mahallaId);
+      !_busy &&
+      _req.isComplete(
+        schoolId: _schoolId,
+        mahallaId: _mahallaId,
+        classLabel: _classLabel,
+      );
 
   /// Inline text for one field: required (server said it was missing) or
   /// stale (the cached list offered something the server rejects).
@@ -84,7 +99,7 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
             schoolFixed: widget.detail.schoolFixed,
             schoolId: _schoolId,
             mahallaId: _mahallaId,
-            classLabel: _classCtrl.text,
+            classLabel: _classLabel,
           );
       ref.invalidate(liveSectionsProvider);
       ref.invalidate(liveSectionDetailProvider(widget.detail.id));
@@ -181,18 +196,38 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
             ),
             const Gap.md(),
 
-            TextField(
-              key: const Key('join-class-label'),
-              controller: _classCtrl,
-              enabled: !_busy,
-              maxLength: 20,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(
-                labelText: l.joinClassLabel,
-                hintText: '9-A',
-                counterText: '',
+            // 041. A section may be limited to named classes. Then the class
+            // is required and must come from that list, so a dropdown — a free
+            // text box would just produce a 422 the student cannot fix.
+            if (detail.classes.isNotEmpty)
+              DropdownButtonFormField<String>(
+                key: const Key('join-class-picker'),
+                initialValue: _classPick,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: l.joinClassRequiredLabel,
+                  errorText: _errorFor('class_label', l),
+                ),
+                items: [
+                  for (final c in detail.classes)
+                    DropdownMenuItem(value: c, child: Text(c)),
+                ],
+                onChanged:
+                    _busy ? null : (v) => setState(() => _classPick = v),
+              )
+            else
+              TextField(
+                key: const Key('join-class-label'),
+                controller: _classCtrl,
+                enabled: !_busy,
+                maxLength: 20,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: l.joinClassLabel,
+                  hintText: '9-A',
+                  counterText: '',
+                ),
               ),
-            ),
 
             if (_formError != null) ...[
               const Gap.sm(),

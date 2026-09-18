@@ -7,6 +7,7 @@ import '../../widgets/empty_state.dart';
 import '../quiz/quiz_data.dart';
 import '../subjects/subjects.dart';
 import 'admin_sections_data.dart';
+import 'admin_sections_screen.dart' show removeSection;
 
 /// Admin: one live section — blocks, bank check, publish.
 ///
@@ -111,6 +112,13 @@ class _AdminSectionDetailScreenState
           ));
         }
       });
+
+  Future<void> _remove(AdminSectionDetail s) async {
+    await removeSection(context, ref, s);
+    // Gone from the list either way (deleted or archived), so this screen
+    // has nothing left to show.
+    if (mounted) Navigator.pop(context);
+  }
 
   Future<void> _cancel() async {
     final ok = await showDialog<bool>(
@@ -231,6 +239,11 @@ class _AdminSectionDetailScreenState
                     icon: const Icon(Icons.block),
                     label: const Text('Bekor qilish'),
                   ),
+                TextButton.icon(
+                  onPressed: _busy ? null : () => _remove(s),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text("Olib tashlash"),
+                ),
               ],
             ),
             if (s.isDraft)
@@ -282,6 +295,13 @@ class _Header extends StatelessWidget {
                 Chip(
                   avatar: const Icon(Icons.school_outlined, size: 16),
                   label: Text(s.school?.label ?? 'Barcha maktablar'),
+                  visualDensity: VisualDensity.compact,
+                ),
+                Chip(
+                  avatar: const Icon(Icons.groups_outlined, size: 16),
+                  label: Text(s.classes.isEmpty
+                      ? 'Barcha sinflar'
+                      : s.classes.join(', ')),
                   visualDensity: VisualDensity.compact,
                 ),
               ],

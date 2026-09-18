@@ -628,5 +628,6 @@
   "joinFieldStale": "Bu qiymat endi mavjud emas — qaytadan tanlang",
   "liveSectionsSignInTitle": "Kirish kerak",
   "liveSectionsSignInBody": "Jonli sinovda qatnashish uchun hisobingizga kiring.",
-  "liveSectionTopics": "Mavzular"
+  "liveSectionTopics": "Mavzular",
+  "joinClassRequiredLabel": "Sinf"
 }

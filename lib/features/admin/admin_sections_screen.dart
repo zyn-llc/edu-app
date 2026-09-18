@@ -79,7 +79,17 @@ class AdminSectionsScreen extends ConsumerWidget {
                               ? '${s.status} · barcha maktablar'
                               : '${s.status} · ${s.school!.label}',
                         ),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: "Olib tashlash",
+                              onPressed: () => removeSection(context, ref, s),
+                            ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -118,6 +128,7 @@ class NewSectionSheet extends ConsumerStatefulWidget {
 
 class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
   final _titleCtrl = TextEditingController();
+  final _classesCtrl = TextEditingController();
   DateTime? _start;
   DateTime? _end;
   String? _schoolId;
@@ -127,8 +138,18 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
   @override
   void dispose() {
     _titleCtrl.dispose();
+    _classesCtrl.dispose();
     super.dispose();
   }
+
+  /// "9-a, 9b" -> ['9-A', '9B']. Upper-cased and de-duplicated here as well
+  /// as on the server, so the admin sees exactly what will be stored.
+  List<String> get _classes => _classesCtrl.text
+      .split(RegExp(r'[,;\n]+'))
+      .map((e) => e.trim().toUpperCase())
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .toList();
 
   bool get _valid =>
       _titleCtrl.text.trim().length >= 3 &&
@@ -166,6 +187,7 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
             startAt: _start!,
             endAt: _end!,
             schoolId: _schoolId, // null -> open to every school
+            classes: _classes, // empty -> open to every class
           );
       if (mounted) Navigator.pop(context, created.id);
     } on DioException catch (e) {
@@ -256,6 +278,38 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
                 ),
               ),
 
+            const Gap.md(),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text("Sinflar (ixtiyoriy)",
+                  style: theme.textTheme.labelLarge),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Masalan: 9-A, 9-B. Bo'sh qoldirilsa — hamma sinf qatnasha "
+                "oladi. To'ldirilsa, o'quvchi ro'yxatdan o'tishda shu "
+                "ro'yxatdan sinfini tanlaydi va boshqa sinf yozila olmaydi.",
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const Gap.sm(),
+            TextField(
+              controller: _classesCtrl,
+              enabled: !_busy,
+              decoration: const InputDecoration(
+                labelText: "Sinflar",
+                hintText: "9-A, 9-B",
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            if (_classes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: Spacing.xs),
+                child: Text("Tanlandi: ${_classes.join(', ')}",
+                    style: theme.textTheme.bodySmall),
+              ),
+
             if (_error != null) ...[
               const Gap.sm(),
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
@@ -280,6 +334,55 @@ class _NewSectionSheetState extends ConsumerState<NewSectionSheet> {
         ),
       ),
     );
+  }
+}
+
+/// Remove a section from the list.
+///
+/// The server decides delete-vs-archive (041); the dialog says so plainly,
+/// because "delete" on a finished competition would otherwise read as
+/// "throw the results away".
+Future<void> removeSection(
+    BuildContext context, WidgetRef ref, AdminSection s) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text("«${s.title}» olib tashlansinmi?"),
+      content: const Text(
+        "Hech kim ro'yxatdan o'tmagan qoralama butunlay o'chiriladi.\n\n"
+        "E'lon qilingan yoki ishtirokchisi bor sinov esa ARXIVLANADI — "
+        "ro'yxatdan yo'qoladi, lekin natijalar va statistika bazada qoladi.",
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Bekor")),
+        FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Olib tashlash")),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  try {
+    final r = await ref.read(adminSectionsRepositoryProvider).remove(s.id);
+    ref.invalidate(adminSectionsProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(r.deleted
+            ? "O'chirildi"
+            : "Arxivlandi — natijalar bazada saqlanib qoldi"),
+      ));
+    }
+  } on DioException catch (e) {
+    final data = e.response?.data;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(data is Map && data["detail"] is String
+            ? data["detail"] as String
+            : "Olib tashlanmadi"),
+      ));
+    }
   }
 }
 

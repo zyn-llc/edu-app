@@ -60,6 +60,33 @@ void main() {
       final r = JoinRequirements.forSection(schoolFixed: false);
       expect(r.isComplete(schoolId: '', mahallaId: ''), isFalse);
     });
+
+    // 041 -------------------------------------------------------------- //
+
+    test('no class limit: the class stays optional', () {
+      final r = JoinRequirements.forSection(schoolFixed: true);
+      expect(r.needsClass, isFalse);
+      expect(r.missing(mahallaId: 'm1'), isEmpty);
+      expect(r.isComplete(mahallaId: 'm1'), isTrue);
+    });
+
+    test('class-restricted: the class is required, reported last', () {
+      final r = JoinRequirements.forSection(
+          schoolFixed: false, classRestricted: true);
+      expect(r.needsClass, isTrue);
+      // Same order as the server's missing_fields, so highlighting lines up.
+      expect(r.missing(), ['school_id', 'mahalla_id', 'class_label']);
+      expect(r.isComplete(schoolId: 's1', mahallaId: 'm1'), isFalse);
+      expect(
+          r.isComplete(schoolId: 's1', mahallaId: 'm1', classLabel: '9-A'),
+          isTrue);
+    });
+
+    test('class-restricted: whitespace is not a class', () {
+      final r = JoinRequirements.forSection(
+          schoolFixed: true, classRestricted: true);
+      expect(r.isComplete(mahallaId: 'm1', classLabel: '  '), isFalse);
+    });
   });
 
   group('buildRegisterBody', () {
@@ -142,7 +169,11 @@ void main() {
   //  Widget: which pickers appear                                              //
   // ------------------------------------------------------------------------- //
   group('JoinSheet', () {
-    LiveSectionDetail detail({required bool schoolFixed}) => LiveSectionDetail(
+    LiveSectionDetail detail({
+      required bool schoolFixed,
+      List<String> classes = const [],
+    }) =>
+        LiveSectionDetail(
           id: 'sec-1',
           title: 'Matematika sinovi',
           description: null,
@@ -163,6 +194,7 @@ void main() {
                   name: null,
                 )
               : null,
+          classes: classes,
           blocks: const [],
         );
 
@@ -230,6 +262,69 @@ void main() {
         expect(button.onPressed, isNull,
             reason: 'nothing selected yet (schoolFixed=$fixed)');
       }
+    });
+
+    // 041 -------------------------------------------------------------- //
+
+    testWidgets('no class limit: the free-text class field is shown',
+        (tester) async {
+      await tester
+          .pumpWidget(wrap(JoinSheet(detail: detail(schoolFixed: true))));
+      await tester.pump();
+
+      expect(find.byKey(const Key('join-class-label')), findsOneWidget);
+      expect(find.byKey(const Key('join-class-picker')), findsNothing);
+    });
+
+    testWidgets('class-restricted: a dropdown replaces the free-text field',
+        (tester) async {
+      await tester.pumpWidget(wrap(JoinSheet(
+          detail: detail(schoolFixed: true, classes: const ['9-A', '9-B']))));
+      await tester.pump();
+
+      // A free text box here would only ever produce a 422 the student
+      // cannot act on, so it must be gone.
+      expect(find.byKey(const Key('join-class-label')), findsNothing);
+      expect(find.byKey(const Key('join-class-picker')), findsOneWidget);
+    });
+
+    testWidgets('class-restricted: the dropdown offers exactly the allowed '
+        'classes', (tester) async {
+      await tester.pumpWidget(wrap(JoinSheet(
+          detail: detail(schoolFixed: true, classes: const ['9-A', '9-B']))));
+      await tester.pump();
+
+      final picker = find.byKey(const Key('join-class-picker'));
+      await tester.ensureVisible(picker);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+
+      expect(find.text('9-A'), findsWidgets);
+      expect(find.text('9-B'), findsWidgets);
+      expect(find.text('10-A'), findsNothing);
+    });
+
+    testWidgets('class-restricted: picking a class does not unlock join on '
+        'its own', (tester) async {
+      await tester.pumpWidget(wrap(JoinSheet(
+          detail: detail(schoolFixed: true, classes: const ['9-A']))));
+      await tester.pump();
+
+      FilledButton submit() => tester
+          .widget<FilledButton>(find.byKey(const Key('join-submit')));
+
+      expect(submit().onPressed, isNull);
+
+      final picker = find.byKey(const Key('join-class-picker'));
+      await tester.ensureVisible(picker);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('9-A').last);
+      await tester.pumpAndSettle();
+
+      // The mahalla is still missing, so the button stays disabled — the
+      // class is simply one more gate, not a replacement for the others.
+      expect(submit().onPressed, isNull);
     });
   });
 }

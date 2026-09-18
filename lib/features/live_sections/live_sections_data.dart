@@ -55,6 +55,10 @@ class LiveSectionSummary {
   final bool schoolFixed;
   final GeoSchool? school;
 
+  /// 041. Empty = open to every class. Otherwise only these classes may
+  /// register, and the class becomes required.
+  final List<String> classes;
+
   const LiveSectionSummary({
     required this.id,
     required this.title,
@@ -68,7 +72,12 @@ class LiveSectionSummary {
     required this.isProctored,
     required this.schoolFixed,
     required this.school,
+    required this.classes,
   });
+
+  static List<String> classesOf(Map<String, dynamic> j) => [
+        for (final c in (j['classes'] as List? ?? const [])) c as String
+      ];
 
   factory LiveSectionSummary.fromJson(Map<String, dynamic> j) =>
       LiveSectionSummary(
@@ -88,6 +97,7 @@ class LiveSectionSummary {
         school: j['school'] == null
             ? null
             : GeoSchool.fromJson(j['school'] as Map<String, dynamic>),
+        classes: classesOf(j),
       );
 }
 
@@ -103,6 +113,7 @@ class LiveSectionDetail {
   final bool registered;
   final bool schoolFixed;
   final GeoSchool? school;
+  final List<String> classes;
   final List<LiveBlock> blocks;
 
   const LiveSectionDetail({
@@ -117,6 +128,7 @@ class LiveSectionDetail {
     required this.registered,
     required this.schoolFixed,
     required this.school,
+    required this.classes,
     required this.blocks,
   });
 
@@ -135,6 +147,7 @@ class LiveSectionDetail {
         school: j['school'] == null
             ? null
             : GeoSchool.fromJson(j['school'] as Map<String, dynamic>),
+        classes: LiveSectionSummary.classesOf(j),
         blocks: [
           for (final b in (j['blocks'] as List? ?? const []))
             LiveBlock.fromJson(b as Map<String, dynamic>)
@@ -156,20 +169,48 @@ class JoinRequirements {
   final bool needsSchool;
   final bool needsMahalla;
 
-  const JoinRequirements({required this.needsSchool, required this.needsMahalla});
+  /// 041. True when the section limits itself to named classes — then the
+  /// class is required and must come from that list. Without a limit it
+  /// stays optional, as it was before.
+  final bool needsClass;
 
-  factory JoinRequirements.forSection({required bool schoolFixed}) =>
-      JoinRequirements(needsSchool: !schoolFixed, needsMahalla: true);
+  const JoinRequirements({
+    required this.needsSchool,
+    required this.needsMahalla,
+    this.needsClass = false,
+  });
 
-  bool isComplete({String? schoolId, String? mahallaId}) =>
-      missing(schoolId: schoolId, mahallaId: mahallaId).isEmpty;
+  factory JoinRequirements.forSection({
+    required bool schoolFixed,
+    bool classRestricted = false,
+  }) =>
+      JoinRequirements(
+        needsSchool: !schoolFixed,
+        needsMahalla: true,
+        needsClass: classRestricted,
+      );
+
+  bool isComplete({String? schoolId, String? mahallaId, String? classLabel}) =>
+      missing(
+        schoolId: schoolId,
+        mahallaId: mahallaId,
+        classLabel: classLabel,
+      ).isEmpty;
 
   /// Field names in form order — the same order the server reports them in
   /// `missing_fields`, so the highlighting lines up.
-  List<String> missing({String? schoolId, String? mahallaId}) => [
+  List<String> missing({
+    String? schoolId,
+    String? mahallaId,
+    String? classLabel,
+  }) =>
+      [
         if (needsSchool && (schoolId == null || schoolId.isEmpty)) 'school_id',
         if (needsMahalla && (mahallaId == null || mahallaId.isEmpty))
           'mahalla_id',
+        // Same order the server reports them in, so the highlighting lines up.
+        if (needsClass && (classLabel == null || classLabel.trim().isEmpty))
+          'class_label',
       ];
 }
 

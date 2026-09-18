@@ -61,6 +61,12 @@ class AdminSection {
   final String? schoolId;
   final GeoSchool? school;
 
+  /// 041. Empty = open to every class. Otherwise only these classes may
+  /// register, and the class becomes required at registration.
+  final List<String> classes;
+
+  final DateTime? archivedAt;
+
   const AdminSection({
     required this.id,
     required this.title,
@@ -69,7 +75,13 @@ class AdminSection {
     required this.endAt,
     required this.schoolId,
     required this.school,
+    required this.classes,
+    required this.archivedAt,
   });
+
+  static List<String> classesOf(Map<String, dynamic> j) => [
+        for (final c in (j['classes'] as List? ?? const [])) c as String
+      ];
 
   factory AdminSection.fromJson(Map<String, dynamic> j) => AdminSection(
         id: j['id'] as String,
@@ -81,6 +93,10 @@ class AdminSection {
         school: j['school'] == null
             ? null
             : GeoSchool.fromJson(j['school'] as Map<String, dynamic>),
+        classes: classesOf(j),
+        archivedAt: j['archived_at'] == null
+            ? null
+            : DateTime.parse(j['archived_at'] as String).toLocal(),
       );
 }
 
@@ -97,6 +113,8 @@ class AdminSectionDetail extends AdminSection {
     required super.endAt,
     required super.schoolId,
     required super.school,
+    required super.classes,
+    required super.archivedAt,
     required this.blocks,
     required this.registrationCount,
     required this.attemptCount,
@@ -113,6 +131,10 @@ class AdminSectionDetail extends AdminSection {
         school: j['school'] == null
             ? null
             : GeoSchool.fromJson(j['school'] as Map<String, dynamic>),
+        classes: AdminSection.classesOf(j),
+        archivedAt: j['archived_at'] == null
+            ? null
+            : DateTime.parse(j['archived_at'] as String).toLocal(),
         blocks: [
           for (final b in (j['blocks'] as List? ?? const []))
             AdminBlock.fromJson(b as Map<String, dynamic>)
@@ -219,6 +241,7 @@ class AdminSectionsRepository {
     required DateTime startAt,
     required DateTime endAt,
     String? schoolId,
+    List<String> classes = const [],
   }) async {
     final res =
         await ref.read(dioProvider).post('/v1/admin/live-sections', data: {
@@ -226,8 +249,22 @@ class AdminSectionsRepository {
       'start_at': startAt.toUtc().toIso8601String(),
       'end_at': endAt.toUtc().toIso8601String(),
       if (schoolId != null) 'school_id': schoolId,
+      if (classes.isNotEmpty) 'classes': classes,
     });
     return AdminSection.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Remove a section from the list.
+  ///
+  /// The server decides what that means (041): an empty draft is really
+  /// deleted, anything with registrations or attempts is archived so the
+  /// results survive. `deleted`/`archived` in the response say which.
+  Future<({bool deleted, bool archived})> remove(String sectionId) async {
+    final res = await ref
+        .read(dioProvider)
+        .delete('/v1/admin/live-sections/$sectionId');
+    final j = res.data as Map<String, dynamic>;
+    return (deleted: j['deleted'] == true, archived: j['archived'] == true);
   }
 
   /// `topicIds` empty -> the whole subject. The server rejects a topic that
