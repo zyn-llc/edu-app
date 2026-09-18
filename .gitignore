@@ -33,6 +33,14 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# `flutter gen-l10n` chiqishi. `l10n.yaml` uni har build'da qayta yaratadi,
+# shuning uchun repoda saqlanmaydi.
+#
+# Monorepo .gitignore'ida bu qator `mobile/lib/l10n/...` edi. Bu tarmoqda
+# ilova repo ILDIZIDA turadi, ya'ni o'sha naqsh mos kelmasdi va uchta
+# generatsiya qilingan fayl `git status` da osilib turardi.
+/lib/l10n/app_localizations*.dart
+
 # Symbolication related
 app.*.symbols
 
