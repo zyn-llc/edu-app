@@ -11,7 +11,6 @@ import '../../core/app_settings.dart';
 import '../../widgets/avatar.dart';
 import '../admin/admin_home_screen.dart';
 import '../auth/login_sheet.dart';
-import '../live_sections/live_sections_screen.dart';
 import '../profile/profile_screen.dart';
 import '../referral/invite_friends.dart';
 import 'support_section.dart';
@@ -45,22 +44,9 @@ class SettingsScreen extends ConsumerWidget {
             if (auth.isAuthenticated) ...[
               const SizedBox(height: 10),
               _InviteFriendsCard(),
-              const SizedBox(height: 10),
-              // Entry point for live sections. Settings is a stopgap: the
-              // proper home is a HomeShell destination, which lands with the
-              // live-sections rebuild (MOBILE_ARCHITECTURE.md §8).
-              Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  leading: const Icon(Icons.event_available_outlined),
-                  title: Text(l.liveSectionsTitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const LiveSectionsScreen())),
-                ),
-              ),
+              // Live sections used to be linked from here. They now have their
+              // own destination in the bottom bar / rail, so a student can
+              // actually find them — a link buried in Settings was invisible.
               if (isAdmin(auth.user?.role)) ...[
                 const SizedBox(height: 10),
                 Card(

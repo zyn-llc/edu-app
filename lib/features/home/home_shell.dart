@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../challenges/challenge_invite.dart';
 import '../challenges/challenges_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import '../live_sections/live_sections_screen.dart';
 import '../parent/parent_screen.dart';
 import '../../theme/app_colors.dart';
 import '../notes/notes_screen.dart';
@@ -37,6 +38,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     LeaderboardScreen(),
     ChallengesScreen(),
     ParentScreen(),
+    // Oxiriga QO'SHILDI, o'rtasiga emas: `homeTabProvider` ga 0 va 2
+    // indekslari kodning boshqa joylarida qattiq yozilgan
+    // (`activity_sections.dart`, `leaderboard_screen.dart`, `app_footer.dart`).
+    // O'rtaga qo'yilsa o'sha havolalar boshqa ekranga olib borardi.
+    LiveSectionsScreen(),
   ];
 
   static const _challengesTab = 2;
@@ -68,6 +74,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       _Dest(Icons.leaderboard_outlined, Icons.leaderboard, l.navLeaderboard),
       _Dest(Icons.emoji_events_outlined, Icons.emoji_events, l.navChallenges),
       _Dest(Icons.family_restroom_outlined, Icons.family_restroom, l.navParent),
+      _Dest(Icons.event_available_outlined, Icons.event_available,
+          l.liveSectionsTitle),
     ];
 
     final body = IndexedStack(

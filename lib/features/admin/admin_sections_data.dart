@@ -25,6 +25,10 @@ class AdminBlock {
   final int timeLimitSec;
   final int orderIndex;
 
+  /// Empty = the whole subject. Otherwise the block only draws from these
+  /// topics ("9-sinf matematika: logarifm, sinus").
+  final List<String> topicIds;
+
   const AdminBlock({
     required this.id,
     required this.subjectId,
@@ -32,6 +36,7 @@ class AdminBlock {
     required this.questionCount,
     required this.timeLimitSec,
     required this.orderIndex,
+    required this.topicIds,
   });
 
   factory AdminBlock.fromJson(Map<String, dynamic> j) => AdminBlock(
@@ -41,6 +46,9 @@ class AdminBlock {
         questionCount: (j['question_count'] as num).toInt(),
         timeLimitSec: (j['time_limit_sec'] as num).toInt(),
         orderIndex: (j['order_index'] as num?)?.toInt() ?? 0,
+        topicIds: [
+          for (final t in (j['topic_ids'] as List? ?? const [])) t as String
+        ],
       );
 }
 
@@ -222,15 +230,19 @@ class AdminSectionsRepository {
     return AdminSection.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// `topic_ids` is left empty: the whole subject is in scope. `difficulty_mix`
-  /// is omitted so the server applies its own 30/50/20 default — the same
-  /// target the question banks are written against.
+  /// `topicIds` empty -> the whole subject. The server rejects a topic that
+  /// does not belong to `subjectId`, so the picker is filtered by subject and
+  /// grade before it ever gets here.
+  ///
+  /// `difficulty_mix` is omitted so the server applies its own 30/50/20
+  /// default — the same target the question banks are written against.
   Future<AdminBlock> addBlock(
     String sectionId, {
     required String subjectId,
     int? grade,
     required int questionCount,
     required int timeLimitSec,
+    List<String> topicIds = const [],
   }) async {
     final res = await ref
         .read(dioProvider)
@@ -239,6 +251,7 @@ class AdminSectionsRepository {
       if (grade != null) 'grade': grade,
       'question_count': questionCount,
       'time_limit_sec': timeLimitSec,
+      if (topicIds.isNotEmpty) 'topic_ids': topicIds,
     });
     return AdminBlock.fromJson(res.data as Map<String, dynamic>);
   }

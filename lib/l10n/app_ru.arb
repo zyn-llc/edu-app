@@ -515,5 +515,8 @@
   "joinRegistered": "Вы в списке",
   "joinClosed": "Регистрация закрыта",
   "joinFieldRequired": "Это поле обязательно",
-  "joinFieldStale": "Это значение больше недоступно — выберите заново"
+  "joinFieldStale": "Это значение больше недоступно — выберите заново",
+  "liveSectionsSignInTitle": "Нужен вход",
+  "liveSectionsSignInBody": "Чтобы участвовать в живом испытании, войдите в аккаунт.",
+  "liveSectionTopics": "Темы"
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
+import '../quiz/quiz_data.dart';
 import '../subjects/subjects.dart';
 import 'admin_sections_data.dart';
 
@@ -66,9 +67,11 @@ class _AdminSectionDetailScreenState
   }
 
   Future<void> _addBlock() async {
-    final input = await showDialog<_BlockInput>(
+    final input = await showModalBottomSheet<_BlockInput>(
       context: context,
-      builder: (_) => const _AddBlockDialog(),
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => const _AddBlockSheet(),
     );
     if (input == null || !mounted) return;
     await _run(() async {
@@ -78,6 +81,7 @@ class _AdminSectionDetailScreenState
             grade: input.grade,
             questionCount: input.questionCount,
             timeLimitSec: input.minutes * 60,
+            topicIds: input.topicIds,
           );
       setState(() => _preview = null); // blocks changed -> old check is stale
       _refresh();
@@ -189,7 +193,8 @@ class _AdminSectionDetailScreenState
                     subtitle: Text(
                       '${b.grade == null ? "Barcha sinflar" : "${b.grade}-sinf"}'
                       ' · ${b.questionCount} savol'
-                      ' · ${(b.timeLimitSec / 60).round()} daqiqa',
+                      ' · ${(b.timeLimitSec / 60).round()} daqiqa'
+                      '${b.topicIds.isEmpty ? "" : " · ${b.topicIds.length} mavzu"}',
                     ),
                     trailing: s.isDraft
                         ? IconButton(
@@ -368,23 +373,32 @@ class _BlockInput {
   final int? grade;
   final int questionCount;
   final int minutes;
-  const _BlockInput(
-      this.subjectId, this.grade, this.questionCount, this.minutes);
+
+  /// Empty = the whole subject.
+  final List<String> topicIds;
+
+  const _BlockInput(this.subjectId, this.grade, this.questionCount,
+      this.minutes, this.topicIds);
 }
 
-class _AddBlockDialog extends ConsumerStatefulWidget {
-  const _AddBlockDialog();
+/// Fan -> sinf -> (ixtiyoriy) mavzular.
+///
+/// A bottom sheet rather than a dialog because the topic list is long — maths
+/// grade 6 alone has 63 topics, which a dialog cannot show.
+class _AddBlockSheet extends ConsumerStatefulWidget {
+  const _AddBlockSheet();
 
   @override
-  ConsumerState<_AddBlockDialog> createState() => _AddBlockDialogState();
+  ConsumerState<_AddBlockSheet> createState() => _AddBlockSheetState();
 }
 
-class _AddBlockDialogState extends ConsumerState<_AddBlockDialog> {
+class _AddBlockSheetState extends ConsumerState<_AddBlockSheet> {
   final _formKey = GlobalKey<FormState>();
   final _countCtrl = TextEditingController(text: '20');
   final _minutesCtrl = TextEditingController(text: '30');
   String? _subjectId;
   int? _grade;
+  final Set<String> _topicIds = {};
 
   @override
   void dispose() {
@@ -393,18 +407,32 @@ class _AddBlockDialogState extends ConsumerState<_AddBlockDialog> {
     super.dispose();
   }
 
+  /// Subject or grade changed -> the old picks may not exist in the new
+  /// catalogue, and the server rejects a topic outside the subject.
+  void _resetTopics() => _topicIds.clear();
+
+  int get _requested => int.tryParse(_countCtrl.text.trim()) ?? 0;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final subjects = ref.watch(subjectsProvider);
 
-    return AlertDialog(
-      title: const Text('Blok qo\'shish'),
-      content: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(
+        left: Spacing.md,
+        right: Spacing.md,
+        bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.lg,
+      ),
+      child: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text('Blok qo\'shish', style: theme.textTheme.titleLarge),
+              const Gap.md(),
               subjects.when(
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const Text('Fanlar yuklanmadi'),
@@ -417,7 +445,10 @@ class _AddBlockDialogState extends ConsumerState<_AddBlockDialog> {
                       DropdownMenuItem(value: s.id, child: Text(s.name)),
                   ],
                   validator: (v) => v == null ? 'Fanni tanlang' : null,
-                  onChanged: (v) => setState(() => _subjectId = v),
+                  onChanged: (v) => setState(() {
+                    _subjectId = v;
+                    _resetTopics();
+                  }),
                 ),
               ),
               DropdownButtonFormField<int?>(
@@ -430,12 +461,16 @@ class _AddBlockDialogState extends ConsumerState<_AddBlockDialog> {
                   for (var g = 1; g <= 11; g++)
                     DropdownMenuItem<int?>(value: g, child: Text('$g-sinf')),
                 ],
-                onChanged: (v) => setState(() => _grade = v),
+                onChanged: (v) => setState(() {
+                  _grade = v;
+                  _resetTopics();
+                }),
               ),
               TextFormField(
                 controller: _countCtrl,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Savollar soni'),
+                onChanged: (_) => setState(() {}),
                 validator: (v) {
                   final n = int.tryParse((v ?? '').trim());
                   if (n == null) return 'Raqam kiriting';
@@ -455,30 +490,102 @@ class _AddBlockDialogState extends ConsumerState<_AddBlockDialog> {
                   return null;
                 },
               ),
+              const Gap.md(),
+              if (_subjectId != null) _topics(theme),
+              const Gap.md(),
+              FilledButton(
+                onPressed: () {
+                  if (!(_formKey.currentState?.validate() ?? false)) return;
+                  Navigator.pop(
+                    context,
+                    _BlockInput(
+                      _subjectId!,
+                      _grade,
+                      int.parse(_countCtrl.text.trim()),
+                      int.parse(_minutesCtrl.text.trim()),
+                      _topicIds.toList(),
+                    ),
+                  );
+                },
+                child: const Text('Qo\'shish'),
+              ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Bekor')),
-        FilledButton(
-          onPressed: () {
-            if (!(_formKey.currentState?.validate() ?? false)) return;
-            Navigator.pop(
-              context,
-              _BlockInput(
-                _subjectId!,
-                _grade,
-                int.parse(_countCtrl.text.trim()),
-                int.parse(_minutesCtrl.text.trim()),
+    );
+  }
+
+  Widget _topics(ThemeData theme) {
+    // The catalogue is already filtered by subject AND grade, so picking
+    // "9-sinf matematika" offers exactly that grade's topics.
+    final async =
+        ref.watch(catalogProvider((subjectId: _subjectId!, grade: _grade)));
+
+    return async.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const Text('Mavzular yuklanmadi'),
+      data: (cat) {
+        if (cat.topics.isEmpty) {
+          return Text('Bu fan va sinf uchun mavzu belgilanmagan — '
+              'blok butun fandan oladi.',
+              style: theme.textTheme.bodySmall);
+        }
+        final available = cat.topics
+            .where((t) => _topicIds.contains(t.id))
+            .fold<int>(0, (sum, t) => sum + t.count);
+        final short = _topicIds.isNotEmpty && available < _requested;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Mavzular', style: theme.textTheme.titleSmall),
+                const Spacer(),
+                if (_topicIds.isNotEmpty)
+                  TextButton(
+                    onPressed: () => setState(_resetTopics),
+                    child: const Text('Tozalash'),
+                  ),
+              ],
+            ),
+            Text(
+              _topicIds.isEmpty
+                  ? 'Bo\'sh qoldirilsa — butun fandan olinadi.'
+                  : '$available ta savol tanlangan mavzularda',
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: short ? theme.colorScheme.error : null),
+            ),
+            if (short)
+              Text(
+                'So\'ralgani $_requested ta — savol sonini kamaytiring yoki '
+                'yana mavzu qo\'shing, aks holda e\'lon qilib bo\'lmaydi.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.error),
               ),
-            );
-          },
-          child: const Text('Qo\'shish'),
-        ),
-      ],
+            const Gap.sm(),
+            Wrap(
+              spacing: Spacing.xs,
+              runSpacing: Spacing.xs,
+              children: [
+                for (final t in cat.topics)
+                  FilterChip(
+                    label: Text('${t.title} (${t.count})'),
+                    selected: _topicIds.contains(t.id),
+                    onSelected: (on) => setState(() {
+                      if (on) {
+                        _topicIds.add(t.id);
+                      } else {
+                        _topicIds.remove(t.id);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

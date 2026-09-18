@@ -625,5 +625,8 @@
   "joinRegistered": "Ro'yxatdasiz",
   "joinClosed": "Ro'yxat yopilgan",
   "joinFieldRequired": "Bu maydon to'ldirilishi shart",
-  "joinFieldStale": "Bu qiymat endi mavjud emas — qaytadan tanlang"
+  "joinFieldStale": "Bu qiymat endi mavjud emas — qaytadan tanlang",
+  "liveSectionsSignInTitle": "Kirish kerak",
+  "liveSectionsSignInBody": "Jonli sinovda qatnashish uchun hisobingizga kiring.",
+  "liveSectionTopics": "Mavzular"
 }

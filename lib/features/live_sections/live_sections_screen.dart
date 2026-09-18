@@ -19,6 +19,23 @@ class LiveSectionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L10n.of(context);
+    final auth = ref.watch(authControllerProvider);
+
+    // Every live-section endpoint requires a real account, so a guest would
+    // otherwise just see a 401 rendered as "failed to load".
+    if (!auth.isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l.liveSectionsTitle)),
+        body: Center(
+          child: EmptyState(
+            icon: Icons.lock_outline,
+            title: l.liveSectionsSignInTitle,
+            message: l.liveSectionsSignInBody,
+          ),
+        ),
+      );
+    }
+
     final async = ref.watch(liveSectionsProvider);
 
     return Scaffold(
