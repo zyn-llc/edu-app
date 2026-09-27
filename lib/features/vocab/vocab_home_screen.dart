@@ -7,6 +7,7 @@ import '../../auth/auth_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
+import '../grammar/grammar_home_screen.dart';
 import 'vocab_browse_screen.dart';
 import 'vocab_data.dart';
 import 'vocab_review_screen.dart';
@@ -149,6 +150,19 @@ class _LanguageBody extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+        ),
+        const Gap.md(),
+        // Grammatika — shu modulning ikkinchi yarmi. Alohida kirish nuqtasi
+        // emas: o'quvchi avval tilni tanlaydi, keyin nima qilishini.
+        OutlinedButton.icon(
+          key: const Key('open-grammar'),
+          icon: const Icon(Icons.rule_outlined),
+          label: Text(l.grammarOpen),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => GrammarHomeScreen(language: language)),
           ),
         ),
         const Gap.md(),

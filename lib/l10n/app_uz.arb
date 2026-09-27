@@ -685,5 +685,62 @@
   "vocabNoLanguagesTitle": "Til qo'shilmagan",
   "vocabNoLanguagesBody": "Hozircha o'rganish uchun til yo'q.",
   "vocabSignInBody": "To'plam yuritish va takrorlash uchun hisobingizga kiring.",
-  "navVocab": "Til"
+  "navVocab": "Til",
+  "grammarTitle": "Grammatika",
+  "grammarPracticeTitle": "Mashq",
+  "grammarStart": "Mashqni boshlash",
+  "grammarTopicsTitle": "Mavzular",
+  "grammarProgressTitle": "Daraja bo'yicha o'sish",
+  "grammarWeakTitle": "Takrorlash kerak",
+  "grammarCorrect": "To'g'ri",
+  "grammarIncorrect": "Noto'g'ri",
+  "grammarRuleLabel": "Qoida: {topic}",
+  "@grammarRuleLabel": {
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "grammarNext": "Keyingisi",
+  "grammarFinish": "Yakunlash",
+  "grammarSkip": "Bilmayman, o'tkazib yuborish",
+  "grammarSessionDoneTitle": "Mashq tugadi",
+  "grammarSessionDoneBody": "{total} ta savoldan {correct} tasi to'g'ri.",
+  "@grammarSessionDoneBody": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarNoQuestionsTitle": "Savol topilmadi",
+  "grammarNoQuestionsBody": "Bu daraja yoki mavzu uchun savol yo'q. Filtrni o'zgartiring.",
+  "grammarTopicUnseen": "{count} ta savol · hali boshlanmagan",
+  "@grammarTopicUnseen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarTopicSeen": "{correct}/{attempts} to'g'ri · {questions} ta savol",
+  "@grammarTopicSeen": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "attempts": {
+        "type": "int"
+      },
+      "questions": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarSignInBody": "O'sishni kuzatish uchun hisobingizga kiring. Mashq qilish kirmasdan ham mumkin.",
+  "grammarOpen": "Grammatika mashqi"
 }

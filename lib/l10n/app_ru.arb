@@ -575,5 +575,62 @@
   "vocabNoLanguagesTitle": "Языки не добавлены",
   "vocabNoLanguagesBody": "Пока нет языков для изучения.",
   "vocabSignInBody": "Войдите в аккаунт, чтобы вести набор и повторять слова.",
-  "navVocab": "Язык"
+  "navVocab": "Язык",
+  "grammarTitle": "Грамматика",
+  "grammarPracticeTitle": "Практика",
+  "grammarStart": "Начать практику",
+  "grammarTopicsTitle": "Темы",
+  "grammarProgressTitle": "Прогресс по уровням",
+  "grammarWeakTitle": "Нужно повторить",
+  "grammarCorrect": "Верно",
+  "grammarIncorrect": "Неверно",
+  "grammarRuleLabel": "Правило: {topic}",
+  "@grammarRuleLabel": {
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "grammarNext": "Дальше",
+  "grammarFinish": "Завершить",
+  "grammarSkip": "Не знаю, пропустить",
+  "grammarSessionDoneTitle": "Практика завершена",
+  "grammarSessionDoneBody": "Правильно {correct} из {total}.",
+  "@grammarSessionDoneBody": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarNoQuestionsTitle": "Вопросы не найдены",
+  "grammarNoQuestionsBody": "Для этого уровня или темы вопросов нет. Измените фильтр.",
+  "grammarTopicUnseen": "{count} вопросов · ещё не начато",
+  "@grammarTopicUnseen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarTopicSeen": "{correct}/{attempts} верно · {questions} вопросов",
+  "@grammarTopicSeen": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "attempts": {
+        "type": "int"
+      },
+      "questions": {
+        "type": "int"
+      }
+    }
+  },
+  "grammarSignInBody": "Войдите, чтобы отслеживать прогресс. Практиковаться можно и без входа.",
+  "grammarOpen": "Практика грамматики"
 }
