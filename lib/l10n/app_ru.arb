@@ -632,5 +632,31 @@
     }
   },
   "grammarSignInBody": "Войдите, чтобы отслеживать прогресс. Практиковаться можно и без входа.",
-  "grammarOpen": "Практика грамматики"
+  "grammarOpen": "Практика грамматики",
+  "readingTitle": "Чтение",
+  "readingOpen": "Практика чтения",
+  "readingMeta": "{words} слов · ~{minutes} мин",
+  "@readingMeta": {
+    "placeholders": {
+      "words": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "readingQuestionsTitle": "{count} вопросов",
+  "@readingQuestionsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readingEvidenceLabel": "Подтверждение в тексте",
+  "readingNoQuestionsTitle": "Вопросов нет",
+  "readingNoQuestionsBody": "К этому тексту пока не добавлены вопросы.",
+  "readingNonePlannedTitle": "Текстов нет",
+  "readingNonePlannedBody": "Пока тексты для чтения доступны только на русском языке."
 }

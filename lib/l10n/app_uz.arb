@@ -742,5 +742,31 @@
     }
   },
   "grammarSignInBody": "O'sishni kuzatish uchun hisobingizga kiring. Mashq qilish kirmasdan ham mumkin.",
-  "grammarOpen": "Grammatika mashqi"
+  "grammarOpen": "Grammatika mashqi",
+  "readingTitle": "O'qish",
+  "readingOpen": "O'qish mashqi",
+  "readingMeta": "{words} so'z · ~{minutes} daqiqa",
+  "@readingMeta": {
+    "placeholders": {
+      "words": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "readingQuestionsTitle": "{count} ta savol",
+  "@readingQuestionsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readingEvidenceLabel": "Matndagi dalil",
+  "readingNoQuestionsTitle": "Savollar yo'q",
+  "readingNoQuestionsBody": "Bu matnga hozircha savol biriktirilmagan.",
+  "readingNonePlannedTitle": "Matn yo'q",
+  "readingNonePlannedBody": "Hozircha o'qish matnlari faqat rus tilida mavjud."
 }

@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
 import '../grammar/grammar_home_screen.dart';
+import '../reading/reading_list_screen.dart';
 import 'vocab_browse_screen.dart';
 import 'vocab_data.dart';
 import 'vocab_review_screen.dart';
@@ -163,6 +164,20 @@ class _LanguageBody extends ConsumerWidget {
             context,
             MaterialPageRoute(
                 builder: (_) => GrammarHomeScreen(language: language)),
+          ),
+        ),
+        const Gap.md(),
+        // O'qish — hozircha faqat rus tilida matn bor. Tugma baribir
+        // ko'rsatiladi: bosilganda "matn yo'q" deb ochiq aytiladi, chunki
+        // tugmani yashirish bo'lim umuman yo'qdek ko'rsatardi.
+        OutlinedButton.icon(
+          key: const Key('open-reading'),
+          icon: const Icon(Icons.menu_book_outlined),
+          label: Text(l.readingOpen),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ReadingListScreen(language: language)),
           ),
         ),
         const Gap.md(),
