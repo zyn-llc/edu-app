@@ -24,6 +24,7 @@ import '../settings/settings_screen.dart';
 import '../subjects/subject_card.dart';
 import '../subjects/subjects.dart';
 import 'activity_sections.dart';
+import '../vocab/vocab_home_screen.dart';
 
 ///
 ///
@@ -104,6 +105,33 @@ class DashboardScreen extends ConsumerWidget {
                     child: WeekStrip(progress: meAsync.value!.progress),
                   ),
                 ),
+
+              // ---- til moduli ----------------------------------------------
+              // Alohida TAB emas: pastki panelda allaqachon 5 ta yo'nalish
+              // bor va Material 3 da 5 tadan ortig'i siqilib ketadi.
+              // Bosh sahifadagi karta esa birinchi ko'rinadigan joyda.
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.md, Spacing.xl, Spacing.md, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    child: ListTile(
+                      key: const Key('dash-vocab-entry'),
+                      leading: const Icon(Icons.translate),
+                      title: Text(l.vocabTitle),
+                      subtitle: Text(l.vocabPickLanguageBody,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const VocabHomeScreen()),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
               // ---- fanlar --------------------------------------------------
               SliverPadding(

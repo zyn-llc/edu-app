@@ -405,7 +405,7 @@
   "back": "Orqaga",
   "challengeGetLink": "Havola",
   "parentThisWeek": "Shu hafta",
-  "parentActiveDays": "Faol kunlar",
+  "parentActiveDays": "faol kun",
   "parentAccuracy7d": "To‘g‘ri javoblar",
   "parentNeverPracticed": "Hali mashq qilmagan",
   "parentOpenDetail": "Batafsil",
@@ -596,7 +596,6 @@
   "parentRhythmTitle": "Shug'ullanish ritmi",
   "parentStrugglesTitle": "Qayerda qiynalyapti",
   "parentAnsweredWeek": "savol (7 kun)",
-  "parentActiveDays": "faol kun",
   "parentAccuracyWeek": "to'g'ri javob",
   "parentAnalysisEmptyTitle": "Hali ma'lumot yetarli emas",
   "parentAnalysisEmptyBody": "Farzandingiz bir necha mavzudan savol yechgach, qaysi mavzular qiyin kelayotgani shu yerda ko'rinadi.",
@@ -630,5 +629,61 @@
   "liveSectionsSignInBody": "Jonli sinovda qatnashish uchun hisobingizga kiring.",
   "liveSectionTopics": "Mavzular",
   "joinSchoolNumber": "Maktab raqami",
-  "joinClassRequiredLabel": "Sinf"
+  "joinClassRequiredLabel": "Sinf",
+  "vocabTitle": "Lug'at",
+  "vocabReviewTitle": "Takrorlash",
+  "vocabPickLanguage": "Qaysi tilni o'rganasiz?",
+  "vocabPickLanguageBody": "Tilni tanlang — so'zlar va takrorlash shu tilga qarab ko'rsatiladi.",
+  "vocabDeckSize": "To'plamda",
+  "vocabDueToday": "Bugun",
+  "vocabMastered": "O'zlashtirilgan",
+  "vocabLearning": "O'rganilmoqda",
+  "vocabStartReview": "{count} ta so'zni takrorlash",
+  "@vocabStartReview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabBrowseAction": "Lug'atni ochish",
+  "vocabSearchHint": "So'zni qidirish",
+  "vocabAllLevels": "Hammasi",
+  "vocabAllTopics": "Barcha mavzular",
+  "vocabAddToDeck": "To'plamga qo'shish",
+  "vocabAdded": "«{word}» to'plamga qo'shildi",
+  "@vocabAdded": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "vocabReveal": "Javobni ko'rish",
+  "vocabGradeForgot": "Bilmadim",
+  "vocabGradeHard": "Qiyin",
+  "vocabGradeEasy": "Bildim",
+  "vocabNothingDueTitle": "Bugun takrorlash yo'q",
+  "vocabNothingDueBody": "Hammasi takrorlangan. Yangi so'z qo'shsangiz, u shu zahoti navbatga tushadi.",
+  "vocabSessionDoneTitle": "Seans tugadi",
+  "vocabSessionDoneBody": "{total} ta so'z ko'rildi, {forgot} tasi qaytadi.",
+  "@vocabSessionDoneBody": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "forgot": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabSessionDoneAction": "Yopish",
+  "vocabNoTranslation": "Tarjima yo'q",
+  "vocabNoResultsTitle": "Topilmadi",
+  "vocabNoResultsBody": "Filtrlarni o'zgartirib ko'ring.",
+  "vocabLoadFailedTitle": "Yuklanmadi",
+  "vocabNoLanguagesTitle": "Til qo'shilmagan",
+  "vocabNoLanguagesBody": "Hozircha o'rganish uchun til yo'q.",
+  "vocabSignInBody": "To'plam yuritish va takrorlash uchun hisobingizga kiring.",
+  "navVocab": "Til"
 }

@@ -341,7 +341,7 @@
   "back": "Назад",
   "challengeGetLink": "Ссылка",
   "parentThisWeek": "На неделе",
-  "parentActiveDays": "Активных дней",
+  "parentActiveDays": "активных дней",
   "parentAccuracy7d": "Правильных ответов",
   "parentNeverPracticed": "Ещё не занимался",
   "parentOpenDetail": "Подробно",
@@ -486,7 +486,6 @@
   "parentRhythmTitle": "Ритм занятий",
   "parentStrugglesTitle": "Где возникают трудности",
   "parentAnsweredWeek": "вопросов (7 дней)",
-  "parentActiveDays": "активных дней",
   "parentAccuracyWeek": "верных ответов",
   "parentAnalysisEmptyTitle": "Данных пока недостаточно",
   "parentAnalysisEmptyBody": "Когда ребёнок решит вопросы по нескольким темам, здесь появится список трудных тем.",
@@ -520,5 +519,61 @@
   "liveSectionsSignInBody": "Чтобы участвовать в живом испытании, войдите в аккаунт.",
   "liveSectionTopics": "Темы",
   "joinSchoolNumber": "Номер школы",
-  "joinClassRequiredLabel": "Класс"
+  "joinClassRequiredLabel": "Класс",
+  "vocabTitle": "Словарь",
+  "vocabReviewTitle": "Повторение",
+  "vocabPickLanguage": "Какой язык вы учите?",
+  "vocabPickLanguageBody": "Выберите язык — слова и повторение зависят от него.",
+  "vocabDeckSize": "В наборе",
+  "vocabDueToday": "Сегодня",
+  "vocabMastered": "Освоено",
+  "vocabLearning": "Изучается",
+  "vocabStartReview": "Повторить {count} слов",
+  "@vocabStartReview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabBrowseAction": "Открыть словарь",
+  "vocabSearchHint": "Поиск слова",
+  "vocabAllLevels": "Все",
+  "vocabAllTopics": "Все темы",
+  "vocabAddToDeck": "Добавить в набор",
+  "vocabAdded": "«{word}» добавлено в набор",
+  "@vocabAdded": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "vocabReveal": "Показать ответ",
+  "vocabGradeForgot": "Не знаю",
+  "vocabGradeHard": "Трудно",
+  "vocabGradeEasy": "Знаю",
+  "vocabNothingDueTitle": "На сегодня нет повторений",
+  "vocabNothingDueBody": "Всё повторено. Новое слово попадёт в очередь сразу после добавления.",
+  "vocabSessionDoneTitle": "Сессия завершена",
+  "vocabSessionDoneBody": "Просмотрено {total} слов, {forgot} вернутся.",
+  "@vocabSessionDoneBody": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "forgot": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabSessionDoneAction": "Закрыть",
+  "vocabNoTranslation": "Нет перевода",
+  "vocabNoResultsTitle": "Ничего не найдено",
+  "vocabNoResultsBody": "Попробуйте изменить фильтры.",
+  "vocabLoadFailedTitle": "Не загрузилось",
+  "vocabNoLanguagesTitle": "Языки не добавлены",
+  "vocabNoLanguagesBody": "Пока нет языков для изучения.",
+  "vocabSignInBody": "Войдите в аккаунт, чтобы вести набор и повторять слова.",
+  "navVocab": "Язык"
 }
