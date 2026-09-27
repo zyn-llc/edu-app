@@ -658,5 +658,7 @@
   "readingNoQuestionsTitle": "Вопросов нет",
   "readingNoQuestionsBody": "К этому тексту пока не добавлены вопросы.",
   "readingNonePlannedTitle": "Текстов нет",
-  "readingNonePlannedBody": "Пока тексты для чтения доступны только на русском языке."
+  "readingNonePlannedBody": "Пока тексты для чтения доступны только на русском языке.",
+  "vocabTapToFlip": "Нажмите, чтобы перевернуть",
+  "vocabListen": "Прослушать"
 }

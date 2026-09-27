@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_error.dart';
+import '../../core/sound.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/empty_state.dart';
@@ -87,6 +89,13 @@ class _GrammarPracticeScreenState
       final r = await ref
           .read(grammarRepositoryProvider)
           .answer(q.id, optionId, responseMs: ms);
+      final sfx = ref.read(soundServiceProvider);
+      r.correct ? sfx.correct() : sfx.wrong();
+      // Haptika xulosani ovozdan oldin yetkazadi va ovoz o'chirilgan
+      // bo'lsa ham ishlaydi.
+      r.correct
+          ? HapticFeedback.lightImpact()
+          : HapticFeedback.mediumImpact();
       if (mounted) {
         setState(() {
           _result = r;

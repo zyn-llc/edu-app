@@ -768,5 +768,7 @@
   "readingNoQuestionsTitle": "Savollar yo'q",
   "readingNoQuestionsBody": "Bu matnga hozircha savol biriktirilmagan.",
   "readingNonePlannedTitle": "Matn yo'q",
-  "readingNonePlannedBody": "Hozircha o'qish matnlari faqat rus tilida mavjud."
+  "readingNonePlannedBody": "Hozircha o'qish matnlari faqat rus tilida mavjud.",
+  "vocabTapToFlip": "Kartochkani ag'darish uchun bosing",
+  "vocabListen": "Tinglash"
 }

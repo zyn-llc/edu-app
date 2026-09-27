@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_client.dart';
 import '../../api/api_error.dart';
+import '../../core/pronounce.dart';
 import '../../auth/auth_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/spacing.dart';
@@ -183,7 +184,25 @@ class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
                             child: Text(e.cefrLevel,
                                 style: theme.textTheme.labelSmall),
                           ),
-                          trailing: e.inDeck
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Talaffuz — ro'yxatda ham. Til uchun ovoz
+                              // bo'lmasa tugma umuman chiqmaydi.
+                              if (ref
+                                      .watch(pronounceSupportedProvider(
+                                          e.language))
+                                      .valueOrNull ==
+                                  true)
+                                IconButton(
+                                  key: Key('vocab-say-${e.id}'),
+                                  icon: const Icon(Icons.volume_up_outlined),
+                                  tooltip: l.vocabListen,
+                                  onPressed: () => ref
+                                      .read(pronounceServiceProvider)
+                                      .say(e.lemma, e.language),
+                                ),
+                              e.inDeck
                               ? Icon(Icons.check_circle,
                                   color: theme.colorScheme.primary)
                               : IconButton(
@@ -200,6 +219,8 @@ class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
                                       ? () => _add(e)
                                       : null,
                                 ),
+                            ],
+                          ),
                         );
                       },
                     ),

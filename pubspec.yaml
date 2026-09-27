@@ -47,6 +47,11 @@ dependencies:
   # sound effects (reward / error)
   audioplayers: ^6.1.0
 
+  # So'z talaffuzi. Bank'da AUDIO YO'Q (bitta faylda ham), shuning uchun
+  # ovoz qurilmaning/brauzerning o'z sintezatoridan olinadi. Web'da bu
+  # SpeechSynthesis API.
+  flutter_tts: ^4.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
