@@ -104,14 +104,17 @@ const _uz = <String, String>{
       'will — taxmin, taklif, shu ondagi qaror',
 };
 
-class GrammarTopic {
+/// NOMI `GrammarTopicName`, `GrammarTopic` EMAS: oxirgisi allaqachon
+/// ma'lumot qatlamida band (`grammar/grammar_data.dart`) va u mavzu
+/// STATISTIKASI. Bu esa faqat KO'RINADIGAN NOM.
+class GrammarTopicName {
   /// Asosiy sarlavha — o'zbekcha bo'lsa o'zbekcha, bo'lmasa aslining o'zi.
   final String title;
 
   /// Ostidagi kichik satr — asl atama. Sarlavha allaqachon asl bo'lsa `null`.
   final String? subtitle;
 
-  const GrammarTopic(this.title, this.subtitle);
+  const GrammarTopicName(this.title, this.subtitle);
 
   /// Tarjima qilinganmi — hisobot va test uchun.
   bool get translated => subtitle != null;
@@ -120,9 +123,11 @@ class GrammarTopic {
 class GrammarTopics {
   GrammarTopics._();
 
-  static GrammarTopic of(String raw) {
+  static GrammarTopicName of(String raw) {
     final uz = _uz[raw.trim()];
-    return uz == null ? GrammarTopic(raw, null) : GrammarTopic(uz, raw);
+    return uz == null
+        ? GrammarTopicName(raw, null)
+        : GrammarTopicName(uz, raw);
   }
 
   static int get translatedCount => _uz.length;

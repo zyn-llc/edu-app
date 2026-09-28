@@ -4,12 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../api/api_error.dart';
 import '../../auth/auth_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../mascot/mascot.dart';
+import '../../theme/level_palette.dart';
 import '../../theme/spacing.dart';
-import '../../widgets/empty_state.dart';
+import '../../widgets/language_kit.dart';
+import '../language/grammar_topics.dart';
 import 'grammar_data.dart';
 import 'grammar_practice_screen.dart';
 
-/// Grammatika: daraja bo'yicha o'sish, mavzular, mashqni boshlash.
+/// Grammatika: daraja bo'yicha o'sish, mavzular ro'yxati, mashq.
+///
+/// UCHTA ESKI MUAMMO SHU YERDA TUZATILGAN:
+///   * Mavzu qatorida radio doira turardi — u "bittasini tanlang" degan
+///     ma'no berardi, holbuki qator HOLATNI ko'rsatishi kerak.
+///   * Suzuvchi tugma ro'yxatning ustiga chiqib, oxirgi qatorlarni
+///     yopib qo'yardi. Endi u pastda, o'z joyida turadi va ro'yxat uning
+///     balandligicha pastdan bo'sh joy oladi.
+///   * Daraja chiziqlari kulrang va bir xil edi. Endi har bir daraja o'z
+///     rangida va yonida "12/34" turadi.
 class GrammarHomeScreen extends ConsumerStatefulWidget {
   const GrammarHomeScreen({super.key, required this.language});
 
@@ -24,6 +36,9 @@ const _levels = ['A1', 'A2', 'B1', 'B2'];
 class _GrammarHomeScreenState extends ConsumerState<GrammarHomeScreen> {
   String? _level;
 
+  GrammarQuery get _query =>
+      GrammarQuery(language: widget.language, level: _level);
+
   Future<void> _practice({String? topic}) async {
     await Navigator.push(
       context,
@@ -35,109 +50,234 @@ class _GrammarHomeScreenState extends ConsumerState<GrammarHomeScreen> {
       ),
     );
     ref.invalidate(grammarMasteryProvider(widget.language));
-    ref.invalidate(grammarTopicsProvider(
-        GrammarQuery(language: widget.language, level: _level)));
+    ref.invalidate(grammarTopicsProvider(_query));
   }
+
+  TopicStatus _statusOf(TopicState s) => switch (s) {
+        TopicState.mastered => TopicStatus.done,
+        TopicState.unseen => TopicStatus.notStarted,
+        _ => TopicStatus.inProgress,
+      };
 
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final theme = Theme.of(context);
     final signedIn = ref.watch(authControllerProvider).isAuthenticated;
-    final q = GrammarQuery(language: widget.language, level: _level);
-    final topics = ref.watch(grammarTopicsProvider(q));
+    final topics = ref.watch(grammarTopicsProvider(_query));
 
     return Scaffold(
       appBar: AppBar(title: Text(l.grammarTitle)),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('grammar-start'),
-        onPressed: () => _practice(),
-        icon: const Icon(Icons.play_arrow),
-        label: Text(l.grammarStart),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            Spacing.md, Spacing.md, Spacing.md, 96),
-        children: [
-          // ---- daraja filtri -------------------------------------------
-          Wrap(
-            spacing: Spacing.xs,
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
             children: [
-              FilterChip(
-                key: const Key('grammar-level-all'),
-                label: Text(l.vocabAllLevels),
-                selected: _level == null,
-                onSelected: (_) => setState(() => _level = null),
-              ),
-              for (final lv in _levels)
-                FilterChip(
-                  key: Key('grammar-level-$lv'),
-                  label: Text(lv),
-                  selected: _level == lv,
-                  onSelected: (_) =>
-                      setState(() => _level = _level == lv ? null : lv),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.md, Spacing.md, Spacing.md, Spacing.md),
+                  children: [
+                    // ---- daraja filtri ---------------------------------
+                    SizedBox(
+                      height: 40,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _LevelFilter(
+                            key: const Key('grammar-level-all'),
+                            label: l.vocabAllLevels,
+                            selected: _level == null,
+                            onTap: () => setState(() => _level = null),
+                          ),
+                          for (final lv in _levels)
+                            _LevelFilter(
+                              key: Key('grammar-level-$lv'),
+                              label: lv,
+                              color: LevelPalette.color(lv, theme.brightness),
+                              selected: _level == lv,
+                              onTap: () => setState(
+                                  () => _level = _level == lv ? null : lv),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Gap.md(),
+
+                    if (signedIn)
+                      _MasteryCard(
+                        language: widget.language,
+                        onPractiseTopic: (t) => _practice(topic: t),
+                      )
+                    else
+                      _SignInHint(text: l.grammarSignInBody),
+                    const Gap.lg(),
+
+                    // ---- mavzular ---------------------------------------
+                    Text(l.grammarTopicsTitle,
+                        style: theme.textTheme.titleMedium),
+                    const Gap.sm(),
+                    topics.when(
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(Spacing.xl),
+                        child:
+                            Center(child: CircularProgressIndicator()),
+                      ),
+                      error: (e, _) => OwlEmptyState(
+                        state: OwlState.confused,
+                        title: l.vocabLoadFailedTitle,
+                        message: humanError(e, l),
+                        actionLabel: l.retry,
+                        onAction: () =>
+                            ref.invalidate(grammarTopicsProvider(_query)),
+                        size: 96,
+                      ),
+                      data: (items) => items.isEmpty
+                          ? OwlEmptyState(
+                              key: const Key('grammar-topics-empty'),
+                              state: OwlState.confused,
+                              title: l.grammarNoQuestionsTitle,
+                              message: l.grammarNoQuestionsBody,
+                              size: 96,
+                            )
+                          : Column(
+                              key: const Key('grammar-topics'),
+                              children: [
+                                for (final t in items)
+                                  _TopicRow(
+                                    stat: t,
+                                    status: _statusOf(t.state),
+                                    onTap: () => _practice(topic: t.topic),
+                                  ),
+                              ],
+                            ),
+                    ),
+                  ],
                 ),
+              ),
+
+              // ---- pastdagi tugma ----------------------------------------
+              // Ro'yxatning USTIDA emas, ostida: suzuvchi tugma oxirgi
+              // qatorlarni yopib qo'yardi.
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                      top: BorderSide(color: theme.colorScheme.outlineVariant)),
+                ),
+                child: PrimaryButton(
+                  key: const Key('grammar-start'),
+                  label: l.continueAction,
+                  icon: Icons.play_arrow_rounded,
+                  expand: true,
+                  onPressed: () => _practice(),
+                ),
+              ),
             ],
           ),
-          const Gap.md(),
+        ),
+      ),
+    );
+  }
+}
 
-          // ---- o'sish ---------------------------------------------------
-          if (signedIn) _MasteryCard(language: widget.language,
-              onPractiseTopic: (t) => _practice(topic: t))
-          else
-            Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(Spacing.md),
-                child: Text(l.grammarSignInBody,
-                    style: theme.textTheme.bodySmall),
-              ),
-            ),
-          const Gap.lg(),
+class _LevelFilter extends StatelessWidget {
+  const _LevelFilter({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+  });
 
-          // ---- mavzular -------------------------------------------------
-          Text(l.grammarTopicsTitle, style: theme.textTheme.titleMedium),
-          const Gap.sm(),
-          topics.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(Spacing.lg),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, _) => EmptyState(
-              icon: Icons.cloud_off,
-              title: l.vocabLoadFailedTitle,
-              message: humanError(e, l),
-              actionLabel: l.retry,
-              onAction: () => ref.invalidate(grammarTopicsProvider(q)),
-              compact: true,
-            ),
-            data: (items) => items.isEmpty
-                ? EmptyState(
-                    key: const Key('grammar-topics-empty'),
-                    icon: Icons.search_off,
-                    title: l.grammarNoQuestionsTitle,
-                    message: l.grammarNoQuestionsBody,
-                    compact: true,
-                  )
-                : Column(
-                    key: const Key('grammar-topics'),
-                    children: [
-                      for (final t in items)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: _StateDot(t.state),
-                          title: Text(t.topic,
-                              maxLines: 2, overflow: TextOverflow.ellipsis),
-                          subtitle: Text(t.attempts == 0
-                              ? l.grammarTopicUnseen(t.questions)
-                              : l.grammarTopicSeen(
-                                  t.correct, t.attempts, t.questions)),
-                          trailing: const Icon(Icons.play_circle_outline),
-                          onTap: () => _practice(topic: t.topic),
-                        ),
-                    ],
-                  ),
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final c = color ?? cs.primary;
+    return Padding(
+      padding: const EdgeInsets.only(right: Spacing.sm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          alignment: Alignment.center,
+          constraints: const BoxConstraints(minWidth: 56, minHeight: 40),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          decoration: BoxDecoration(
+            color: selected ? c : c.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+                color: selected ? c : c.withValues(alpha: 0.35)),
           ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: selected ? cs.onPrimary : c,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TopicRow extends StatelessWidget {
+  const _TopicRow(
+      {required this.stat, required this.status, required this.onTap});
+
+  final GrammarTopic stat;
+  final TopicStatus status;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L10n.of(context);
+    // O'zbekcha sarlavha + asl atama kichik satrda.
+    final named = GrammarTopics.of(stat.topic);
+    return TopicTile(
+      title: named.title,
+      subtitle: named.subtitle,
+      level: stat.cefrLevel,
+      status: status,
+      progress: stat.attempts == 0 ? 0 : (stat.accuracy ?? 0),
+      meta: stat.attempts == 0
+          ? l.grammarTopicUnseen(stat.questions)
+          : l.grammarTopicSeen(stat.correct, stat.attempts, stat.questions),
+      onTap: onTap,
+    );
+  }
+}
+
+class _SignInHint extends StatelessWidget {
+  const _SignInHint({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(Radii.md),
+      ),
+      child: Row(
+        children: [
+          const BreathingOwl(state: OwlState.idle, size: 48),
+          const Gap.ms(),
+          Expanded(
+              child: Text(text,
+                  style: Theme.of(context).textTheme.bodyMedium)),
         ],
       ),
     );
@@ -157,89 +297,77 @@ class _MasteryCard extends ConsumerWidget {
     final m = ref.watch(grammarMasteryProvider(language));
 
     return m.when(
-      loading: () => const Card(
-        margin: EdgeInsets.zero,
-        child: SizedBox(
-            height: 90, child: Center(child: CircularProgressIndicator())),
-      ),
-      error: (e, _) => Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
+      loading: () => const SizedBox(
+          height: 120, child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => _SignInHint(text: humanError(e, l)),
+      data: (data) {
+        final everythingDone = data.levels.isNotEmpty &&
+            data.levels.every((lv) => lv.mastered >= lv.topics);
+        return Container(
+          key: const Key('grammar-mastery'),
           padding: const EdgeInsets.all(Spacing.md),
-          child: Text(humanError(e, l)),
-        ),
-      ),
-      data: (data) => Card(
-        key: const Key('grammar-mastery'),
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.md),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(Radii.lg),
+            border:
+                Border.all(color: theme.colorScheme.outlineVariant),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l.grammarProgressTitle,
-                  style: theme.textTheme.titleMedium),
-              const Gap.sm(),
-              for (final lv in data.levels) ...[
-                Row(children: [
-                  SizedBox(width: 34, child: Text(lv.cefrLevel)),
+              Row(
+                children: [
                   Expanded(
-                    child: LinearProgressIndicator(value: lv.shareMastered),
+                    child: Text(l.grammarProgressTitle,
+                        style: theme.textTheme.titleMedium),
                   ),
-                  const SizedBox(width: Spacing.sm),
-                  // Mavzular bo'yicha, savollar bo'yicha EMAS: o'quvchi
-                  // "shart gaplarni bildim" deb o'ylaydi.
-                  Text('${lv.mastered}/${lv.topics}',
-                      style: theme.textTheme.bodySmall),
-                ]),
-                const Gap.xs(),
-              ],
+                  // Hamma daraja tugaganda — bitiruv kayfiyati.
+                  if (everythingDone)
+                    const OwlMascot(OwlMood.achievement, size: 44),
+                ],
+              ),
+              const Gap.sm(),
+              for (final lv in data.levels)
+                LevelProgressBar(
+                  level: lv.cefrLevel,
+                  done: lv.mastered,
+                  total: lv.topics,
+                ),
               if (data.weakTopics.isNotEmpty) ...[
-                const Gap.sm(),
-                Text(l.grammarWeakTitle, style: theme.textTheme.labelLarge),
+                const Gap.md(),
+                Text(l.grammarWeakTitle,
+                    style: theme.textTheme.labelLarge),
                 const Gap.xs(),
-                for (final w in data.weakTopics)
-                  ActionChip(
-                    key: Key('grammar-weak-${w.topic}'),
-                    avatar: const Icon(Icons.trending_down, size: 16),
-                    label: Text(
-                      '${w.topic}  ${((w.accuracy ?? 0) * 100).round()}%',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onPressed: () => onPractiseTopic(w.topic),
-                  ),
+                Wrap(
+                  spacing: Spacing.sm,
+                  runSpacing: Spacing.xs,
+                  children: [
+                    for (final w in data.weakTopics)
+                      ActionChip(
+                        key: Key('grammar-weak-${w.topic}'),
+                        avatar: const Icon(Icons.trending_down, size: 16),
+                        label: Text(
+                          GrammarTopics.of(w.topic).title,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: () => onPractiseTopic(w.topic),
+                      ),
+                  ],
+                ),
               ] else if (data.nextTopic != null) ...[
-                const Gap.sm(),
+                const Gap.md(),
                 ActionChip(
                   key: const Key('grammar-next-topic'),
                   avatar: const Icon(Icons.arrow_forward, size: 16),
-                  label: Text(data.nextTopic!,
+                  label: Text(GrammarTopics.of(data.nextTopic!).title,
                       overflow: TextOverflow.ellipsis),
                   onPressed: () => onPractiseTopic(data.nextTopic!),
                 ),
               ],
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
-  }
-}
-
-class _StateDot extends StatelessWidget {
-  const _StateDot(this.state);
-
-  final TopicState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final (icon, colour) = switch (state) {
-      TopicState.mastered => (Icons.check_circle, cs.primary),
-      TopicState.weak => (Icons.error_outline, cs.error),
-      TopicState.learning => (Icons.timelapse, cs.tertiary),
-      TopicState.unseen => (Icons.circle_outlined, cs.outlineVariant),
-    };
-    return Icon(icon, color: colour);
   }
 }
