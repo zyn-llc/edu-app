@@ -67,6 +67,38 @@ class LevelChip extends StatelessWidget {
   }
 }
 
+/// Ro'yxatdagi daraja belgisi — yumaloq kvadrat, ichida "A1".
+///
+/// Rangli NUQTA o'rniga yozuv: rang o'zi yetarli emas (rangni ajrata
+/// olmaydigan o'quvchi bor, va olti daraja olti rang — yodlab bo'lmaydi).
+/// Yozuv + rang birga ishlaydi.
+class LevelBadge extends StatelessWidget {
+  const LevelBadge(this.level, {super.key, this.size = 36});
+
+  final String level;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = LevelPalette.color(level, Theme.of(context).brightness);
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        level,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: c, fontWeight: FontWeight.w700, fontSize: 12),
+      ),
+    );
+  }
+}
+
 /// Ro'yxatdagi kichik nuqta — matn o'rnini egallamasdan darajani beradi.
 class LevelDot extends StatelessWidget {
   const LevelDot(this.level, {super.key, this.size = 10});

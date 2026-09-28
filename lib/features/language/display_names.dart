@@ -94,7 +94,7 @@ const _posUzByLanguage = <String, Map<String, String>>{
   'en': {
     'prep': 'prepozitsiya',
     'preposition': 'prepozitsiya',
-    'det': 'aniqlovchi',
+    'det': 'artikl',
     'modal': 'modal fe’l',
     'exclam': 'undov',
     'abbr': 'qisqartma',

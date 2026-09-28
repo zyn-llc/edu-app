@@ -569,7 +569,7 @@
   },
   "vocabSessionDoneAction": "Закрыть",
   "vocabNoTranslation": "Нет перевода",
-  "vocabNoResultsTitle": "Ничего не найдено",
+  "vocabNoResultsTitle": "Слово не найдено",
   "vocabNoResultsBody": "Попробуйте изменить фильтры.",
   "vocabLoadFailedTitle": "Не загрузилось",
   "vocabNoLanguagesTitle": "Языки не добавлены",
@@ -726,5 +726,15 @@
   },
   "readingRetry": "Прочитать снова",
   "readingMore": "Другой текст",
-  "vocabInDeckLabel": "Уже в словаре"
+  "vocabInDeckLabel": "Уже в словаре",
+  "vocabTotalWords": "{count} слов",
+  "@vocabTotalWords": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "vocabNoPronounce": "Нет данных о произношении"
 }

@@ -25,13 +25,25 @@ class LevelStyle {
 class LevelPalette {
   LevelPalette._();
 
+  //  2026-09-28 da QAYTA TANLANDI. Ikki muammo bor edi:
+  //
+  //  1. A1 (144°) va A2 (176°) atigi 32° farq qilardi — 10 px nuqtada
+  //     ular bir xil ko'rinardi va A1 so'zi A2 dek o'qilardi. Xarita
+  //     to'g'ri edi, rang farqi yetarli emasdi. Endi qo'shnilar orasida
+  //     kamida 42°, A1/A2 orasida 48° bor.
+  //  2. Oq matn bilan kontrast AA dan past edi: A1 3.41:1, A2 3.68:1,
+  //     C1 esa atigi 2.52:1. Tanlangan chip oq matn bilan bo'lgani uchun
+  //     bu o'qilmaydigan matn degani. Hammasi endi >= 4.5:1.
+  //
+  //  Kontrast SIMMETRIK, shuning uchun bitta rang ikkala holatga yetadi:
+  //  oq fonda matn bo'lib ham, to'ldirilgan chipda oq matn ostida ham.
   static const _map = <String, LevelStyle>{
-    'A1': LevelStyle(Color(0xFF2E9E5B), Color(0xFF41BA72)), // yashil
-    'A2': LevelStyle(Color(0xFF17958C), Color(0xFF29ADA3)), // moviy-yashil
-    'B1': LevelStyle(Color(0xFF2F6FB0), Color(0xFF4A8BD0)), // ko'k
-    'B2': LevelStyle(Color(0xFF6A53C7), Color(0xFF8470DE)), // binafsha
-    'C1': LevelStyle(Color(0xFFD9962A), Color(0xFFE8A53B)), // sariq
-    'C2': LevelStyle(Color(0xFFC7436B), Color(0xFFDC5C82)), // pushti
+    'A1': LevelStyle(Color(0xFF258649), Color(0xFF4FBE78)), // yashil    142°
+    'A2': LevelStyle(Color(0xFF298092), Color(0xFF55B6CA)), // siyan     190°
+    'B1': LevelStyle(Color(0xFF3640C2), Color(0xFF6973FA)), // ko'k      236°
+    'B2': LevelStyle(Color(0xFF9836C2), Color(0xFFCE69FA)), // binafsha  282°
+    'C1': LevelStyle(Color(0xFFA3682E), Color(0xFFDB9B5D)), // jigarrang  30°
+    'C2': LevelStyle(Color(0xFFC23669), Color(0xFFFA699E)), // pushti    338°
   };
 
   static const _fallback =

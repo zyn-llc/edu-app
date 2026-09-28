@@ -237,6 +237,18 @@ class VocabQuery {
   int get hashCode => Object.hash(language, level, topic, search);
 }
 
+/// Bir sahifa natija — JAMI son bilan birga.
+///
+/// Ro'yxat o'zi jami nechta so'z borligini ayta olmaydi (u faqat
+/// `limit` tagacha keladi), lekin sarlavhada "7 580 ta so'z" ko'rsatish
+/// uchun aynan shu son kerak.
+class VocabPage {
+  final List<VocabEntry> items;
+  final int total;
+
+  const VocabPage({required this.items, required this.total});
+}
+
 class VocabRepository {
   final Ref ref;
   VocabRepository(this.ref);
@@ -259,6 +271,27 @@ class VocabRepository {
       for (final e in (res.data as Map<String, dynamic>)['items'] as List)
         VocabTopic.fromJson(e as Map<String, dynamic>)
     ];
+  }
+
+  Future<VocabPage> page(VocabQuery q,
+      {int limit = 50, int offset = 0}) async {
+    final res = await ref.read(dioProvider).get('/v1/vocab/entries',
+        queryParameters: {
+          'language': q.language,
+          if (q.level != null) 'level': q.level,
+          if (q.topic != null) 'topic': q.topic,
+          if ((q.search ?? '').trim().isNotEmpty) 'q': q.search!.trim(),
+          'limit': limit,
+          'offset': offset,
+        });
+    final j = res.data as Map<String, dynamic>;
+    return VocabPage(
+      items: [
+        for (final e in j['items'] as List)
+          VocabEntry.fromJson(e as Map<String, dynamic>)
+      ],
+      total: (j['total'] as num?)?.toInt() ?? 0,
+    );
   }
 
   Future<List<VocabEntry>> entries(VocabQuery q,
@@ -340,6 +373,12 @@ final vocabEntriesProvider =
     FutureProvider.family<List<VocabEntry>, VocabQuery>((ref, q) async {
   ref.watch(authControllerProvider);
   return ref.read(vocabRepositoryProvider).entries(q);
+});
+
+final vocabPageProvider =
+    FutureProvider.family<VocabPage, VocabQuery>((ref, q) async {
+  ref.watch(authControllerProvider);
+  return ref.read(vocabRepositoryProvider).page(q);
 });
 
 final vocabStatsProvider =

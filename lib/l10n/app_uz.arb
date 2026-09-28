@@ -679,7 +679,7 @@
   },
   "vocabSessionDoneAction": "Yopish",
   "vocabNoTranslation": "Tarjima yo'q",
-  "vocabNoResultsTitle": "Topilmadi",
+  "vocabNoResultsTitle": "So’z topilmadi",
   "vocabNoResultsBody": "Filtrlarni o'zgartirib ko'ring.",
   "vocabLoadFailedTitle": "Yuklanmadi",
   "vocabNoLanguagesTitle": "Til qo'shilmagan",
@@ -836,5 +836,15 @@
   },
   "readingRetry": "Qayta o’qish",
   "readingMore": "Yana matn",
-  "vocabInDeckLabel": "Lug’atingizda bor"
+  "vocabInDeckLabel": "Lug’atingizda bor",
+  "vocabTotalWords": "{count} ta so’z",
+  "@vocabTotalWords": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "vocabNoPronounce": "Talaffuz ma’lumoti yo’q"
 }
