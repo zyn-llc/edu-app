@@ -22,18 +22,35 @@ import 'grammar_practice_screen.dart';
 ///     balandligicha pastdan bo'sh joy oladi.
 ///   * Daraja chiziqlari kulrang va bir xil edi. Endi har bir daraja o'z
 ///     rangida va yonida "12/34" turadi.
-class GrammarHomeScreen extends ConsumerStatefulWidget {
+/// Alohida ekran sifatida ochilganda — o'z sarlavhasi bilan.
+class GrammarHomeScreen extends StatelessWidget {
   const GrammarHomeScreen({super.key, required this.language});
 
   final String language;
 
   @override
-  ConsumerState<GrammarHomeScreen> createState() => _GrammarHomeScreenState();
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(L10n.of(context).grammarTitle)),
+        body: GrammarTab(language: language),
+      );
+}
+
+/// Til ekranidagi "Grammatika" varaqasi.
+///
+/// Sarlavhasiz va Scaffold'siz: varaqa ichida o'z AppBar'i bo'lsa, ekranda
+/// ikkita sarlavha paydo bo'lardi.
+class GrammarTab extends ConsumerStatefulWidget {
+  const GrammarTab({super.key, required this.language});
+
+  final String language;
+
+  @override
+  ConsumerState<GrammarTab> createState() => _GrammarHomeScreenState();
 }
 
 const _levels = ['A1', 'A2', 'B1', 'B2'];
 
-class _GrammarHomeScreenState extends ConsumerState<GrammarHomeScreen> {
+class _GrammarHomeScreenState extends ConsumerState<GrammarTab> {
   String? _level;
 
   GrammarQuery get _query =>
@@ -66,10 +83,8 @@ class _GrammarHomeScreenState extends ConsumerState<GrammarHomeScreen> {
     final signedIn = ref.watch(authControllerProvider).isAuthenticated;
     final topics = ref.watch(grammarTopicsProvider(_query));
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l.grammarTitle)),
-      body: SafeArea(
-        child: ContentWidth(
+    return SafeArea(
+      child: ContentWidth(
           child: Column(
             children: [
               Expanded(
@@ -174,9 +189,8 @@ class _GrammarHomeScreenState extends ConsumerState<GrammarHomeScreen> {
                   expand: true,
                   onPressed: () => _practice(),
                 ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

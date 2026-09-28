@@ -779,5 +779,21 @@
   "vocabMemorise": "So’z yodlash",
   "vocabLevelsTitle": "Darajalar bo’yicha yutuqlar",
   "startAction": "Boshlash",
-  "continueAction": "Davom etish"
+  "continueAction": "Davom etish",
+  "vocabWordsTab": "So’zlar",
+  "vocabMemoriseBody": "Yangi so’zlarni to’plamingizga qo’shing",
+  "vocabBrowseBody": "Daraja va mavzu bo’yicha izlang",
+  "readingTileBody": "Matn o’qib, savollarga javob bering",
+  "vocabDueCount": "Bugun {count} ta so’z kutmoqda",
+  "@vocabDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabDueBody": "Bir necha daqiqa — va bugungi ish bajarildi.",
+  "vocabStartReviewShort": "Takrorlashni boshlash",
+  "vocabInReview": "Takrorlashda",
+  "vocabSignInTitle": "Kirish kerak"
 }

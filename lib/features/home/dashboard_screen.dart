@@ -24,7 +24,8 @@ import '../settings/settings_screen.dart';
 import '../subjects/subject_card.dart';
 import '../subjects/subjects.dart';
 import 'activity_sections.dart';
-import '../vocab/vocab_home_screen.dart';
+import '../language/language_screen.dart';
+import '../language/language_subjects.dart';
 
 ///
 ///
@@ -106,33 +107,6 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
 
-              // ---- til moduli ----------------------------------------------
-              // Alohida TAB emas: pastki panelda allaqachon 5 ta yo'nalish
-              // bor va Material 3 da 5 tadan ortig'i siqilib ketadi.
-              // Bosh sahifadagi karta esa birinchi ko'rinadigan joyda.
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.md, Spacing.xl, Spacing.md, 0),
-                sliver: SliverToBoxAdapter(
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      key: const Key('dash-vocab-entry'),
-                      leading: const Icon(Icons.translate),
-                      title: Text(l.vocabTitle),
-                      subtitle: Text(l.vocabPickLanguageBody,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const VocabHomeScreen()),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // ---- fanlar --------------------------------------------------
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
@@ -186,17 +160,28 @@ class DashboardScreen extends ConsumerWidget {
                         mainAxisExtent: subjectCardHeight(context),
                       ),
                       delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => SubjectCard(
-                          subject: subjects[i],
-                          streakDays:
-                              meAsync.valueOrNull?.progress.streakDays ?? 0,
-                          onTap: () => Navigator.push(
-                            ctx,
-                            MaterialPageRoute(
-                                builder: (_) => PickerScreen(subjects[i])),
-                          ),
-                        ).enterStaggered(i),
-                        childCount: subjects.length,
+                        (ctx, i) {
+                          // Tillar fanlar bilan BIR TO'RDA va AYNI karta
+                          // bilan: alohida ro'yxat bo'lsa, til bo'limi
+                          // ilovaga yopishtirilgandek ko'rinardi.
+                          final all = [...subjects, ...languageSubjects(l)];
+                          final s = all[i];
+                          final lang = languageCodeOf(s);
+                          return SubjectCard(
+                            subject: s,
+                            streakDays:
+                                meAsync.valueOrNull?.progress.streakDays ?? 0,
+                            onTap: () => Navigator.push(
+                              ctx,
+                              MaterialPageRoute(
+                                builder: (_) => lang == null
+                                    ? PickerScreen(s)
+                                    : LanguageScreen(language: lang),
+                              ),
+                            ),
+                          ).enterStaggered(i);
+                        },
+                        childCount: subjects.length + 3,
                       ),
                     ),
                   );

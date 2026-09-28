@@ -36,6 +36,25 @@ class SubjectPalette {
         SubjectStyle(Color(0xFF5AA02C), Color(0xFF6FB83E), Icons.eco),
     'huquq':
         SubjectStyle(Color(0xFF3E5168), Color(0xFF56697F), Icons.gavel),
+
+    // Informatika va SAT ilgari umumiy `school` belgisini olardi va
+    // to'rida bir xil ko'rinardi.
+    'informatika':
+        SubjectStyle(Color(0xFF3B7C8C), Color(0xFF4E9AAC), Icons.memory),
+    'sat_math':
+        SubjectStyle(Color(0xFF8A5BB8), Color(0xFFA274D1), Icons.functions),
+    'sat':
+        SubjectStyle(Color(0xFF8A5BB8), Color(0xFFA274D1), Icons.functions),
+
+    // Tillar — fan to'rining O'ZIDA, o'sha karta bilan. Har biriga o'z
+    // rangi, chunki uchalasi bir xil bo'lsa karta "til" degan bitta
+    // narsadek ko'rinardi.
+    'lang_en':
+        SubjectStyle(Color(0xFFC0492F), Color(0xFFD55A3F), Icons.translate),
+    'lang_ru':
+        SubjectStyle(Color(0xFF2F6FB0), Color(0xFF4A8BD0), Icons.translate),
+    'lang_de':
+        SubjectStyle(Color(0xFF5E6B2F), Color(0xFF7C8C41), Icons.translate),
   };
 
   static const _fallback =

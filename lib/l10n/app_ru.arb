@@ -669,5 +669,21 @@
   "vocabMemorise": "Учить слова",
   "vocabLevelsTitle": "Достижения по уровням",
   "startAction": "Начать",
-  "continueAction": "Продолжить"
+  "continueAction": "Продолжить",
+  "vocabWordsTab": "Слова",
+  "vocabMemoriseBody": "Добавляйте новые слова в свой набор",
+  "vocabBrowseBody": "Ищите по уровню и теме",
+  "readingTileBody": "Читайте текст и отвечайте на вопросы",
+  "vocabDueCount": "Сегодня ждут {count} слов",
+  "@vocabDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabDueBody": "Несколько минут — и сегодняшнее дело сделано.",
+  "vocabStartReviewShort": "Начать повторение",
+  "vocabInReview": "На повторении",
+  "vocabSignInTitle": "Нужен вход"
 }
