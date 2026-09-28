@@ -770,5 +770,8 @@
   "readingNonePlannedTitle": "Matn yo'q",
   "readingNonePlannedBody": "Hozircha o'qish matnlari faqat rus tilida mavjud.",
   "vocabTapToFlip": "Kartochkani ag'darish uchun bosing",
-  "vocabListen": "Tinglash"
+  "vocabListen": "Tinglash",
+  "langEnglish": "Ingliz tili",
+  "langRussian": "Rus tili",
+  "langGerman": "Nemis tili"
 }

@@ -660,5 +660,8 @@
   "readingNonePlannedTitle": "Текстов нет",
   "readingNonePlannedBody": "Пока тексты для чтения доступны только на русском языке.",
   "vocabTapToFlip": "Нажмите, чтобы перевернуть",
-  "vocabListen": "Прослушать"
+  "vocabListen": "Прослушать",
+  "langEnglish": "Английский язык",
+  "langRussian": "Русский язык",
+  "langGerman": "Немецкий язык"
 }
