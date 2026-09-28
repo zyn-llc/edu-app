@@ -632,11 +632,11 @@
   "joinClassRequiredLabel": "Sinf",
   "vocabTitle": "Lug'at",
   "vocabReviewTitle": "Takrorlash",
-  "vocabPickLanguage": "Qaysi tilni o'rganasiz?",
+  "vocabPickLanguage": "Qaysi tilni o’rganamiz?",
   "vocabPickLanguageBody": "Tilni tanlang — so'zlar va takrorlash shu tilga qarab ko'rsatiladi.",
-  "vocabDeckSize": "To'plamda",
+  "vocabDeckSize": "Lug’atimda",
   "vocabDueToday": "Bugun",
-  "vocabMastered": "O'zlashtirilgan",
+  "vocabMastered": "Yodlangan",
   "vocabLearning": "O'rganilmoqda",
   "vocabStartReview": "{count} ta so'zni takrorlash",
   "@vocabStartReview": {
@@ -646,7 +646,7 @@
       }
     }
   },
-  "vocabBrowseAction": "Lug'atni ochish",
+  "vocabBrowseAction": "Barcha so’zlar",
   "vocabSearchHint": "So'zni qidirish",
   "vocabAllLevels": "Hammasi",
   "vocabAllTopics": "Barcha mavzular",
@@ -660,11 +660,11 @@
     }
   },
   "vocabReveal": "Javobni ko'rish",
-  "vocabGradeForgot": "Bilmadim",
-  "vocabGradeHard": "Qiyin",
-  "vocabGradeEasy": "Bildim",
-  "vocabNothingDueTitle": "Bugun takrorlash yo'q",
-  "vocabNothingDueBody": "Hammasi takrorlangan. Yangi so'z qo'shsangiz, u shu zahoti navbatga tushadi.",
+  "vocabGradeForgot": "Yana ko’rsat",
+  "vocabGradeHard": "Qiyin edi",
+  "vocabGradeEasy": "Bilaman",
+  "vocabNothingDueTitle": "Bugun takrorlaydigan so’z yo’q. Zo’r!",
+  "vocabNothingDueBody": "Yangi so’z qo’shsangiz, u shu zahoti navbatga tushadi.",
   "vocabSessionDoneTitle": "Seans tugadi",
   "vocabSessionDoneBody": "{total} ta so'z ko'rildi, {forgot} tasi qaytadi.",
   "@vocabSessionDoneBody": {
@@ -769,9 +769,15 @@
   "readingNoQuestionsBody": "Bu matnga hozircha savol biriktirilmagan.",
   "readingNonePlannedTitle": "Matn yo'q",
   "readingNonePlannedBody": "Hozircha o'qish matnlari faqat rus tilida mavjud.",
-  "vocabTapToFlip": "Kartochkani ag'darish uchun bosing",
+  "vocabTapToFlip": "Tarjimani ko’rish uchun bosing",
   "vocabListen": "Tinglash",
   "langEnglish": "Ingliz tili",
   "langRussian": "Rus tili",
-  "langGerman": "Nemis tili"
+  "langGerman": "Nemis tili",
+  "vocabRevealAction": "Tarjimani ko’rsat",
+  "vocabPronounceLabel": "Taxminiy talaffuz",
+  "vocabMemorise": "So’z yodlash",
+  "vocabLevelsTitle": "Darajalar bo’yicha yutuqlar",
+  "startAction": "Boshlash",
+  "continueAction": "Davom etish"
 }

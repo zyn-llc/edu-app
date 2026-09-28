@@ -522,11 +522,11 @@
   "joinClassRequiredLabel": "Класс",
   "vocabTitle": "Словарь",
   "vocabReviewTitle": "Повторение",
-  "vocabPickLanguage": "Какой язык вы учите?",
+  "vocabPickLanguage": "Какой язык учим?",
   "vocabPickLanguageBody": "Выберите язык — слова и повторение зависят от него.",
-  "vocabDeckSize": "В наборе",
+  "vocabDeckSize": "В словаре",
   "vocabDueToday": "Сегодня",
-  "vocabMastered": "Освоено",
+  "vocabMastered": "Выучено",
   "vocabLearning": "Изучается",
   "vocabStartReview": "Повторить {count} слов",
   "@vocabStartReview": {
@@ -536,7 +536,7 @@
       }
     }
   },
-  "vocabBrowseAction": "Открыть словарь",
+  "vocabBrowseAction": "Все слова",
   "vocabSearchHint": "Поиск слова",
   "vocabAllLevels": "Все",
   "vocabAllTopics": "Все темы",
@@ -550,11 +550,11 @@
     }
   },
   "vocabReveal": "Показать ответ",
-  "vocabGradeForgot": "Не знаю",
-  "vocabGradeHard": "Трудно",
+  "vocabGradeForgot": "Показать снова",
+  "vocabGradeHard": "Было трудно",
   "vocabGradeEasy": "Знаю",
-  "vocabNothingDueTitle": "На сегодня нет повторений",
-  "vocabNothingDueBody": "Всё повторено. Новое слово попадёт в очередь сразу после добавления.",
+  "vocabNothingDueTitle": "На сегодня повторений нет. Отлично!",
+  "vocabNothingDueBody": "Новое слово попадёт в очередь сразу после добавления.",
   "vocabSessionDoneTitle": "Сессия завершена",
   "vocabSessionDoneBody": "Просмотрено {total} слов, {forgot} вернутся.",
   "@vocabSessionDoneBody": {
@@ -659,9 +659,15 @@
   "readingNoQuestionsBody": "К этому тексту пока не добавлены вопросы.",
   "readingNonePlannedTitle": "Текстов нет",
   "readingNonePlannedBody": "Пока тексты для чтения доступны только на русском языке.",
-  "vocabTapToFlip": "Нажмите, чтобы перевернуть",
+  "vocabTapToFlip": "Нажмите, чтобы увидеть перевод",
   "vocabListen": "Прослушать",
   "langEnglish": "Английский язык",
   "langRussian": "Русский язык",
-  "langGerman": "Немецкий язык"
+  "langGerman": "Немецкий язык",
+  "vocabRevealAction": "Показать перевод",
+  "vocabPronounceLabel": "Примерное произношение",
+  "vocabMemorise": "Учить слова",
+  "vocabLevelsTitle": "Достижения по уровням",
+  "startAction": "Начать",
+  "continueAction": "Продолжить"
 }
