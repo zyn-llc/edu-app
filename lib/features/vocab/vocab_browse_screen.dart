@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_client.dart';
 import '../../api/api_error.dart';
-import '../../core/pronounce.dart';
 import '../../auth/auth_controller.dart';
+import '../../core/pronounce.dart';
 import '../../l10n/app_localizations.dart';
+import '../../mascot/mascot.dart';
+import '../../theme/level_palette.dart';
 import '../../theme/spacing.dart';
-import '../../widgets/empty_state.dart';
+import '../../widgets/language_kit.dart';
+import '../language/display_names.dart';
 import 'vocab_data.dart';
 
-/// Lug'atni ko'rish: daraja va mavzu bo'yicha filtr, to'plamga qo'shish.
+/// "Barcha so'zlar" — lug'atni ko'rish va to'plamga qo'shish.
 ///
-/// KIRISH SHART EMAS ko'rish uchun — mehmon so'zlarni ko'rib, modul nima
-/// ekanini tushunishi kerak. To'plamga qo'shish esa akkaunt talab qiladi.
+/// XOM KALIT BU YERGA CHIQMAYDI. Mavzu va so'z turkumi
+/// `DisplayNames` orqali o'zbekchaga o'giriladi: ilgari ekranda
+/// `science_abstract (1054)` va `noun` turardi.
+///
+/// Ko'rish uchun kirish shart emas; to'plamga qo'shish uchun shart.
 class VocabBrowseScreen extends ConsumerStatefulWidget {
   const VocabBrowseScreen({super.key, required this.language});
 
@@ -23,12 +31,11 @@ class VocabBrowseScreen extends ConsumerStatefulWidget {
   ConsumerState<VocabBrowseScreen> createState() => _VocabBrowseScreenState();
 }
 
-const _levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
   late VocabQuery _q = VocabQuery(language: widget.language);
   final _searchCtrl = TextEditingController();
   final _pending = <String>{};
+  final _justAdded = <String>{};
 
   @override
   void dispose() {
@@ -39,9 +46,12 @@ class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
   Future<void> _add(VocabEntry e) async {
     final l = L10n.of(context);
     setState(() => _pending.add(e.id));
+    HapticFeedback.selectionClick();
     try {
       await ref.read(vocabRepositoryProvider).addToDeck([e.id]);
-      ref.invalidate(vocabEntriesProvider(_q));
+      // Belgi darhol o'zgaradi — ro'yxat qayta yuklanguncha kutmaydi,
+      // aks holda tugma bosilgandek tuyulmaydi.
+      if (mounted) setState(() => _justAdded.add(e.id));
       ref.invalidate(vocabStatsProvider);
       ref.invalidate(vocabDueProvider);
       if (mounted) {
@@ -68,165 +78,320 @@ class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
     final topics = ref.watch(vocabTopicsProvider(widget.language));
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.vocabTitle)),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                Spacing.md, Spacing.sm, Spacing.md, 0),
-            child: TextField(
-              key: const Key('vocab-search'),
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: l.vocabSearchHint,
-                isDense: true,
-              ),
-              onSubmitted: (v) => setState(() => _q = _q.copyWith(search: v)),
-            ),
-          ),
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-              children: [
-                FilterChip(
-                  key: const Key('vocab-level-all'),
-                  label: Text(l.vocabAllLevels),
-                  selected: _q.level == null,
-                  onSelected: (_) =>
-                      setState(() => _q = _q.copyWith(clearLevel: true)),
-                ),
-                for (final lv in _levels) ...[
-                  const SizedBox(width: Spacing.xs),
-                  FilterChip(
-                    key: Key('vocab-level-$lv'),
-                    label: Text(lv),
-                    selected: _q.level == lv,
-                    onSelected: (_) => setState(() => _q = _q.level == lv
-                        ? _q.copyWith(clearLevel: true)
-                        : _q.copyWith(level: lv)),
+      appBar: AppBar(title: Text(l.vocabBrowseAction)),
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
+            children: [
+              // ---- qidiruv ---------------------------------------------
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.md, Spacing.sm, Spacing.md, Spacing.sm),
+                child: TextField(
+                  key: const Key('vocab-search'),
+                  controller: _searchCtrl,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: l.vocabSearchHint,
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: _searchCtrl.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _q = _q.copyWith(search: ''));
+                            },
+                          ),
                   ),
-                ],
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (v) =>
+                      setState(() => _q = _q.copyWith(search: v)),
+                ),
+              ),
+
+              // ---- daraja ----------------------------------------------
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: Spacing.md),
+                  children: [
+                    _Pill(
+                      key: const Key('vocab-level-all'),
+                      label: l.vocabAllLevels,
+                      selected: _q.level == null,
+                      onTap: () =>
+                          setState(() => _q = _q.copyWith(clearLevel: true)),
+                    ),
+                    for (final lv in LevelPalette.order)
+                      _Pill(
+                        key: Key('vocab-level-$lv'),
+                        label: lv,
+                        color: LevelPalette.color(lv, theme.brightness),
+                        selected: _q.level == lv,
+                        onTap: () => setState(() => _q = _q.level == lv
+                            ? _q.copyWith(clearLevel: true)
+                            : _q.copyWith(level: lv)),
+                      ),
+                  ],
+                ),
+              ),
+
+              // ---- mavzu (O'ZBEKCHA nom + son) --------------------------
+              topics.maybeWhen(
+                data: (ts) => SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: Spacing.md),
+                    children: [
+                      _Pill(
+                        label: l.vocabAllTopics,
+                        selected: _q.topic == null,
+                        onTap: () => setState(
+                            () => _q = _q.copyWith(clearTopic: true)),
+                      ),
+                      for (final t in ts)
+                        _Pill(
+                          key: Key('vocab-topic-${t.topic}'),
+                          label: DisplayNames.topic(t.topic, uiLang),
+                          badge: '${t.count}',
+                          selected: _q.topic == t.topic,
+                          onTap: () => setState(() => _q = _q.topic == t.topic
+                              ? _q.copyWith(clearTopic: true)
+                              : _q.copyWith(topic: t.topic)),
+                        ),
+                    ],
+                  ),
+                ),
+                orElse: () => const SizedBox(height: 44),
+              ),
+              const Gap.sm(),
+              const Divider(height: 1),
+
+              // ---- ro'yxat ---------------------------------------------
+              Expanded(
+                child: entries.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(
+                    child: OwlEmptyState(
+                      state: OwlState.confused,
+                      title: l.vocabLoadFailedTitle,
+                      message: humanError(e, l),
+                      actionLabel: l.retry,
+                      onAction: () =>
+                          ref.invalidate(vocabEntriesProvider(_q)),
+                    ),
+                  ),
+                  data: (items) => items.isEmpty
+                      ? Center(
+                          child: OwlEmptyState(
+                            key: const Key('vocab-browse-empty'),
+                            state: OwlState.confused,
+                            title: l.vocabNoResultsTitle,
+                            message: l.vocabNoResultsBody,
+                          ),
+                        )
+                      : ListView.separated(
+                          key: const Key('vocab-list'),
+                          padding: const EdgeInsets.only(bottom: Spacing.lg),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 1, indent: Spacing.md),
+                          itemBuilder: (_, i) => _WordRow(
+                            entry: items[i],
+                            uiLang: uiLang,
+                            inDeck: items[i].inDeck ||
+                                _justAdded.contains(items[i].id),
+                            pending: _pending.contains(items[i].id),
+                            canAdd: signedIn,
+                            onAdd: () => _add(items[i]),
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WordRow extends ConsumerWidget {
+  const _WordRow({
+    required this.entry,
+    required this.uiLang,
+    required this.inDeck,
+    required this.pending,
+    required this.canAdd,
+    required this.onAdd,
+  });
+
+  final VocabEntry entry;
+  final String uiLang;
+  final bool inDeck;
+  final bool pending;
+  final bool canAdd;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = L10n.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    // `noun` emas, `ot`.
+    final pos = DisplayNames.pos(entry.pos, entry.language, uiLang);
+    final canSpeak =
+        ref.watch(pronounceSupportedProvider(entry.language)).valueOrNull ==
+            true;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md, vertical: Spacing.sm),
+      child: Row(
+        children: [
+          LevelDot(entry.cefrLevel),
+          const Gap.ms(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.display,
+                    style: theme.textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                Text(
+                  entry.translation(uiLang) ?? l.vocabNoTranslation,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (pos.isNotEmpty)
+                  Text(pos, style: theme.textTheme.labelSmall),
               ],
             ),
           ),
-          topics.maybeWhen(
-            data: (ts) => SizedBox(
-              height: 44,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                children: [
-                  FilterChip(
-                    label: Text(l.vocabAllTopics),
-                    selected: _q.topic == null,
-                    onSelected: (_) =>
-                        setState(() => _q = _q.copyWith(clearTopic: true)),
+          if (canSpeak)
+            IconButton(
+              key: Key('vocab-say-${entry.id}'),
+              icon: const Icon(Icons.volume_up_outlined),
+              tooltip: l.vocabListen,
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                ref
+                    .read(pronounceServiceProvider)
+                    .say(entry.lemma, entry.language);
+              },
+            ),
+          // Qo'shilgani darhol ko'rinadi va belgi "sakrab" chiqadi.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            transitionBuilder: (child, anim) =>
+                ScaleTransition(scale: anim, child: child),
+            child: inDeck
+                ? Icon(Icons.check_circle,
+                    key: const ValueKey('in'), color: cs.primary, size: 28)
+                    .animate()
+                    .scale(
+                        begin: const Offset(0.6, 0.6),
+                        curve: Curves.easeOutBack,
+                        duration: 260.ms)
+                : IconButton(
+                    key: Key('vocab-add-${entry.id}'),
+                    icon: pending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.add_circle_outline),
+                    tooltip: l.vocabAddToDeck,
+                    onPressed: canAdd && !pending ? onAdd : null,
                   ),
-                  for (final t in ts.take(24)) ...[
-                    const SizedBox(width: Spacing.xs),
-                    FilterChip(
-                      label: Text('${t.topic} (${t.count})'),
-                      selected: _q.topic == t.topic,
-                      onSelected: (_) => setState(() => _q =
-                          _q.topic == t.topic
-                              ? _q.copyWith(clearTopic: true)
-                              : _q.copyWith(topic: t.topic)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            orElse: () => const SizedBox(height: 44),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: entries.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: EmptyState(
-                  icon: Icons.cloud_off,
-                  title: l.vocabLoadFailedTitle,
-                  message: humanError(e, l),
-                  actionLabel: l.retry,
-                  onAction: () => ref.invalidate(vocabEntriesProvider(_q)),
-                ),
-              ),
-              data: (items) => items.isEmpty
-                  ? Center(
-                      child: EmptyState(
-                        key: const Key('vocab-browse-empty'),
-                        icon: Icons.search_off,
-                        title: l.vocabNoResultsTitle,
-                        message: l.vocabNoResultsBody,
-                      ),
-                    )
-                  : ListView.separated(
-                      key: const Key('vocab-list'),
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final e = items[i];
-                        return ListTile(
-                          title: Text(e.display),
-                          subtitle: Text(
-                            [
-                              e.translation(uiLang) ?? l.vocabNoTranslation,
-                              if ((e.ipa ?? '').isNotEmpty) e.ipa!,
-                            ].join('  ·  '),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          leading: CircleAvatar(
-                            radius: 16,
-                            child: Text(e.cefrLevel,
-                                style: theme.textTheme.labelSmall),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Talaffuz — ro'yxatda ham. Til uchun ovoz
-                              // bo'lmasa tugma umuman chiqmaydi.
-                              if (ref
-                                      .watch(pronounceSupportedProvider(
-                                          e.language))
-                                      .valueOrNull ==
-                                  true)
-                                IconButton(
-                                  key: Key('vocab-say-${e.id}'),
-                                  icon: const Icon(Icons.volume_up_outlined),
-                                  tooltip: l.vocabListen,
-                                  onPressed: () => ref
-                                      .read(pronounceServiceProvider)
-                                      .say(e.lemma, e.language),
-                                ),
-                              e.inDeck
-                              ? Icon(Icons.check_circle,
-                                  color: theme.colorScheme.primary)
-                              : IconButton(
-                                  key: Key('vocab-add-${e.id}'),
-                                  icon: _pending.contains(e.id)
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2))
-                                      : const Icon(Icons.add_circle_outline),
-                                  tooltip: l.vocabAddToDeck,
-                                  onPressed: signedIn && !_pending.contains(e.id)
-                                      ? () => _add(e)
-                                      : null,
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Filtr tugmasi — daraja rangida yoki neytral, son kichik nishon bilan.
+class _Pill extends StatelessWidget {
+  const _Pill({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+    this.badge,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? color;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final c = color ?? cs.primary;
+    return Padding(
+      padding: const EdgeInsets.only(right: Spacing.sm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          decoration: BoxDecoration(
+            color: selected ? c : c.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(999),
+            border:
+                Border.all(color: selected ? c : c.withValues(alpha: 0.30)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(
+                    color: selected ? cs.onPrimary : c,
+                    fontWeight: FontWeight.w600),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: Spacing.xs),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? cs.onPrimary.withValues(alpha: 0.22)
+                        : c.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(badge!,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          color: selected ? cs.onPrimary : c)),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
