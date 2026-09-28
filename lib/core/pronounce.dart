@@ -69,8 +69,12 @@ class PronounceService {
     return ok;
   }
 
-  /// So'zni aytish. Ovoz yo'q bo'lsa — HECH NARSA qilmaydi (jim).
-  Future<void> say(String text, String language) async {
+  /// Matnni aytish. Ovoz yo'q bo'lsa — HECH NARSA qilmaydi (jim).
+  ///
+  /// `slow` — sekinroq. Butun matnni tinglashda foydali: o'quvchi
+  /// so'zlarni ajratib eshitishi kerak, tabiiy sur'at esa ularni
+  /// qo'shib yuboradi.
+  Future<void> say(String text, String language, {bool slow = false}) async {
     if (!ref.read(soundEnabledProvider)) return;
     final word = text.trim();
     if (word.isEmpty) return;
@@ -79,6 +83,7 @@ class PronounceService {
     try {
       await _tts.stop();
       await _tts.setLanguage(_locales[language]!);
+      await _tts.setSpeechRate(slow ? 0.28 : 0.42);
       await _tts.speak(word);
     } catch (_) {
       // Ovoz chiqmasa ham ekran ishlashda davom etadi.

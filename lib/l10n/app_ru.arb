@@ -633,7 +633,7 @@
   },
   "grammarSignInBody": "Войдите, чтобы отслеживать прогресс. Практиковаться можно и без входа.",
   "grammarOpen": "Практика грамматики",
-  "readingTitle": "Чтение",
+  "readingTitle": "Чтение текста",
   "readingOpen": "Практика чтения",
   "readingMeta": "{words} слов · ~{minutes} мин",
   "@readingMeta": {
@@ -697,5 +697,34 @@
         "type": "int"
       }
     }
-  }
+  },
+  "readingCheck": "Проверить",
+  "readingSeeResult": "Посмотреть результат",
+  "readingCorrect": "Верно!",
+  "readingWrong": "Неверно, правильный ответ: {letter}",
+  "@readingWrong": {
+    "placeholders": {
+      "letter": {
+        "type": "String"
+      }
+    }
+  },
+  "readingListen": "Прослушать текст",
+  "readingListenSlow": "Медленно",
+  "readingShowText": "Показать текст",
+  "readingHideText": "Скрыть текст",
+  "readingScore": "{correct}/{total} верно",
+  "@readingScore": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "readingRetry": "Прочитать снова",
+  "readingMore": "Другой текст",
+  "vocabInDeckLabel": "Уже в словаре"
 }

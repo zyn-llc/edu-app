@@ -105,6 +105,10 @@ class ReadingQuestion {
 
 class PassageDetail {
   final String id;
+
+  /// Talaffuz va so'z qidirish uchun kerak — matn qaysi tilda.
+  final String language;
+
   final String cefrLevel;
   final String? topic;
   final String body;
@@ -114,6 +118,7 @@ class PassageDetail {
 
   const PassageDetail({
     required this.id,
+    required this.language,
     required this.cefrLevel,
     required this.topic,
     required this.body,
@@ -124,6 +129,9 @@ class PassageDetail {
 
   factory PassageDetail.fromJson(Map<String, dynamic> j) => PassageDetail(
         id: j['id'] as String,
+        // Matn hozircha faqat ruscha, lekin kod tilni SO'RAYDI: ingliz
+        // matnlari qo'shilganda bu yer o'zgarmasligi kerak.
+        language: j['language'] as String? ?? 'ru',
         cefrLevel: j['cefr_level'] as String? ?? 'A1',
         topic: j['topic'] as String?,
         body: j['body'] as String? ?? '',

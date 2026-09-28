@@ -134,6 +134,30 @@ const _posRuCommon = <String, String>{
   'other': 'другое',
 };
 
+/// O'QISH matnlarining mavzusi — kalit emas, RUSCHA MATN
+/// ("город и транспорт"). Lug'at mavzularidan alohida ro'yxat, chunki
+/// bular boshqa manbadan keladi va kalit shakliga ega emas.
+///
+/// Interfeys o'zbekcha bo'lgani uchun ular ham o'zbekchaga o'giriladi.
+/// Tarjimasi topilmasa, ASLI ko'rsatiladi: ruscha sarlavha ham xom
+/// kalitdan ko'ra tushunarliroq va yolg'on emas.
+const _readingTopicUz = <String, String>{
+  'город и транспорт': 'Shahar va transport',
+  'еда и покупки': 'Ovqat va xarid',
+  'интернет и техника': 'Internet va texnika',
+  'книги и кино': 'Kitob va kino',
+  'общество': 'Jamiyat',
+  'погода и времена года': 'Ob-havo va fasllar',
+  'природа и животные': 'Tabiat va hayvonlar',
+  'путешествия': 'Sayohat',
+  'работа и профессии': 'Ish va kasblar',
+  'семья и дом': 'Oila va uy',
+  'спорт и здоровье': 'Sport va salomatlik',
+  'традиции и праздники': 'An’ana va bayramlar',
+  'школа и учёба': 'Maktab va ta’lim',
+};
+
+
 /// Noma'lum kalitni hech bo'lmaganda O'QILADIGAN qilish:
 /// `some_new_key` -> `Some new key`. Xom kalit ekranga CHIQMAYDI.
 String _humanise(String key) {
@@ -161,6 +185,17 @@ class DisplayNames {
     return _posUzByLanguage[language]?[k] ?? _posUzCommon[k] ?? _humanise(k);
   }
 
+  /// O'qish matnining mavzusi.
+  ///
+  /// `uiLang == 'ru'` bo'lsa ASLI qaytadi — u allaqachon ruscha va
+  /// o'zbekchadan o'girib qaytarish ma'nosiz bo'lardi.
+  static String readingTopic(String? raw, String uiLang) {
+    final t = (raw ?? '').trim();
+    if (t.isEmpty) return '';
+    if (uiLang == 'ru') return t;
+    return _readingTopicUz[t.toLowerCase()] ?? t;
+  }
+
   /// Tilning nomi — l10n'dan, chunki bu uchta qiymat o'zgarmaydi.
   static String language(String code, L10n l) => switch (code) {
         'en' => l.langEnglish,
@@ -171,5 +206,7 @@ class DisplayNames {
 
   /// Testlar va hisobot uchun: qaysi kalitlar tarjima qilingan.
   static Iterable<String> get knownTopicKeys => _topicUz.keys;
+  static Iterable<String> get knownReadingTopics =>
+      _readingTopicUz.keys;
   static Iterable<String> get knownPosKeys => _posUzCommon.keys;
 }

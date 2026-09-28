@@ -743,7 +743,7 @@
   },
   "grammarSignInBody": "O'sishni kuzatish uchun hisobingizga kiring. Mashq qilish kirmasdan ham mumkin.",
   "grammarOpen": "Grammatika mashqi",
-  "readingTitle": "O'qish",
+  "readingTitle": "Matn o’qish",
   "readingOpen": "O'qish mashqi",
   "readingMeta": "{words} so'z · ~{minutes} daqiqa",
   "@readingMeta": {
@@ -764,7 +764,7 @@
       }
     }
   },
-  "readingEvidenceLabel": "Matndagi dalil",
+  "readingEvidenceLabel": "Matndan dalil",
   "readingNoQuestionsTitle": "Savollar yo'q",
   "readingNoQuestionsBody": "Bu matnga hozircha savol biriktirilmagan.",
   "readingNonePlannedTitle": "Matn yo'q",
@@ -807,5 +807,34 @@
         "type": "int"
       }
     }
-  }
+  },
+  "readingCheck": "Tekshirish",
+  "readingSeeResult": "Natijani ko’rish",
+  "readingCorrect": "To’g’ri!",
+  "readingWrong": "Noto’g’ri, to’g’ri javob: {letter}",
+  "@readingWrong": {
+    "placeholders": {
+      "letter": {
+        "type": "String"
+      }
+    }
+  },
+  "readingListen": "Matnni tinglash",
+  "readingListenSlow": "Sekin tinglash",
+  "readingShowText": "Matnni ko’rsatish",
+  "readingHideText": "Matnni yashirish",
+  "readingScore": "{correct}/{total} to’g’ri",
+  "@readingScore": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "readingRetry": "Qayta o’qish",
+  "readingMore": "Yana matn",
+  "vocabInDeckLabel": "Lug’atingizda bor"
 }
