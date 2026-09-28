@@ -162,8 +162,10 @@ class _VocabBrowseScreenState extends ConsumerState<VocabBrowseScreen> {
                       for (final t in ts)
                         _Pill(
                           key: Key('vocab-topic-${t.topic}'),
+                          // Son ATAYLAB ko'rsatilmaydi: o'quvchiga
+                          // mavzuda nechta so'z borligi emas, mavzuning
+                          // o'zi kerak.
                           label: DisplayNames.topic(t.topic, uiLang),
-                          badge: '${t.count}',
                           selected: _q.topic == t.topic,
                           onTap: () => setState(() => _q = _q.topic == t.topic
                               ? _q.copyWith(clearTopic: true)
@@ -334,14 +336,12 @@ class _Pill extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.color,
-    this.badge,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final Color? color;
-  final String? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -364,32 +364,11 @@ class _Pill extends StatelessWidget {
             border:
                 Border.all(color: selected ? c : c.withValues(alpha: 0.30)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.labelLarge?.copyWith(
-                    color: selected ? cs.onPrimary : c,
-                    fontWeight: FontWeight.w600),
-              ),
-              if (badge != null) ...[
-                const SizedBox(width: Spacing.xs),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? cs.onPrimary.withValues(alpha: 0.22)
-                        : c.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(badge!,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                          color: selected ? cs.onPrimary : c)),
-                ),
-              ],
-            ],
+          child: Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+                color: selected ? cs.onPrimary : c,
+                fontWeight: FontWeight.w600),
           ),
         ),
       ),

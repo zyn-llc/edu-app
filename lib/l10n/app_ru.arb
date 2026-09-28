@@ -685,5 +685,17 @@
   "vocabDueBody": "Несколько минут — и сегодняшнее дело сделано.",
   "vocabStartReviewShort": "Начать повторение",
   "vocabInReview": "На повторении",
-  "vocabSignInTitle": "Нужен вход"
+  "vocabSignInTitle": "Нужен вход",
+  "grammarTopicNotStarted": "Ещё не начато",
+  "grammarTopicScore": "{correct}/{attempts} верно",
+  "@grammarTopicScore": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "attempts": {
+        "type": "int"
+      }
+    }
+  }
 }

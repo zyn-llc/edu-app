@@ -6,6 +6,7 @@ import '../../api/api_error.dart';
 import '../../core/sound.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/answer_tile.dart';
 import '../../widgets/empty_state.dart';
 import 'grammar_data.dart';
 
@@ -130,12 +131,14 @@ class _GrammarPracticeScreenState
     Navigator.pop(context);
   }
 
-  Color? _optionColour(String id, ColorScheme cs) {
+  /// Variantning holati. Tekshirishdan OLDIN faqat tanlangani
+  /// ajralib turadi; keyin to'g'risi yashil, xato tanlov qizil bo'ladi.
+  AnswerState _stateOf(String id) {
     final r = _result;
-    if (r == null) return null;
-    if (id == r.correctOptionId) return cs.primaryContainer;
-    if (id == _picked) return cs.errorContainer;
-    return null;
+    if (r == null) return id == _picked ? AnswerState.picked : AnswerState.idle;
+    if (id == r.correctOptionId) return AnswerState.correct;
+    if (id == _picked) return AnswerState.wrong;
+    return AnswerState.idle;
   }
 
   @override
@@ -225,30 +228,15 @@ class _GrammarPracticeScreenState
                         style: theme.textTheme.headlineSmall,
                       ),
                       const Gap.lg(),
-                      for (final o in q.options) ...[
-                        Card(
+                      for (final o in q.options)
+                        AnswerTile(
                           key: Key('grammar-option-${o.id}'),
-                          margin: const EdgeInsets.only(bottom: Spacing.sm),
-                          color: _optionColour(o.id, theme.colorScheme),
-                          child: ListTile(
-                            enabled: !_busy && r == null,
-                            title: Text(o.text),
-                            leading: CircleAvatar(
-                              radius: 14,
-                              child: Text(o.id.toUpperCase(),
-                                  style: theme.textTheme.labelSmall),
-                            ),
-                            trailing: r == null
-                                ? null
-                                : o.id == r.correctOptionId
-                                    ? const Icon(Icons.check)
-                                    : (o.id == _picked
-                                        ? const Icon(Icons.close)
-                                        : null),
-                            onTap: () => _submit(o.id),
-                          ),
+                          letter: o.id.toUpperCase(),
+                          text: o.text,
+                          state: _stateOf(o.id),
+                          onTap:
+                              (_busy || r != null) ? null : () => _submit(o.id),
                         ),
-                      ],
                       if (r != null) ...[
                         const Gap.sm(),
                         Card(

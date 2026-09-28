@@ -264,9 +264,11 @@ class _TopicRow extends StatelessWidget {
       level: stat.cefrLevel,
       status: status,
       progress: stat.attempts == 0 ? 0 : (stat.accuracy ?? 0),
+      // Savollar SONI emas, o'quvchining o'z natijasi. "50 ta savol"
+      // hech narsani hal qilmaydi; "12/18 to'g'ri" esa hal qiladi.
       meta: stat.attempts == 0
-          ? l.grammarTopicUnseen(stat.questions)
-          : l.grammarTopicSeen(stat.correct, stat.attempts, stat.questions),
+          ? l.grammarTopicNotStarted
+          : l.grammarTopicScore(stat.correct, stat.attempts),
       onTap: onTap,
     );
   }

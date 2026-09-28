@@ -795,5 +795,17 @@
   "vocabDueBody": "Bir necha daqiqa — va bugungi ish bajarildi.",
   "vocabStartReviewShort": "Takrorlashni boshlash",
   "vocabInReview": "Takrorlashda",
-  "vocabSignInTitle": "Kirish kerak"
+  "vocabSignInTitle": "Kirish kerak",
+  "grammarTopicNotStarted": "Hali boshlanmagan",
+  "grammarTopicScore": "{correct}/{attempts} to’g’ri",
+  "@grammarTopicScore": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "attempts": {
+        "type": "int"
+      }
+    }
+  }
 }

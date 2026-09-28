@@ -26,6 +26,7 @@ List<Subject> languageSubjects(L10n l) => [
         Subject(
           id: 'lang_$c',
           code: 'lang_$c',
+          // Nom faqat til — yonida "(7580)" kabi son yo'q.
           name: switch (c) {
             'en' => l.langEnglish,
             'ru' => l.langRussian,
