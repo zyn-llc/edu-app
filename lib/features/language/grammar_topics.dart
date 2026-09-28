@@ -107,6 +107,76 @@ const _uz = <String, String>{
 /// NOMI `GrammarTopicName`, `GrammarTopic` EMAS: oxirgisi allaqachon
 /// ma'lumot qatlamida band (`grammar/grammar_data.dart`) va u mavzu
 /// STATISTIKASI. Bu esa faqat KO'RINADIGAN NOM.
+/// RUS bank'idagi INGLIZCHA sarlavhalar.
+///
+/// 240 mavzudan 45 tasi ingliz tilida yozilgan (b1/b2 da, asosan
+/// sifatdosh va fe'l ko'rinishi mavzulari). Rus tilini
+/// o'rganayotgan o'quvchi mavzu nomini RUS TILIDA ko'rishi kerak:
+/// u darslikda ham, imtihonda ham aynan shu atamani uchratadi.
+/// Qolgan 195 tasi allaqachon ruscha va tegilmaydi.
+const _ruNative = <String, String>{
+  "Advanced case government": 'Сложное управление падежами',
+  "Advanced participles": 'Причастия: продвинутый уровень',
+  "Advanced verbs of motion": 'Глаголы движения: продвинутый уровень',
+  "Common fixed constructions": 'Устойчивые конструкции',
+  "Complex conditional constructions": 'Сложные условные конструкции',
+  "Complex participial constructions": 'Сложные причастные конструкции',
+  "Participial adjective agreement":
+      'Согласование причастия с существительным',
+  "Participial phrase": 'Причастный оборот',
+  "Past active formation":
+      'Образование действительного причастия прошедшего времени',
+  "Past active participle": 'Действительное причастие прошедшего времени',
+  "Past passive participle": 'Страдательное причастие прошедшего времени',
+  "Perfective adverbial participle": 'Деепричастие совершенного вида',
+  "Prefix meaning and aspect": 'Значение приставок и вид глагола',
+  "Present active formation":
+      'Образование действительного причастия настоящего времени',
+  "Present adverbial participle": 'Деепричастие несовершенного вида',
+  "Present passive participle": 'Страдательное причастие настоящего времени',
+  "Prior action": 'Предшествующее действие',
+  "Simultaneous action": 'Одновременное действие',
+  "Subject agreement": 'Согласование с подлежащим',
+  "Subtle aspect distinctions": 'Тонкие различия видов',
+  "What is a gerund/adverbial participle": 'Что такое деепричастие',
+  "advanced adjective/adverb distinction":
+      'Различение прилагательных и наречий',
+  "advanced relative clauses": 'Сложные относительные придаточные',
+  "aspect + infinitive": 'Вид глагола с инфинитивом',
+  "aspect + modal verbs": 'Вид глагола с модальными словами',
+  "aspect and meaning changes": 'Вид и изменение значения',
+  "aspect in commands": 'Вид глагола в повелительном наклонении',
+  "aspect in habitual situations": 'Вид глагола при повторяющемся действии',
+  "aspect in narrative": 'Вид глагола в повествовании',
+  "aspect with negation": 'Вид глагола с отрицанием',
+  "aspect with prefixes": 'Вид глагола с приставками',
+  "complex subordinate clauses": 'Сложноподчинённые предложения',
+  "concessive constructions": 'Уступительные конструкции',
+  "conditional sentences": 'Условные предложения',
+  "formal/impersonal constructions": 'Безличные конструкции',
+  "indirect questions": 'Косвенные вопросы',
+  "infinitive constructions": 'Инфинитивные конструкции',
+  "participle + noun": 'Причастие с существительным',
+  "participles in written language": 'Причастия в письменной речи',
+  "passive constructions": 'Страдательные конструкции',
+  "relative clauses": 'Относительные придаточные',
+  "reported speech": 'Косвенная речь',
+  "reported speech basics": 'Косвенная речь: основы',
+  "short-form adjectives": 'Краткие прилагательные',
+  "stylistic grammatical variation": 'Стилистические варианты',
+};
+
+/// NEMIS bank'idagi inglizcha sarlavhalar — atigi uchta.
+/// Qolgan 96 tasi allaqachon nemischa.
+const _deNative = <String, String>{
+  "Definite & indefinite article der / ein, die / eine, das / ein":
+      'Bestimmter und unbestimmter Artikel: der/ein, die/eine, das/ein',
+  "Negative article kein Ich habe kein Auto / keine Zeit.":
+      'Negationsartikel kein: Ich habe kein Auto / keine Zeit.',
+  "Noun gender der / die / das; -ung, -heit, -chen typical endings (recognition)":
+      'Genus der Nomen: der/die/das; typische Endungen -ung, -heit, -chen',
+};
+
 class GrammarTopicName {
   /// Asosiy sarlavha — o'zbekcha bo'lsa o'zbekcha, bo'lmasa aslining o'zi.
   final String title;
@@ -123,13 +193,33 @@ class GrammarTopicName {
 class GrammarTopics {
   GrammarTopics._();
 
-  static GrammarTopicName of(String raw) {
-    final uz = _uz[raw.trim()];
+  /// [language] — O'RGANILAYOTGAN til (en/de/ru).
+  ///
+  /// Rus va nemis bank'ida sarlavha o'sha tilning O'ZIDA bo'lishi kerak;
+  /// inglizcha yozilganlari shu yerda almashtiriladi. Ingliz bank'ida esa
+  /// sarlavha o'zbekchaga o'giriladi va asli ostida qoladi.
+  static GrammarTopicName of(String raw, [String language = 'en']) {
+    final key = raw.trim();
+    if (language == 'ru') {
+      final ru = _ruNative[key];
+      return ru == null
+          ? GrammarTopicName(key, null)
+          : GrammarTopicName(ru, null);
+    }
+    if (language == 'de') {
+      final de = _deNative[key];
+      return de == null
+          ? GrammarTopicName(key, null)
+          : GrammarTopicName(de, null);
+    }
+    final uz = _uz[key];
     return uz == null
-        ? GrammarTopicName(raw, null)
-        : GrammarTopicName(uz, raw);
+        ? GrammarTopicName(key, null)
+        : GrammarTopicName(uz, key);
   }
 
   static int get translatedCount => _uz.length;
+  static int get ruNativeCount => _ruNative.length;
+  static int get deNativeCount => _deNative.length;
   static Iterable<String> get translatedKeys => _uz.keys;
 }

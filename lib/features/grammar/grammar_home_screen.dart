@@ -161,6 +161,7 @@ class _GrammarHomeScreenState extends ConsumerState<GrammarTab> {
                                   _TopicRow(
                                     stat: t,
                                     status: _statusOf(t.state),
+                                    language: widget.language,
                                     onTap: () => _practice(topic: t.topic),
                                   ),
                               ],
@@ -246,8 +247,16 @@ class _LevelFilter extends StatelessWidget {
 }
 
 class _TopicRow extends StatelessWidget {
-  const _TopicRow(
-      {required this.stat, required this.status, required this.onTap});
+  const _TopicRow({
+    required this.stat,
+    required this.status,
+    required this.onTap,
+    required this.language,
+  });
+
+  /// Sarlavha qaysi tilda bo'lishini shu hal qiladi: rus bank'ida ruscha,
+  /// nemisda nemischa, inglizda esa o'zbekcha + asl atama.
+  final String language;
 
   final GrammarTopic stat;
   final TopicStatus status;
@@ -257,7 +266,7 @@ class _TopicRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     // O'zbekcha sarlavha + asl atama kichik satrda.
-    final named = GrammarTopics.of(stat.topic);
+    final named = GrammarTopics.of(stat.topic, language);
     return TopicTile(
       title: named.title,
       subtitle: named.subtitle,
@@ -363,7 +372,7 @@ class _MasteryCard extends ConsumerWidget {
                         key: Key('grammar-weak-${w.topic}'),
                         avatar: const Icon(Icons.trending_down, size: 16),
                         label: Text(
-                          GrammarTopics.of(w.topic).title,
+                          GrammarTopics.of(w.topic, language).title,
                           overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => onPractiseTopic(w.topic),
@@ -375,7 +384,8 @@ class _MasteryCard extends ConsumerWidget {
                 ActionChip(
                   key: const Key('grammar-next-topic'),
                   avatar: const Icon(Icons.arrow_forward, size: 16),
-                  label: Text(GrammarTopics.of(data.nextTopic!).title,
+                  label: Text(
+                      GrammarTopics.of(data.nextTopic!, language).title,
                       overflow: TextOverflow.ellipsis),
                   onPressed: () => onPractiseTopic(data.nextTopic!),
                 ),
